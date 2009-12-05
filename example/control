@@ -1,0 +1,9 @@
+Package: libactivator.examplelistener
+Priority: optional
+Section: System
+Architecture: iphoneos-arm
+Version: 0.1
+Description: Simply shows the event name in an UIAlertView
+Name: Example Listener for libactivator
+Depends: mobilesubstrate, libactivator
+Author: Ryan Petrich <rpetrich@gmail.com>
