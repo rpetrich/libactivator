@@ -4,18 +4,25 @@
 #import <SpringBoard/SpringBoard.h>
 #import <UIKit/UIKit-Private.h>
 
-NSString * const LAEventNameMenuSinglePress       = @"libactivator.menu.single-press";
-NSString * const LAEventNameMenuDoublePress       = @"libactivator.menu.double-press";
-NSString * const LAEventNameMenuShortHold         = @"libactivator.menu.short-hold";
+NSString * const LAEventNameMenuPressAtSpringBoard = @"libactivator.menu.press.at-springboard";
+NSString * const LAEventNameMenuPressDouble        = @"libactivator.menu.press.double";
+NSString * const LAEventNameMenuHoldShort          = @"libactivator.menu.hold.short";
 
-NSString * const LAEventNameLockShortHold         = @"libactivator.lock.short-hold";
+NSString * const LAEventNameLockHoldShort          = @"libactivator.lock.hold.short";
 
-NSString * const LAEventNameMenuSpringBoardPinch  = @"libactivator.springboard.pinch";
-NSString * const LAEventNameMenuSpringBoardSpread = @"libactivator.springboard.spread";
+NSString * const LAEventNameSpringBoardPinch       = @"libactivator.springboard.pinch";
+NSString * const LAEventNameSpringBoardSpread      = @"libactivator.springboard.spread";
 
-#define kPinchThreshold  0.95f
-#define kSpreadThreshold 1.05f
-#define kButtonHoldDelay 1.0f
+NSString * const LAEventNameStatusBarSwipeRight    = @"libactivator.statusbar.swipe.right";
+NSString * const LAEventNameStatusBarSwipeLeft     = @"libactivator.statusbar.swipe.left";
+NSString * const LAEventNameStatusBarSwipeDown     = @"libactivator.statusbar.swipe.down";
+NSString * const LAEventNameStatusBarTapDouble     = @"libactivator.statusbar.tap.double";
+
+#define kSpringBoardPinchThreshold         0.95f
+#define kSpringBoardSpreadThreshold        1.05f
+#define kButtonHoldDelay                   1.0f
+#define kStatusBarHorizontalSwipeThreshold 50.0f
+#define kStatusBarVerticalSwipeThreshold   10.0f
 
 CHInline
 static LAEvent *LASendEventWithName(NSString *eventName)
@@ -51,7 +58,7 @@ CHMethod0(BOOL, SpringBoard, allowMenuDoubleTap)
 
 CHMethod0(void, SpringBoard, handleMenuDoubleTap)
 {
-	if ([LASendEventWithName(LAEventNameMenuDoublePress) isHandled])
+	if ([LASendEventWithName(LAEventNameMenuPressDouble) isHandled])
 		return;
 	CHSuper0(SpringBoard, handleMenuDoubleTap);
 }
@@ -86,7 +93,7 @@ CHMethod0(void, SpringBoard, activatorLockButtonTimerCompleted)
 {
 	[lockEventToAbort release];
 	lockEventToAbort = nil;
-	LAEvent *event = LASendEventWithName(LAEventNameLockShortHold);
+	LAEvent *event = LASendEventWithName(LAEventNameLockHoldShort);
 	if ([event isHandled])
 		lockEventToAbort = [event retain];
 }
@@ -121,7 +128,7 @@ CHMethod0(void, SpringBoard, activatorMenuButtonTimerCompleted)
 {
 	[menuEventToAbort release];
 	menuEventToAbort = nil;
-	LAEvent *event = LASendEventWithName(LAEventNameMenuShortHold);
+	LAEvent *event = LASendEventWithName(LAEventNameMenuHoldShort);
 	if ([event isHandled])
 		menuEventToAbort = [event retain];
 }
@@ -131,11 +138,13 @@ CHDeclareClass(SBIconController);
 CHMethod2(void, SBIconController, scrollToIconListAtIndex, NSInteger, index, animate, BOOL, animate)
 {
 	if (shouldInterceptMenuPresses) {
-		if ([LASendEventWithName(LAEventNameMenuSinglePress) isHandled])
+		if ([LASendEventWithName(LAEventNameMenuPressAtSpringBoard) isHandled])
 			return;
 	}
 	CHSuper2(SBIconController, scrollToIconListAtIndex, index, animate, animate);
 }
+
+static BOOL hasSentPinchSpread;
 
 CHDeclareClass(SBIconScrollView);
 
@@ -148,13 +157,24 @@ CHMethod1(id, SBIconScrollView, initWithFrame, CGRect, frame)
 	return self;
 }
 
+CHMethod2(void, SBIconScrollView, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
+{
+	hasSentPinchSpread = NO;
+	CHSuper2(SBIconScrollView, touchesBegan, touches, withEvent, event);
+}
+
 CHMethod1(void, SBIconScrollView, handlePinch, UIPinchGestureRecognizer *, pinchGesture)
 {
-	CGFloat scale = [pinchGesture scale];
-	if (scale < kPinchThreshold)
-		LASendEventWithName(LAEventNameMenuSpringBoardPinch);
-	else if (scale > kSpreadThreshold)
-		LASendEventWithName(LAEventNameMenuSpringBoardSpread);
+	if (!hasSentPinchSpread) {
+		CGFloat scale = [pinchGesture scale];
+		if (scale < kSpringBoardPinchThreshold) {
+			hasSentPinchSpread = YES;
+			LASendEventWithName(LAEventNameSpringBoardPinch);
+		} else if (scale > kSpringBoardSpreadThreshold) {
+			hasSentPinchSpread = YES;
+			LASendEventWithName(LAEventNameSpringBoardSpread);
+		}
+	}
 }
 
 CHDeclareClass(SBIcon);
@@ -175,43 +195,80 @@ static CGFloat startingDistanceSquared;
 CHMethod2(void, SBIcon, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	lastTouchesCount = 1;
+	hasSentPinchSpread = NO;
 	CHSuper2(SBIcon, touchesBegan, touches, withEvent, event);
 }
 
 CHMethod2(void, SBIcon, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
 {
-	NSArray *allTouches = [[event allTouches] allObjects];
-	NSInteger allTouchesCount = [allTouches count];
-	if (allTouchesCount == 2) {
-		UIWindow *window = [self window];
-		UITouch *firstTouch = [allTouches objectAtIndex:0];
-		UITouch *secondTouch = [allTouches objectAtIndex:1];
-		CGPoint firstPoint = [firstTouch locationInView:window];
-		CGPoint secondPoint = [secondTouch locationInView:window];
-		CGFloat deltaX = firstPoint.x - secondPoint.x;
-		CGFloat deltaY = firstPoint.y - secondPoint.y;
-		CGFloat currentDistanceSquared = deltaX * deltaX + deltaY * deltaY;
-		if (lastTouchesCount != 2)
-			startingDistanceSquared = currentDistanceSquared;
-		else if (currentDistanceSquared < startingDistanceSquared * (kPinchThreshold * kPinchThreshold))
-			LASendEventWithName(LAEventNameMenuSpringBoardPinch);
-		else if (currentDistanceSquared > startingDistanceSquared * (kSpreadThreshold * kSpreadThreshold))
-			LASendEventWithName(LAEventNameMenuSpringBoardSpread);
+	if (!hasSentPinchSpread) {
+		NSArray *allTouches = [[event allTouches] allObjects];
+		NSInteger allTouchesCount = [allTouches count];
+		if (allTouchesCount == 2) {
+			UIWindow *window = [self window];
+			UITouch *firstTouch = [allTouches objectAtIndex:0];
+			UITouch *secondTouch = [allTouches objectAtIndex:1];
+			CGPoint firstPoint = [firstTouch locationInView:window];
+			CGPoint secondPoint = [secondTouch locationInView:window];
+			CGFloat deltaX = firstPoint.x - secondPoint.x;
+			CGFloat deltaY = firstPoint.y - secondPoint.y;
+			CGFloat currentDistanceSquared = deltaX * deltaX + deltaY * deltaY;
+			if (lastTouchesCount != 2)
+				startingDistanceSquared = currentDistanceSquared;
+			else if (currentDistanceSquared < startingDistanceSquared * (kSpringBoardPinchThreshold * kSpringBoardPinchThreshold)) {
+				hasSentPinchSpread = YES;
+				LASendEventWithName(LAEventNameSpringBoardPinch);
+			} else if (currentDistanceSquared > startingDistanceSquared * (kSpringBoardSpreadThreshold * kSpringBoardSpreadThreshold)) {
+				hasSentPinchSpread = YES;
+				LASendEventWithName(LAEventNameSpringBoardSpread);
+			}
+		}
+		lastTouchesCount = allTouchesCount;
 	}
-	lastTouchesCount = allTouchesCount;
 	CHSuper2(SBIcon, touchesMoved, touches, withEvent, event);
 }
 
-CHMethod2(void, SBIcon, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
+static CGPoint statusBarTouchDown;
+static BOOL hasSentStatusBarSwipe;
+
+CHDeclareClass(SBStatusBar);
+
+CHMethod2(void, SBStatusBar, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
 {
-	lastTouchesCount = 0;
-	CHSuper2(SBIcon, touchesEnded, touches, withEvent, event);
+	statusBarTouchDown = [[touches anyObject] locationInView:self];
+	hasSentStatusBarSwipe = NO;
+	CHSuper2(SBStatusBar, touchesBegan, touches, withEvent, event);
 }
 
-CHMethod2(void, SBIcon, touchesCancelled, NSSet *, touches, withEvent, UIEvent *, event)
+CHMethod2(void, SBStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
 {
-	lastTouchesCount = 0;
-	CHSuper2(SBIcon, touchesCancelled, touches, withEvent, event);
+	if (!hasSentStatusBarSwipe) {
+		CGPoint currentPosition = [[touches anyObject] locationInView:self];
+		CGFloat deltaX = currentPosition.x - statusBarTouchDown.x;
+		CGFloat deltaY = currentPosition.y - statusBarTouchDown.y;
+		if ((deltaX * deltaX) > (deltaY * deltaY)) {
+			if (deltaX > kStatusBarHorizontalSwipeThreshold) {
+				hasSentStatusBarSwipe = YES;
+				LASendEventWithName(LAEventNameStatusBarSwipeRight);
+			} else if (deltaX < -kStatusBarHorizontalSwipeThreshold) {
+				hasSentStatusBarSwipe = YES;
+				LASendEventWithName(LAEventNameStatusBarSwipeLeft);
+			}
+		} else {
+			if (deltaY > kStatusBarVerticalSwipeThreshold) {
+				hasSentStatusBarSwipe = YES;
+				LASendEventWithName(LAEventNameStatusBarSwipeDown);
+			}
+		}
+	}
+	CHSuper2(SBStatusBar, touchesMoved, touches, withEvent, event);
+}
+
+CHMethod2(void, SBStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
+{
+	if ([[touches anyObject] tapCount] == 2)
+		LASendEventWithName(LAEventNameStatusBarTapDouble);
+	CHSuper2(SBStatusBar, touchesEnded, touches, withEvent, event);
 }
 
 CHConstructor
@@ -234,12 +291,15 @@ CHConstructor
 	
 	CHLoadLateClass(SBIconScrollView);
 	CHHook1(SBIconScrollView, initWithFrame);
+	CHHook2(SBIconScrollView, touchesBegan, withEvent);
 	CHHook1(SBIconScrollView, handlePinch);
 	
 	CHLoadLateClass(SBIcon);
 	CHHook0(SBIcon, initWithDefaultSize);
 	CHHook2(SBIcon, touchesBegan, withEvent);
 	CHHook2(SBIcon, touchesMoved, withEvent);
-	CHHook2(SBIcon, touchesEnded, withEvent);
-	CHHook2(SBIcon, touchesCancelled, withEvent);	
+	
+	CHLoadLateClass(SBStatusBar);
+	CHHook2(SBStatusBar, touchesBegan, withEvent);
+	CHHook2(SBStatusBar, touchesMoved, withEvent);
 }

@@ -1,8 +1,11 @@
-OBJECTS=libactivator.o Events.o
+OBJECTS=libactivator.o Events.o ListenerSettingsViewController.o
 TARGET=fs/usr/lib/libactivator.dylib
 
 PREFS_OBJECTS=Preferences.o
 PREFS_TARGET=fs/System/Library/PreferenceBundles/LibActivator.bundle/LibActivator
+
+CONFIG_OBJECTS=activator-config.o
+CONFIG_TARGET=fs/usr/bin/activator-config
 
 export NEXT_ROOT=/var/sdk
 
@@ -37,7 +40,7 @@ endif
 all:	install
 
 clean:
-		rm -f $(OBJECTS) $(TARGET) $(PREFS_OBJECTS) $(PREFS_TARGET) Common.h
+		rm -f $(OBJECTS) $(TARGET) $(PREFS_OBJECTS) $(PREFS_TARGET) $(CONFIG_OBJECTS) $(CONFIG_TARGET) Common.h
 		rm -rf package
 		find . -name '.svn' -prune -o -name '.git' -prune -o -name '._*' -delete -or -name '.DS_Store' -delete
 
@@ -52,11 +55,15 @@ $(TARGET): $(OBJECTS)
 		$(COMPILER) $(LDFLAGS) -dynamiclib -o $@ $^
 		ldid -S $@
 				
-$(PREFS_TARGET): $(PREFS_OBJECTS)
-		$(COMPILER) $(LDFLAGS) -framework Preferences -bundle -o $@ $^
+$(PREFS_TARGET): $(PREFS_OBJECTS) $(TARGET)
+		$(COMPILER) -L./fs/usr/lib $(LDFLAGS) -lactivator -framework Preferences -bundle -o $@ $(filter %.o,$^)
+		ldid -S $@
+
+$(CONFIG_TARGET): $(CONFIG_OBJECTS)
+		$(COMPILER) $(LDFLAGS) -o $@ $^
 		ldid -S $@
 				
-package: $(TARGET) $(PREFS_TARGET) control
+package: $(TARGET) $(PREFS_TARGET) $(CONFIG_TARGET) control
 		rm -rf package
 		mkdir -p package/DEBIAN
 		cp -a control preinst prerm package/DEBIAN
@@ -67,7 +74,9 @@ package: $(TARGET) $(PREFS_TARGET) control
 		
 install: package
 		dpkg -i $(shell grep ^Package: control | cut -d ' ' -f 2)_$(shell grep ^Version: control | cut -d ' ' -f 2)_iphoneos-arm.deb
-		# respring
+
+respring: install
+		respring
 
 zip:	clean
 		- rm -rf ../$(shell grep ^Package: control | cut -d ' ' -f 2).tgz

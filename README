@@ -1,0 +1,4 @@
+libactivator
+Centralized gestures and button management for iPhone OS
+
+Uses the on-device toolchain + SpringBoard headers + CaptainHook

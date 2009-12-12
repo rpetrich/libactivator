@@ -1,4 +1,6 @@
-#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+
+// Events
 
 @interface LAEvent : NSObject {
 @private
@@ -12,6 +14,22 @@
 @property (nonatomic, getter=isHandled) BOOL handled;
 
 @end
+
+extern NSString * const LAEventNameMenuPressAtSpringBoard;
+extern NSString * const LAEventNameMenuPressDouble;
+extern NSString * const LAEventNameMenuHoldShort;
+
+extern NSString * const LAEventNameLockHoldShort;
+
+extern NSString * const LAEventNameSpringBoardPinch;
+extern NSString * const LAEventNameSpringBoardSpread;
+
+extern NSString * const LAEventNameStatusBarSwipeRight;
+extern NSString * const LAEventNameStatusBarSwipeLeft;
+extern NSString * const LAEventNameStatusBarSwipeDown;
+extern NSString * const LAEventNameStatusBarTapDouble;
+
+// Activator
 
 @protocol LAListener;
 
@@ -33,6 +51,8 @@
 
 @end
 
+// Listeners
+
 @protocol LAListener <NSObject>
 @required
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event;
@@ -40,11 +60,18 @@
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event;
 @end
 
-extern NSString * const LAEventNameMenuSinglePress;
-extern NSString * const LAEventNameMenuDoublePress;
-extern NSString * const LAEventNameMenuShortHold;
+// Settings Controller
 
-extern NSString * const LAEventNameLockShortHold;
+@interface LAListenerSettingsViewController : UIViewController {
+@private
+	NSString *_listenerName;
+	NSArray *_events;
+	NSMutableDictionary *_eventData;
+	NSMutableDictionary *_preferences;	
+}
 
-extern NSString * const LAEventNameMenuSpringBoardPinch;
-extern NSString * const LAEventNameMenuSpringBoardSpread;
+- (id)init;
+@property (nonatomic, copy) NSString *listenerName;
+
+@end
+

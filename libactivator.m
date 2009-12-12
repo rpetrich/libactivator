@@ -41,7 +41,7 @@
 
 - (NSString *)description
 {
-	return [NSString stringWithFormat:@"<%s name=%@ handled=%s %p>", class_getName([self class]), _name, _handled, self];
+	return [NSString stringWithFormat:@"<%s name=%@ handled=%s %p>", class_getName([self class]), _name, _handled?"YES":"NO", self];
 }
 
 @end
@@ -65,7 +65,9 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 - (id)init
 {
 	if ((self = [super init])) {
-		_listeners = [[NSMutableDictionary alloc] init];
+		// Does not retain values!
+		_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
+		// Register for notification
 		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), self, PreferencesChangedCallback, CFSTR("libactivator.preferenceschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 	}
 	return self;

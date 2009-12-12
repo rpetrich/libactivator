@@ -2,6 +2,7 @@
 #import <UIKit/UIKit.h>
 
 @interface ExampleListener : NSObject<LAListener> {
+@private
 	UIAlertView *av;
 }
 @end
@@ -32,7 +33,7 @@
 
 + (void)load
 {
-	[[LAActivator sharedInstance] registerListener:[[self new] autorelease] forName:@"libactivator.examplelistener"];
+	[[LAActivator sharedInstance] registerListener:[self new] forName:@"libactivator.examplelistener"];
 }
 
 @end 
