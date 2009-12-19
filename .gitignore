@@ -1,0 +1,8 @@
+*.o
+._*
+.DS_Store
+*.deb
+Common.h
+package
+*.dylib
+LibActivator

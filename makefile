@@ -52,7 +52,7 @@ Common.h:
 		$(COMPILER) -c $(CFLAGS) $(filter %.m,$^) -o $@
 
 $(TARGET): $(OBJECTS)
-		$(COMPILER) $(LDFLAGS) -dynamiclib -o $@ $^
+		$(COMPILER) $(LDFLAGS) -dynamiclib -install_name /usr/lib/libactivator.dylib -o $@ $^
 		ldid -S $@
 				
 $(PREFS_TARGET): $(PREFS_OBJECTS) $(TARGET)

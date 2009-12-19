@@ -74,9 +74,18 @@ CHMethod1(void, SpringBoard, lockButtonDown, GSEventRef, event)
 CHMethod1(void, SpringBoard, lockButtonUp, GSEventRef, event)
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonTimerCompleted) object:nil];
-	[lockEventToAbort release];
-	lockEventToAbort = nil;
-	CHSuper1(SpringBoard, lockButtonUp, event);
+	if (lockEventToAbort) {
+		[lockEventToAbort release];
+		lockEventToAbort = nil;
+		NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _lockButtonTimer, NSTimer *);
+		if (timer) {
+			[*timer invalidate];
+			[*timer release];
+			*timer = nil;
+		}
+	} else {
+		CHSuper1(SpringBoard, lockButtonUp, event);
+	}
 }
 
 CHMethod0(void, SpringBoard, lockButtonWasHeld)
@@ -109,9 +118,18 @@ CHMethod1(void, SpringBoard, menuButtonDown, GSEventRef, event)
 CHMethod1(void, SpringBoard, menuButtonUp, GSEventRef, event)
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorMenuButtonTimerCompleted) object:nil];
-	[menuEventToAbort release];
-	menuEventToAbort = nil;
-	CHSuper1(SpringBoard, menuButtonUp, event);
+	if (menuEventToAbort) {
+		[menuEventToAbort release];
+		menuEventToAbort = nil;
+		NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _menuButtonTimer, NSTimer *);
+		if (timer) {
+			[*timer invalidate];
+			[*timer release];
+			*timer = nil;
+		}
+	} else {
+		CHSuper1(SpringBoard, menuButtonUp, event);
+	}
 }
 
 CHMethod0(void, SpringBoard, menuButtonWasHeld)
@@ -302,4 +320,5 @@ CHConstructor
 	CHLoadLateClass(SBStatusBar);
 	CHHook2(SBStatusBar, touchesBegan, withEvent);
 	CHHook2(SBStatusBar, touchesMoved, withEvent);
+	CHHook2(SBStatusBar, touchesEnded, withEvent);
 }
