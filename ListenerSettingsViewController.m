@@ -15,22 +15,6 @@
 
 #define kPreferencesFilePath "/User/Library/Preferences/libactivator.plist"
 
-static NSInteger ActivatorSettingsSortFunction(id a, id b, void *context)
-{
-	NSDictionary *eventData = (NSDictionary *)context;
-	NSDictionary *aData = [eventData objectForKey:a];
-	NSDictionary *bData = [eventData objectForKey:b];
-	NSInteger aIndex = [[aData objectForKey:@"index"] integerValue];
-	NSInteger bIndex = [[bData objectForKey:@"index"] integerValue];
-	if (aIndex < bIndex)
-		return NSOrderedAscending;
-	if (aIndex > bIndex)
-		return NSOrderedDescending;
-	NSString *aTitle = [aData objectForKey:@"title"];
-	NSString *bTitle = [bData objectForKey:@"title"];
-	return [aTitle caseInsensitiveCompare:bTitle];
-}
-
 @interface LAListenerSettingsViewController () <UITableViewDelegate, UITableViewDataSource, UIAlertViewDelegate>
 @end
 
@@ -42,18 +26,25 @@ static NSInteger ActivatorSettingsSortFunction(id a, id b, void *context)
 		_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:@kPreferencesFilePath];
 		if (!_preferences)
 			_preferences = [[NSMutableDictionary alloc] init];
-		NSMutableArray *events = [[NSMutableArray alloc] init];
+		BOOL showHidden = [[_preferences objectForKey:@"LAShowHiddenEvents"] boolValue];
+		_events = [[NSMutableDictionary alloc] init];
 		_eventData = [[NSMutableDictionary alloc] init];
 		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Events" error:NULL]) {
 			if (![fileName hasPrefix:@"."]) {
-				[events addObject:fileName];
 				NSDictionary *infoDict = [[NSDictionary alloc] initWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Events/%@/Info.plist", fileName]];
 				[_eventData setObject:infoDict forKey:fileName];
+				if (!([[infoDict objectForKey:@"hidden"] boolValue] || showHidden)) {
+					id key = [infoDict objectForKey:@"group"]?:@"";
+					NSMutableArray *groupList = [_events objectForKey:key];
+					if (!groupList) {
+						groupList = [NSMutableArray array];
+						[_events setObject:groupList forKey:key];
+					}
+					[groupList addObject:fileName];
+				}
 				[infoDict release];
 			}
 		}
-		_events = [[events sortedArrayUsingFunction:ActivatorSettingsSortFunction context:_eventData] retain];
-		[events release];
 	}
 	return self;
 }
@@ -98,9 +89,24 @@ static NSInteger ActivatorSettingsSortFunction(id a, id b, void *context)
 	notify_post("libactivator.preferenceschanged");
 }
 
+- (NSMutableArray *)groupAtIndex:(NSInteger)index
+{
+	return [_events objectForKey:[[_events allKeys] objectAtIndex:index]];
+}
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+	return [[_events allKeys] count];
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
+{
+	return [[_events allKeys] objectAtIndex:section];
+}
+
 - (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section
 {
-	return [_events count];
+	return [[self groupAtIndex:section] count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -111,7 +117,7 @@ static NSInteger ActivatorSettingsSortFunction(id a, id b, void *context)
 	else
 		[cell setSelected:NO animated:NO];
 	NSInteger row = [indexPath row];
-	NSString *eventName = [_events objectAtIndex:row];
+	NSString *eventName = [[self groupAtIndex:[indexPath section]] objectAtIndex:row];
 	NSString *preferenceName = [@"LAEventListener-" stringByAppendingString:eventName];
 	UITableViewCellAccessoryType accessory;
 	if ([[_preferences objectForKey:preferenceName] isEqualToString:_listenerName])
@@ -119,8 +125,15 @@ static NSInteger ActivatorSettingsSortFunction(id a, id b, void *context)
 	else 
 		accessory = UITableViewCellAccessoryNone;
 	[cell setAccessoryType:accessory];
-	NSString *eventTitle = [[_eventData objectForKey:eventName] objectForKey:@"title"];
-	[cell setText:eventTitle];
+	NSDictionary *infoPlist = [_eventData objectForKey:eventName];
+	[cell setText:[infoPlist objectForKey:@"title"]];
+	if ([[infoPlist objectForKey:@"hidden"] boolValue]) {
+		[cell setTextColor:[[UIColor darkTextColor] colorWithAlphaComponent:0.75f]];
+		[cell setSelectedTextColor:[[UIColor lightTextColor] colorWithAlphaComponent:0.75f]];
+	} else {
+		[cell setTextColor:nil];
+		[cell setSelectedTextColor:nil];
+	}
 	return cell;	
 }
 
@@ -129,7 +142,7 @@ static NSInteger ActivatorSettingsSortFunction(id a, id b, void *context)
 	UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
 	UITableViewCellAccessoryType accessory = [cell accessoryType];
 	NSInteger row = [indexPath row];
-	NSString *eventName = [_events objectAtIndex:row];
+	NSString *eventName = [[self groupAtIndex:[indexPath section]] objectAtIndex:row];
 	NSString *preferenceName = [@"LAEventListener-" stringByAppendingString:eventName];
 	if (accessory == UITableViewCellAccessoryNone) {
 		NSString *currentValue = [_preferences objectForKey:preferenceName];
@@ -160,7 +173,7 @@ static NSInteger ActivatorSettingsSortFunction(id a, id b, void *context)
 	NSIndexPath *indexPath = [tableView indexPathForSelectedRow];
 	UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
 	if (buttonIndex != [alertView cancelButtonIndex]) {
-		NSString *eventName = [_events objectAtIndex:[indexPath row]];
+		NSString *eventName = [[self groupAtIndex:[indexPath section]] objectAtIndex:[indexPath row]];
 		NSString *preferenceName = [@"LAEventListener-" stringByAppendingString:eventName];
 		[_preferences setObject:_listenerName forKey:preferenceName];
 		[self _writePreferences];

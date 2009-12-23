@@ -5,6 +5,7 @@
 #import <UIKit/UIKit-Private.h>
 
 NSString * const LAEventNameMenuPressAtSpringBoard = @"libactivator.menu.press.at-springboard";
+NSString * const LAEventNameMenuPressSingle        = @"libactivator.menu.press.single";
 NSString * const LAEventNameMenuPressDouble        = @"libactivator.menu.press.double";
 NSString * const LAEventNameMenuHoldShort          = @"libactivator.menu.hold.short";
 
@@ -149,6 +150,15 @@ CHMethod0(void, SpringBoard, activatorMenuButtonTimerCompleted)
 	LAEvent *event = LASendEventWithName(LAEventNameMenuHoldShort);
 	if ([event isHandled])
 		menuEventToAbort = [event retain];
+}
+
+CHDeclareClass(SBUIController);
+
+CHMethod0(BOOL, SBUIController, clickedMenuButton)
+{
+	if ([LASendEventWithName(LAEventNameMenuPressSingle) isHandled])
+		return YES;
+	return CHSuper0(SBUIController, clickedMenuButton);
 }
 
 CHDeclareClass(SBIconController);
@@ -303,6 +313,9 @@ CHConstructor
 	CHHook1(SpringBoard, menuButtonUp);
 	CHHook0(SpringBoard, menuButtonWasHeld);
 	CHHook0(SpringBoard, activatorMenuButtonTimerCompleted);
+	
+	CHLoadLateClass(SBUIController);
+	CHHook0(SBUIController, clickedMenuButton);
 
 	CHLoadLateClass(SBIconController);
 	CHHook2(SBIconController, scrollToIconListAtIndex, animate);

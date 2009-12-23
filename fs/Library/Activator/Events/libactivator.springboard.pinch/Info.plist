@@ -1,4 +1,4 @@
 {
-	title = "SpringBoard Icon Pinch";
-	index = 3;
+	title = "Icon Pinch";
+	group = "SpringBoard";
 }

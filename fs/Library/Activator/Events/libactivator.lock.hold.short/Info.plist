@@ -1,4 +1,4 @@
 {
-	title = "Sleep Button Short Hold";
-	index = 2;
+	title = "Short Hold";
+	group = "Sleep Button";
 }

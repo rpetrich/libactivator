@@ -1,4 +1,4 @@
 {
-	title = "Home Button Double Press";
-	index = 1;
+	title = "Double Press";
+	group = "Home Button";
 }

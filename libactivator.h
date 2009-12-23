@@ -16,6 +16,7 @@
 @end
 
 extern NSString * const LAEventNameMenuPressAtSpringBoard;
+extern NSString * const LAEventNameMenuPressSingle;
 extern NSString * const LAEventNameMenuPressDouble;
 extern NSString * const LAEventNameMenuHoldShort;
 
@@ -65,7 +66,7 @@ extern NSString * const LAEventNameStatusBarTapDouble;
 @interface LAListenerSettingsViewController : UIViewController {
 @private
 	NSString *_listenerName;
-	NSArray *_events;
+	NSMutableDictionary *_events;
 	NSMutableDictionary *_eventData;
 	NSMutableDictionary *_preferences;	
 }

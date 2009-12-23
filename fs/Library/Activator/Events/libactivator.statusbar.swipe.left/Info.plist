@@ -1,4 +1,4 @@
 {
-	title = "Status Bar Swipe Left";
-	index = 8;
+	title = "Swipe Left";
+	group = "Status Bar";
 }
