@@ -18,12 +18,14 @@ NSString * const LAEventNameStatusBarSwipeRight    = @"libactivator.statusbar.sw
 NSString * const LAEventNameStatusBarSwipeLeft     = @"libactivator.statusbar.swipe.left";
 NSString * const LAEventNameStatusBarSwipeDown     = @"libactivator.statusbar.swipe.down";
 NSString * const LAEventNameStatusBarTapDouble     = @"libactivator.statusbar.tap.double";
+NSString * const LAEventNameStatusBarHold          = @"libactivator.statusbar.hold";
 
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
 #define kButtonHoldDelay                   1.0f
 #define kStatusBarHorizontalSwipeThreshold 50.0f
 #define kStatusBarVerticalSwipeThreshold   10.0f
+#define kStatusBarHoldDelay                0.5f
 
 CHInline
 static LAEvent *LASendEventWithName(NSString *eventName)
@@ -257,34 +259,44 @@ CHMethod2(void, SBIcon, touchesMoved, NSSet *, touches, withEvent, UIEvent *, ev
 }
 
 static CGPoint statusBarTouchDown;
-static BOOL hasSentStatusBarSwipe;
+static BOOL hasSentStatusBarEvent;
 
 CHDeclareClass(SBStatusBar);
 
+CHMethod0(void, SBStatusBar, activatorHoldEventCompleted)
+{
+	if (!hasSentStatusBarEvent) {
+		hasSentStatusBarEvent = YES;
+		LASendEventWithName(LAEventNameStatusBarHold);
+	}
+}
+
 CHMethod2(void, SBStatusBar, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
 {
+	[self performSelector:@selector(activatorHoldEventCompleted) withObject:nil afterDelay:kStatusBarHoldDelay];
 	statusBarTouchDown = [[touches anyObject] locationInView:self];
-	hasSentStatusBarSwipe = NO;
+	hasSentStatusBarEvent = NO;
 	CHSuper2(SBStatusBar, touchesBegan, touches, withEvent, event);
 }
 
 CHMethod2(void, SBStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
 {
-	if (!hasSentStatusBarSwipe) {
+	if (!hasSentStatusBarEvent) {
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorHoldEventCompleted) object:nil];
 		CGPoint currentPosition = [[touches anyObject] locationInView:self];
 		CGFloat deltaX = currentPosition.x - statusBarTouchDown.x;
 		CGFloat deltaY = currentPosition.y - statusBarTouchDown.y;
 		if ((deltaX * deltaX) > (deltaY * deltaY)) {
 			if (deltaX > kStatusBarHorizontalSwipeThreshold) {
-				hasSentStatusBarSwipe = YES;
+				hasSentStatusBarEvent = YES;
 				LASendEventWithName(LAEventNameStatusBarSwipeRight);
 			} else if (deltaX < -kStatusBarHorizontalSwipeThreshold) {
-				hasSentStatusBarSwipe = YES;
+				hasSentStatusBarEvent = YES;
 				LASendEventWithName(LAEventNameStatusBarSwipeLeft);
 			}
 		} else {
 			if (deltaY > kStatusBarVerticalSwipeThreshold) {
-				hasSentStatusBarSwipe = YES;
+				hasSentStatusBarEvent = YES;
 				LASendEventWithName(LAEventNameStatusBarSwipeDown);
 			}
 		}
@@ -294,8 +306,10 @@ CHMethod2(void, SBStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent 
 
 CHMethod2(void, SBStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
 {
-	if ([[touches anyObject] tapCount] == 2)
-		LASendEventWithName(LAEventNameStatusBarTapDouble);
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorHoldEventCompleted) object:nil];
+	if (!hasSentStatusBarEvent)
+		if ([[touches anyObject] tapCount] == 2)
+			LASendEventWithName(LAEventNameStatusBarTapDouble);
 	CHSuper2(SBStatusBar, touchesEnded, touches, withEvent, event);
 }
 
@@ -331,6 +345,7 @@ CHConstructor
 	CHHook2(SBIcon, touchesMoved, withEvent);
 	
 	CHLoadLateClass(SBStatusBar);
+	CHHook0(SBStatusBar, activatorHoldEventCompleted);
 	CHHook2(SBStatusBar, touchesBegan, withEvent);
 	CHHook2(SBStatusBar, touchesMoved, withEvent);
 	CHHook2(SBStatusBar, touchesEnded, withEvent);

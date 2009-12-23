@@ -131,8 +131,8 @@
 		[cell setTextColor:[[UIColor darkTextColor] colorWithAlphaComponent:0.75f]];
 		[cell setSelectedTextColor:[[UIColor lightTextColor] colorWithAlphaComponent:0.75f]];
 	} else {
-		[cell setTextColor:nil];
-		[cell setSelectedTextColor:nil];
+		[cell setTextColor:[UIColor darkTextColor]];
+		[cell setSelectedTextColor:[UIColor lightTextColor]];
 	}
 	return cell;	
 }

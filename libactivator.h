@@ -29,6 +29,7 @@ extern NSString * const LAEventNameStatusBarSwipeRight;
 extern NSString * const LAEventNameStatusBarSwipeLeft;
 extern NSString * const LAEventNameStatusBarSwipeDown;
 extern NSString * const LAEventNameStatusBarTapDouble;
+extern NSString * const LAEventNameStatusBarHold;
 
 // Activator
 
