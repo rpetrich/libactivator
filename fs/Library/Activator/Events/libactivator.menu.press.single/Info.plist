@@ -1,4 +1,5 @@
 {
 	title = "Single Press";
 	group = "Home Button";
+	hidden = 1;
 }

@@ -129,10 +129,10 @@
 	[cell setText:[infoPlist objectForKey:@"title"]];
 	if ([[infoPlist objectForKey:@"hidden"] boolValue]) {
 		[cell setTextColor:[[UIColor darkTextColor] colorWithAlphaComponent:0.75f]];
-		[cell setSelectedTextColor:[[UIColor lightTextColor] colorWithAlphaComponent:0.75f]];
+		[cell setSelectedTextColor:[UIColor colorWithWhite:1.0f alpha:0.75f]];
 	} else {
 		[cell setTextColor:[UIColor darkTextColor]];
-		[cell setSelectedTextColor:[UIColor lightTextColor]];
+		[cell setSelectedTextColor:[UIColor whiteColor]];
 	}
 	return cell;	
 }
