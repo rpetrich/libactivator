@@ -1,4 +1,5 @@
 {
 	title = "Double Tap";
 	group = "Status Bar";
+	hidden = 1;
 }
