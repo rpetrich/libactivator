@@ -18,9 +18,11 @@
 extern NSString * const LAEventNameMenuPressAtSpringBoard;
 extern NSString * const LAEventNameMenuPressSingle;
 extern NSString * const LAEventNameMenuPressDouble;
+extern NSString * const LAEventNameMenuPressTriple; // libactivator 1.0.1+
 extern NSString * const LAEventNameMenuHoldShort;
 
 extern NSString * const LAEventNameLockHoldShort;
+extern NSString * const LAEventNameLockPressDouble; // libactivator 1.0.1+
 
 extern NSString * const LAEventNameSpringBoardPinch;
 extern NSString * const LAEventNameSpringBoardSpread;
@@ -30,6 +32,11 @@ extern NSString * const LAEventNameStatusBarSwipeLeft;
 extern NSString * const LAEventNameStatusBarSwipeDown;
 extern NSString * const LAEventNameStatusBarTapDouble;
 extern NSString * const LAEventNameStatusBarHold;
+
+extern NSString * const LAEventNameVolumeDownUp; // libactivator 1.0.1+
+extern NSString * const LAEventNameVolumeUpDown; // libactivator 1.0.1+
+
+extern NSString * const LAEventNameSlideInFromBottom; // libactivator 1.0.1+
 
 // Activator
 
@@ -50,6 +57,11 @@ extern NSString * const LAEventNameStatusBarHold;
 - (void)unregisterListenerWithName:(NSString *)name;
 
 - (void)reloadPreferences;
+
+- (BOOL)hasSeenListenerWithName:(NSString *)name; // libactivator 1.0.1+
+
+- (void)assignEventName:(NSString *)eventName toListenerWithName:(NSString *)listenerName; // libactivator 1.0.1+
+- (void)unassignEventName:(NSString *)eventName; // libactivator 1.0.1+
 
 @end
 
