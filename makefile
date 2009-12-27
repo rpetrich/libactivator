@@ -66,7 +66,7 @@ $(CONFIG_TARGET): $(CONFIG_OBJECTS)
 package: $(TARGET) $(PREFS_TARGET) $(CONFIG_TARGET) control
 		rm -rf package
 		mkdir -p package/DEBIAN
-		cp -a control preinst prerm package/DEBIAN
+		cp -a control package/DEBIAN
 		cp -a fs/* package
 		cp -a libactivator.h package/usr/include/libactivator/
 		- plutil -convert binary1 package/Library/MobileSubstrate/DynamicLibraries/Activator.plist

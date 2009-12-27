@@ -1,9 +1,16 @@
 Package: libactivator
-Priority: optional
-Section: System
-Architecture: iphoneos-arm
-Version: 1.0
-Description: A common library for activating apps via gestures, buttons and shortcuts
-Name: LibActivator
 Depends: mobilesubstrate
+Name: LibActivator
+Version: 1.0
+Priority: optional
+Architecture: iphoneos-arm
+Description: A common library for activating apps via gestures, buttons and shortcuts
+Homepage: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=libactivatorData
+Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=libactivatorData
+Maintainer: BigBoss <bigboss@thebigboss.org>
 Author: Ryan Petrich <rpetrich@gmail.com>
+Sponsor: thebigboss.org <http://thebigboss.org>
+Section: System
+Installed-Size: 72
+dev: rpetrich
+Tag: role::hacker
