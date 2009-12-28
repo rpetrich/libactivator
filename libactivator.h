@@ -25,7 +25,7 @@
 @interface LAActivator : NSObject {
 @private
 	NSMutableDictionary *_listeners;
-	NSDictionary *_preferences;
+	NSMutableDictionary *_preferences;
 }
 + (LAActivator *)sharedInstance;
 
@@ -36,12 +36,14 @@
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name;
 - (void)unregisterListenerWithName:(NSString *)name;
 
-- (void)reloadPreferences;
-
 - (BOOL)hasSeenListenerWithName:(NSString *)name; // libactivator 1.0.1+
 
 - (void)assignEventName:(NSString *)eventName toListenerWithName:(NSString *)listenerName; // libactivator 1.0.1+
 - (void)unassignEventName:(NSString *)eventName; // libactivator 1.0.1+
+- (NSString *)assignedListenerNameForEventName:(NSString *)eventName; // libactivator 1.0.1+
+
+@property (nonatomic, readonly) NSArray *availableEventNames;
+@property (nonatomic, readonly) NSArray *availableListenerNames;
 
 @end
 
@@ -61,7 +63,6 @@
 	NSString *_listenerName;
 	NSMutableDictionary *_events;
 	NSMutableDictionary *_eventData;
-	NSMutableDictionary *_preferences;	
 }
 
 - (id)init;
