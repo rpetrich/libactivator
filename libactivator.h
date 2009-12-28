@@ -38,12 +38,14 @@
 
 - (BOOL)hasSeenListenerWithName:(NSString *)name; // libactivator 1.0.1+
 
-- (void)assignEventName:(NSString *)eventName toListenerWithName:(NSString *)listenerName; // libactivator 1.0.1+
+- (BOOL)assignEventName:(NSString *)eventName toListenerWithName:(NSString *)listenerName; // libactivator 1.0.1+
 - (void)unassignEventName:(NSString *)eventName; // libactivator 1.0.1+
 - (NSString *)assignedListenerNameForEventName:(NSString *)eventName; // libactivator 1.0.1+
 
-@property (nonatomic, readonly) NSArray *availableEventNames;
-@property (nonatomic, readonly) NSArray *availableListenerNames;
+@property (nonatomic, readonly) NSArray *availableEventNames; // libactivator 1.0.1+
+- (NSDictionary *)infoForEventWithName:(NSString *)name;
+@property (nonatomic, readonly) NSArray *availableListenerNames; // libactivator 1.0.1+
+- (NSDictionary *)infoForListenerWithName:(NSString *)name;
 
 @end
 

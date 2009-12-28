@@ -30,15 +30,24 @@
 
 - (void)viewWillBecomeVisible:(void *)source
 {
-	PSSpecifier *specifier = (PSSpecifier *)source;
-	[_viewController setListenerName:[specifier propertyForKey:@"activatorListener"]];
-	CGRect frame;
-	frame.origin.x = 0.0f;
-	frame.origin.y = 0.0f;
-	frame.size = _size;
-	[[_viewController view] setFrame:frame];
-	[_title release];
-	_title = [[specifier propertyForKey:@"activatorTitle"]?:[specifier propertyForKey:@"label"] copy];
+	if (source == NULL)
+		NSLog(@"libactivator: No PSSpecifier specified!");
+	else {
+		PSSpecifier *specifier = (PSSpecifier *)source;
+		NSString *listenerName = [specifier propertyForKey:@"activatorListener"];
+		if ([listenerName length] == 0)
+			NSLog(@"libactivator: No activatorListener key specified on PSSpecifier");
+		else {
+			[_viewController setListenerName:listenerName];
+			CGRect frame;
+			frame.origin.x = 0.0f;
+			frame.origin.y = 0.0f;
+			frame.size = _size;
+			[[_viewController view] setFrame:frame];
+			[_title release];
+			_title = [[specifier propertyForKey:@"activatorTitle"]?:[specifier name] copy];
+		}
+	}
 	[super viewWillBecomeVisible:source];
 }
 

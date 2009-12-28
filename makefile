@@ -19,7 +19,7 @@ LDFLAGS= \
 		-L/var/sdk/lib \
 		-L/var/sdk/usr/lib \
 		-L/usr/lib \
-		-framework CoreFoundation -framework Foundation -framework UIKit \
+		-framework CoreFoundation -framework Foundation -framework UIKit -framework CoreGraphics \
 		-lobjc
 
 CFLAGS= -I/var/root/Headers -I/var/sdk/include -I/var/include \

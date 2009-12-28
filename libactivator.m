@@ -3,6 +3,9 @@
 #import <SpringBoard/SpringBoard.h>
 #import <objc/runtime.h>
 
+#include <sys/stat.h>
+#include <notify.h>
+
 @implementation LAEvent
 
 + (id)eventWithName:(NSString *)name
@@ -48,18 +51,27 @@
 
 static LAActivator *sharedActivator;
 
+@interface LAActivator ()
+- (void)_loadPreferences;
+- (void)_savePreferences;
+- (void)_reloadPreferences;
+@end
+
 static void PreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
 {
-	[[LAActivator sharedInstance] reloadPreferences];
+	[[LAActivator sharedInstance] _reloadPreferences];
 }
 
 @implementation LAActivator
 
 + (LAActivator *)sharedInstance
 {
-	if (!sharedActivator)
-		sharedActivator = [[LAActivator alloc] init];
 	return sharedActivator;
+}
+
++ (void)load
+{
+	sharedActivator = [[LAActivator alloc] init];
 }
 
 - (id)init
@@ -81,17 +93,40 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	[super dealloc];
 }
 
-- (void)reloadPreferences;
+- (void)_reloadPreferences
 {
 	[_preferences release];
 	_preferences = nil;
 }
 
+- (void)_loadPreferences
+{
+	if (!_preferences) {
+		_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/User/Library/Preferences/libactivator.plist"];
+		if (!_preferences)
+			_preferences = [[NSMutableDictionary alloc] init];
+	}
+}
+
+- (void)_savePreferences
+{
+	if (_preferences) {
+		CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, CFSTR("/User/Library/Preferences/libactivator.plist"), kCFURLPOSIXPathStyle, NO);
+		CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
+		CFRelease(url);
+		CFWriteStreamOpen(stream);
+		CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, NULL);
+		CFWriteStreamClose(stream);
+		CFRelease(stream);
+		chmod("/User/Library/Preferences/libactivator.plist", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+		notify_post("libactivator.preferenceschanged");
+	}
+}
+
 - (id<LAListener>)listenerForEvent:(LAEvent *)event
 {
+	[self _loadPreferences];
 	NSString *preferenceName = [@"LAEventListener-" stringByAppendingString:[event name]];
-	if (!_preferences)
-		_preferences = [[NSDictionary alloc] initWithContentsOfFile:@"/User/Library/Preferences/libactivator.plist"];
 	NSString *listenerName = [_preferences objectForKey:preferenceName];
 	return [_listeners objectForKey:listenerName];
 }
@@ -113,11 +148,82 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name
 {
 	[_listeners setObject:listener forKey:name];
+	[self _loadPreferences];
+	NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
+	if (![[_preferences objectForKey:key] boolValue]) {
+		[_preferences setObject:[NSNumber numberWithBool:YES] forKey:key];
+		[self _savePreferences];
+	}
 }
 
 - (void)unregisterListenerWithName:(NSString *)name
 {
 	[_listeners removeObjectForKey:name];
+}
+
+- (BOOL)hasSeenListenerWithName:(NSString *)name
+{
+	[self _loadPreferences];
+	return [[_preferences objectForKey:[@"LAHasSeenListener-" stringByAppendingString:name]] boolValue];
+}
+
+- (BOOL)assignEventName:(NSString *)eventName toListenerWithName:(NSString *)listenerName
+{
+	[self _loadPreferences];
+	NSString *preferenceName = [@"LAEventListener-" stringByAppendingString:eventName];
+	NSString *currentListenerName = [_preferences objectForKey:preferenceName];
+	if (![currentListenerName isEqualToString:listenerName]) {
+		if (![[[self infoForListenerWithName:currentListenerName] objectForKey:@"sticky"] boolValue]) {
+			[_preferences setObject:listenerName forKey:preferenceName];
+			[self _savePreferences];
+			return YES;
+		}
+	}
+	return NO;
+}
+
+- (void)unassignEventName:(NSString *)eventName
+{
+	[self _loadPreferences];
+	NSString *preferenceName = [@"LAEventListener-" stringByAppendingString:eventName];	
+	if ([_preferences objectForKey:preferenceName]) {
+		[_preferences removeObjectForKey:preferenceName];
+		[self _savePreferences];
+	}
+}
+
+- (NSString *)assignedListenerNameForEventName:(NSString *)eventName
+{
+	[self _loadPreferences];
+	return [_preferences objectForKey:[@"LAEventListener-" stringByAppendingString:eventName]];
+}
+
+- (NSArray *)availableEventNames
+{
+	NSMutableArray *result = [NSMutableArray array];
+	for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Events" error:NULL])
+		if (![fileName hasPrefix:@"."])
+			[result addObject:fileName];
+	return result;
+}
+
+- (NSDictionary *)infoForEventWithName:(NSString *)name
+{
+	return [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Events/%@/Info.plist", name]];
+}
+
+- (NSArray *)availableListenerNames
+{
+	NSMutableArray *result = [NSMutableArray array];
+	for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Listeners" error:NULL])
+		if (![fileName hasPrefix:@"."])
+			[result addObject:fileName];
+	return result;
+}
+
+- (NSDictionary *)infoForListenerWithName:(NSString *)name
+{
+	return [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Listeners/%@/Info.plist", name]];
 }
 
 - (NSString *)description

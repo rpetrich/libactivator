@@ -45,6 +45,7 @@ static BOOL shouldInterceptMenuPresses;
 
 CHDeclareClass(SpringBoard);
 CHDeclareClass(SBUIController);
+CHDeclareClass(SBIconController);
 CHDeclareClass(SBIconScrollView);
 CHDeclareClass(SBIcon);
 CHDeclareClass(SBStatusBar);
@@ -167,7 +168,6 @@ CHMethod0(BOOL, SBUIController, clickedMenuButton)
 	return CHSuper0(SBUIController, clickedMenuButton);
 }
 
-CHDeclareClass(SBIconController);
 
 CHMethod2(void, SBIconController, scrollToIconListAtIndex, NSInteger, index, animate, BOOL, animate)
 {
