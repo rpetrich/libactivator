@@ -44,6 +44,10 @@ static void LAAbortEvent(LAEvent *event)
 static BOOL shouldInterceptMenuPresses;
 
 CHDeclareClass(SpringBoard);
+CHDeclareClass(SBUIController);
+CHDeclareClass(SBIconScrollView);
+CHDeclareClass(SBIcon);
+CHDeclareClass(SBStatusBar);
 
 CHMethod0(void, SpringBoard, _handleMenuButtonEvent)
 {
@@ -154,12 +158,12 @@ CHMethod0(void, SpringBoard, activatorMenuButtonTimerCompleted)
 		menuEventToAbort = [event retain];
 }
 
-CHDeclareClass(SBUIController);
 
 CHMethod0(BOOL, SBUIController, clickedMenuButton)
 {
-	if ([LASendEventWithName(LAEventNameMenuPressSingle) isHandled])
-		return YES;
+	if (![CHSharedInstance(SBIconController) isEditing])
+		if ([LASendEventWithName(LAEventNameMenuPressSingle) isHandled])
+			return YES;
 	return CHSuper0(SBUIController, clickedMenuButton);
 }
 
@@ -176,7 +180,6 @@ CHMethod2(void, SBIconController, scrollToIconListAtIndex, NSInteger, index, ani
 
 static BOOL hasSentPinchSpread;
 
-CHDeclareClass(SBIconScrollView);
 
 CHMethod1(id, SBIconScrollView, initWithFrame, CGRect, frame)
 {
@@ -207,7 +210,6 @@ CHMethod1(void, SBIconScrollView, handlePinch, UIPinchGestureRecognizer *, pinch
 	}
 }
 
-CHDeclareClass(SBIcon);
 
 CHMethod0(id, SBIcon, initWithDefaultSize)
 {
@@ -261,7 +263,6 @@ CHMethod2(void, SBIcon, touchesMoved, NSSet *, touches, withEvent, UIEvent *, ev
 static CGPoint statusBarTouchDown;
 static BOOL hasSentStatusBarEvent;
 
-CHDeclareClass(SBStatusBar);
 
 CHMethod0(void, SBStatusBar, activatorHoldEventCompleted)
 {
