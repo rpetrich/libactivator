@@ -6,6 +6,8 @@
 #include <sys/stat.h>
 #include <notify.h>
 
+NSString * const LAActivatorSettingsFilePath = @"/User/Library/Caches/LibActivator/libactivator.plist";
+
 @implementation LAEvent
 
 + (id)eventWithName:(NSString *)name
@@ -102,23 +104,25 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 - (void)_loadPreferences
 {
 	if (!_preferences) {
-		_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/User/Library/Preferences/libactivator.plist"];
-		if (!_preferences)
-			_preferences = [[NSMutableDictionary alloc] init];
+		if ((_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:LAActivatorSettingsFilePath]))
+			return;
+		if ((_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/User/Library/Preferences/libactivator.plist"]))
+			return;
+		_preferences = [[NSMutableDictionary alloc] init];
 	}
 }
 
 - (void)_savePreferences
 {
 	if (_preferences) {
-		CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, CFSTR("/User/Library/Preferences/libactivator.plist"), kCFURLPOSIXPathStyle, NO);
+		CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)LAActivatorSettingsFilePath, kCFURLPOSIXPathStyle, NO);
 		CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
 		CFRelease(url);
 		CFWriteStreamOpen(stream);
 		CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, NULL);
 		CFWriteStreamClose(stream);
 		CFRelease(stream);
-		chmod("/User/Library/Preferences/libactivator.plist", S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+		chmod([LAActivatorSettingsFilePath UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 		notify_post("libactivator.preferenceschanged");
 	}
 }

@@ -1,7 +1,5 @@
 #import "libactivator.h"
 
-#define kPreferencesFilePath "/User/Library/Preferences/libactivator.plist"
-
 @interface LAListenerSettingsViewController () <UITableViewDelegate, UITableViewDataSource, UIAlertViewDelegate>
 @end
 
@@ -10,7 +8,7 @@
 - (id)init
 {
 	if ((self = [super initWithNibName:nil bundle:nil])) {
-		BOOL showHidden = [[[NSDictionary dictionaryWithContentsOfFile:@kPreferencesFilePath] objectForKey:@"LAShowHiddenEvents"] boolValue];
+		BOOL showHidden = [[[NSDictionary dictionaryWithContentsOfFile:LAActivatorSettingsFilePath] objectForKey:@"LAShowHiddenEvents"] boolValue];
 		_events = [[NSMutableDictionary alloc] init];
 		_eventData = [[NSMutableDictionary alloc] init];
 		LAActivator *la = [LAActivator sharedInstance];

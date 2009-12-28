@@ -72,6 +72,9 @@
 
 @end
 
+extern NSString * const LAActivatorSettingsFilePath;
+
+
 extern NSString * const LAEventNameMenuPressAtSpringBoard;
 extern NSString * const LAEventNameMenuPressSingle;
 extern NSString * const LAEventNameMenuPressDouble;
