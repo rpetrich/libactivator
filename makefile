@@ -52,14 +52,17 @@ Common.h:
 		$(COMPILER) -c $(CFLAGS) $(filter %.m,$^) -o $@
 
 $(TARGET): $(OBJECTS)
+		mkdir -p fs/usr/lib
 		$(COMPILER) $(LDFLAGS) -dynamiclib -install_name /usr/lib/libactivator.dylib -o $@ $^
 		ldid -S $@
 				
 $(PREFS_TARGET): $(PREFS_OBJECTS) $(TARGET)
+		mkdir -p fs/System/Library/PreferenceBundles/LibActivator.bundle/
 		$(COMPILER) -L./fs/usr/lib $(LDFLAGS) -lactivator -framework Preferences -bundle -o $@ $(filter %.o,$^)
 		ldid -S $@
 
 $(CONFIG_TARGET): $(CONFIG_OBJECTS)
+		mkdir -p fs/usr/bin
 		$(COMPILER) $(LDFLAGS) -o $@ $^
 		ldid -S $@
 				
