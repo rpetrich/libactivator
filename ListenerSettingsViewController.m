@@ -106,14 +106,15 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
+	LAActivator *la = [LAActivator sharedInstance];
 	UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
 	UITableViewCellAccessoryType accessory = [cell accessoryType];
 	NSInteger row = [indexPath row];
 	NSString *eventName = [[self groupAtIndex:[indexPath section]] objectAtIndex:row];
 	if (accessory == UITableViewCellAccessoryNone) {
-		NSString *currentValue = [[LAActivator sharedInstance] assignedListenerNameForEventName:eventName];
+		NSString *currentValue = [la assignedListenerNameForEventName:eventName];
 		if ([currentValue length] && ![currentValue isEqualToString:_listenerName]) {
-			NSDictionary *listenerInfo = [[LAActivator sharedInstance] infoForListenerWithName:currentValue];
+			NSDictionary *listenerInfo = [la infoForListenerWithName:currentValue];
 			NSString *currentTitle = [listenerInfo objectForKey:@"title"];
 			NSString *alertTitle = [@"Already assigned to\n" stringByAppendingString:currentTitle?:currentValue];
 			UIAlertView *av;
@@ -129,8 +130,27 @@
 		accessory = UITableViewCellAccessoryCheckmark;
 		[[LAActivator sharedInstance] assignEventName:eventName toListenerWithName:_listenerName];
 	} else {
-		accessory = UITableViewCellAccessoryNone;
-		[[LAActivator sharedInstance] unassignEventName:eventName];
+		BOOL shouldUnassign;
+		NSDictionary *info = [la infoForListenerWithName:_listenerName];
+		if ([[info objectForKey:@"require-event"] boolValue]) {
+			shouldUnassign = NO;
+			for (NSString *possibleEvent in [la availableEventNames])
+				if (![possibleEvent isEqualToString:eventName])
+					if ([la assignedListenerNameForEventName:possibleEvent]) {
+						shouldUnassign = YES;
+						break;
+					}
+		} else {
+			shouldUnassign = YES;
+		}
+		if (shouldUnassign) {
+			accessory = UITableViewCellAccessoryNone;
+			[la unassignEventName:eventName];
+		} else {
+			UIAlertView *av = [[UIAlertView alloc] initWithTitle:@"Can't deactivate remaining event" message:[@"At least one event must be assigned to " stringByAppendingString:[info objectForKey:@"title"]] delegate:nil cancelButtonTitle:@"Cancel" otherButtonTitles:nil];
+			[av show];
+			[av release];
+		}
 	}
 	[cell setAccessoryType:accessory];
 	[cell setSelected:NO animated:YES];
