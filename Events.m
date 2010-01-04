@@ -21,6 +21,9 @@ NSString * const LAEventNameStatusBarSwipeDown     = @"libactivator.statusbar.sw
 NSString * const LAEventNameStatusBarTapDouble     = @"libactivator.statusbar.tap.double";
 NSString * const LAEventNameStatusBarHold          = @"libactivator.statusbar.hold";
 
+NSString * const LAEventNameVolumeDownUp           = @"libactivator.volume.down-up";
+NSString * const LAEventNameVolumeUpDown           = @"libactivator.volume.up-down";
+
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
 #define kButtonHoldDelay                   1.0f
@@ -188,6 +191,39 @@ CHMethod0(void, SpringBoard, activatorMenuButtonTimerCompleted)
 		menuEventToAbort = [event retain];
 }
 
+static NSUInteger lastVolumeEvent;
+
+CHMethod1(void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
+{
+	CHSuper1(SpringBoard, volumeChanged, gsEvent);
+	switch (GSEventGetType(gsEvent)) {
+		case kGSEventVolumeUpKeyReleased:
+			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorCancelVolumeChord) object:nil];
+			if (lastVolumeEvent == kGSEventVolumeDownKeyReleased) {
+				lastVolumeEvent = 0;
+				LASendEventWithName(LAEventNameVolumeDownUp);
+			} else {
+				lastVolumeEvent = kGSEventVolumeUpKeyReleased;
+				[self performSelector:@selector(activatorCancelVolumeChord) withObject:nil afterDelay:kButtonHoldDelay];
+			}
+			break;
+		case kGSEventVolumeDownKeyReleased:
+			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorCancelVolumeChord) object:nil];
+			if (lastVolumeEvent == kGSEventVolumeUpKeyReleased) {
+				lastVolumeEvent = 0;
+				LASendEventWithName(LAEventNameVolumeUpDown);
+			} else {
+				lastVolumeEvent = kGSEventVolumeDownKeyReleased;
+				[self performSelector:@selector(activatorCancelVolumeChord) withObject:nil afterDelay:kButtonHoldDelay];
+			}
+			break;
+	}
+}
+
+CHMethod0(void, SpringBoard, activatorCancelVolumeChord)
+{
+	lastVolumeEvent = 0;
+}
 
 CHMethod0(BOOL, SBUIController, clickedMenuButton)
 {
@@ -358,6 +394,8 @@ CHConstructor
 	CHAddHook1(void, SpringBoard, menuButtonUp, GSEventRef);
 	CHAddHook0(void, SpringBoard, menuButtonWasHeld);
 	CHAddHook0(void, SpringBoard, activatorMenuButtonTimerCompleted);
+	CHAddHook1(void, SpringBoard, volumeChanged, GSEventRef);
+	CHAddHook0(void, SpringBoard, activatorCancelVolumeChord);
 	
 	CHLoadLateClass(SBUIController);
 	CHAddHook0(BOOL, SBUIController, clickedMenuButton);
