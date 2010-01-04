@@ -34,8 +34,9 @@ NSString * const LAEventNameVolumeUpDown           = @"libactivator.volume.up-do
 CHInline
 static LAEvent *LASendEventWithName(NSString *eventName)
 {
-	LAEvent *event = [[[LAEvent alloc] initWithName:eventName] autorelease];
-	[[LAActivator sharedInstance] sendEventToListener:event];
+	LAActivator *la = [LAActivator sharedInstance];
+	LAEvent *event = [[[LAEvent alloc] initWithName:eventName mode:[la currentEventMode]] autorelease];
+	[la sendEventToListener:event];
 	return event;
 }
 

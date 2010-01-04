@@ -9,6 +9,7 @@
 {
 	if ((self = [super initWithNibName:nil bundle:nil])) {
 		BOOL showHidden = [[[NSDictionary dictionaryWithContentsOfFile:LAActivatorSettingsFilePath] objectForKey:@"LAShowHiddenEvents"] boolValue];
+		_eventMode = [LAEventModeAny copy];
 		_events = [[NSMutableDictionary alloc] init];
 		_eventData = [[NSMutableDictionary alloc] init];
 		LAActivator *la = [LAActivator sharedInstance];
@@ -32,6 +33,7 @@
 - (void)dealloc
 {
 	[_listenerName release];
+	[_eventMode release];
 	[_eventData release];
 	[_events release];
 	[super dealloc];
@@ -47,6 +49,20 @@
 	if (![_listenerName isEqualToString:listenerName]) {
 		[_listenerName release];
 		_listenerName = [listenerName copy];
+		if ([self isViewLoaded])
+			[(UITableView *)[self view] reloadData];
+	}
+}
+
+- (NSString *)eventMode
+{
+	return _eventMode;
+}
+- (void)setEventMode:(NSString *)eventMode
+{
+	if (![_eventMode isEqualToString:eventMode]) {
+		[_eventMode release];
+		_eventMode = [eventMode copy];
 		if ([self isViewLoaded])
 			[(UITableView *)[self view] reloadData];
 	}
@@ -90,7 +106,7 @@
 		[cell setSelected:NO animated:NO];
 	NSInteger row = [indexPath row];
 	NSString *eventName = [[self groupAtIndex:[indexPath section]] objectAtIndex:row];
-	NSString *assignedListenerName = [[LAActivator sharedInstance] assignedListenerNameForEventName:eventName];
+	NSString *assignedListenerName = [[LAActivator sharedInstance] assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:_eventMode]];
 	[cell setAccessoryType:([assignedListenerName isEqualToString:_listenerName])?UITableViewCellAccessoryCheckmark:UITableViewCellAccessoryNone];
 	NSDictionary *infoPlist = [_eventData objectForKey:eventName];
 	[cell setText:[infoPlist objectForKey:@"title"]];
@@ -104,6 +120,14 @@
 	return cell;	
 }
 
+- (void)showLastEventMessageForListener:(NSString *)listenerName
+{
+	NSDictionary *info = [[LAActivator sharedInstance] infoForListenerWithName:listenerName];
+	UIAlertView *av = [[UIAlertView alloc] initWithTitle:@"Can't deactivate\nremaining event" message:[@"At least one event must be\nassigned to " stringByAppendingString:[info objectForKey:@"title"]] delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
+	[av show];
+	[av release];
+}
+
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	LAActivator *la = [LAActivator sharedInstance];
@@ -111,45 +135,38 @@
 	UITableViewCellAccessoryType accessory = [cell accessoryType];
 	NSInteger row = [indexPath row];
 	NSString *eventName = [[self groupAtIndex:[indexPath section]] objectAtIndex:row];
+	LAEvent *event = [LAEvent eventWithName:eventName mode:_eventMode];
 	if (accessory == UITableViewCellAccessoryNone) {
-		NSString *currentValue = [la assignedListenerNameForEventName:eventName];
-		if ([currentValue length] && ![currentValue isEqualToString:_listenerName]) {
-			NSDictionary *listenerInfo = [la infoForListenerWithName:currentValue];
-			NSString *currentTitle = [listenerInfo objectForKey:@"title"];
-			NSString *alertTitle = [@"Already assigned to\n" stringByAppendingString:currentTitle?:currentValue];
-			UIAlertView *av;
-			if ([[listenerInfo objectForKey:@"sticky"] boolValue])
-				av = [[UIAlertView alloc] initWithTitle:alertTitle message:@"Only one action can be assigned\nto each event." delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:nil];
-			else
-				av = [[UIAlertView alloc] initWithTitle:alertTitle message:@"Only one action can be assigned\nto each event." delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"Reassign", nil];
-			[av show];
-			[av release];
-			[self retain];
-			return;
+		NSString *currentValue = [la assignedListenerNameForEvent:event];
+		NSDictionary *listenerInfo;
+		if (![currentValue isEqualToString:_listenerName] && (listenerInfo = [la infoForListenerWithName:currentValue])) {
+			BOOL requireEvent = [[listenerInfo objectForKey:@"require-event"] boolValue];
+			if (requireEvent && [[la eventsAssignedToListenerWithName:currentValue] count] <= 1)
+				[self showLastEventMessageForListener:currentValue];
+			else {
+				NSString *currentTitle = [listenerInfo objectForKey:@"title"];
+				NSString *alertTitle = [@"Already assigned to\n" stringByAppendingString:currentTitle?:currentValue];
+				UIAlertView *av;
+				if ([[listenerInfo objectForKey:@"sticky"] boolValue])
+					av = [[UIAlertView alloc] initWithTitle:alertTitle message:@"Only one action can be assigned\nto each event." delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:nil];
+				else
+					av = [[UIAlertView alloc] initWithTitle:alertTitle message:@"Only one action can be assigned\nto each event." delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"Reassign", nil];
+				[av show];
+				[av release];
+				[self retain];
+				return;
+			}
+		} else {
+			accessory = UITableViewCellAccessoryCheckmark;
+			[[LAActivator sharedInstance] assignEvent:event toListenerWithName:_listenerName];
 		}
-		accessory = UITableViewCellAccessoryCheckmark;
-		[[LAActivator sharedInstance] assignEventName:eventName toListenerWithName:_listenerName];
 	} else {
-		BOOL shouldUnassign;
-		NSDictionary *info = [la infoForListenerWithName:_listenerName];
-		if ([[info objectForKey:@"require-event"] boolValue]) {
-			shouldUnassign = NO;
-			for (NSString *possibleEvent in [la availableEventNames])
-				if (![possibleEvent isEqualToString:eventName])
-					if ([la assignedListenerNameForEventName:possibleEvent]) {
-						shouldUnassign = YES;
-						break;
-					}
+		BOOL requireEvent = [[[la infoForListenerWithName:_listenerName] objectForKey:@"require-event"] boolValue];
+		if (requireEvent && [[la eventsAssignedToListenerWithName:_listenerName] count] <= 1) {
+			[self showLastEventMessageForListener:_listenerName];
 		} else {
-			shouldUnassign = YES;
-		}
-		if (shouldUnassign) {
 			accessory = UITableViewCellAccessoryNone;
-			[la unassignEventName:eventName];
-		} else {
-			UIAlertView *av = [[UIAlertView alloc] initWithTitle:@"Can't deactivate remaining event" message:[@"At least one event must be assigned to " stringByAppendingString:[info objectForKey:@"title"]] delegate:nil cancelButtonTitle:@"Cancel" otherButtonTitles:nil];
-			[av show];
-			[av release];
+			[la unassignEvent:event];
 		}
 	}
 	[cell setAccessoryType:accessory];
@@ -163,7 +180,8 @@
 	UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
 	if (buttonIndex != [alertView cancelButtonIndex]) {
 		NSString *eventName = [[self groupAtIndex:[indexPath section]] objectAtIndex:[indexPath row]];
-		[[LAActivator sharedInstance] assignEventName:eventName toListenerWithName:_listenerName];
+		LAEvent *event = [LAEvent eventWithName:eventName mode:_eventMode];
+		[[LAActivator sharedInstance] assignEvent:event toListenerWithName:_listenerName];
 		[cell setAccessoryType:UITableViewCellAccessoryCheckmark];		
 	}
 	[cell setSelected:NO animated:YES];

@@ -39,6 +39,9 @@
 			NSLog(@"libactivator: No activatorListener key specified on PSSpecifier");
 		else {
 			[_viewController setListenerName:listenerName];
+			NSString *modeName = [specifier propertyForKey:@"activatorEventMode"];
+			if (modeName)
+				[_viewController setEventMode:modeName];
 			CGRect frame;
 			frame.origin.x = 0.0f;
 			frame.origin.y = 0.0f;
