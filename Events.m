@@ -10,6 +10,7 @@ NSString * const LAEventNameMenuPressDouble        = @"libactivator.menu.press.d
 NSString * const LAEventNameMenuHoldShort          = @"libactivator.menu.hold.short";
 
 NSString * const LAEventNameLockHoldShort          = @"libactivator.lock.hold.short";
+NSString * const LAEventNameLockPressDouble        = @"libactivator.lock.press.double";
 
 NSString * const LAEventNameSpringBoardPinch       = @"libactivator.springboard.pinch";
 NSString * const LAEventNameSpringBoardSpread      = @"libactivator.springboard.spread";
@@ -49,6 +50,7 @@ CHDeclareClass(SBIconController);
 CHDeclareClass(SBIconScrollView);
 CHDeclareClass(SBIcon);
 CHDeclareClass(SBStatusBar);
+CHDeclareClass(SBAwayController);
 
 CHMethod0(void, SpringBoard, _handleMenuButtonEvent)
 {
@@ -72,16 +74,22 @@ CHMethod0(void, SpringBoard, handleMenuDoubleTap)
 }
 
 static LAEvent *lockEventToAbort;
+static BOOL isWaitingForLockDoubleTap;
+static BOOL wasLockedBefore;
 
 CHMethod1(void, SpringBoard, lockButtonDown, GSEventRef, event)
 {
-	[self performSelector:@selector(activatorLockButtonTimerCompleted) withObject:nil afterDelay:kButtonHoldDelay];
+	[self performSelector:@selector(activatorLockButtonHoldCompleted) withObject:nil afterDelay:kButtonHoldDelay];
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonDoubleTapAborted) object:nil];
+	if (!isWaitingForLockDoubleTap)
+		wasLockedBefore = [self isLocked];
 	CHSuper1(SpringBoard, lockButtonDown, event);
 }
 
 CHMethod1(void, SpringBoard, lockButtonUp, GSEventRef, event)
 {
-	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonTimerCompleted) object:nil];
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonHoldCompleted) object:nil];
+	[self performSelector:@selector(activatorLockButtonDoubleTapAborted) withObject:nil afterDelay:kButtonHoldDelay];
 	if (lockEventToAbort) {
 		[lockEventToAbort release];
 		lockEventToAbort = nil;
@@ -91,7 +99,23 @@ CHMethod1(void, SpringBoard, lockButtonUp, GSEventRef, event)
 			[*timer release];
 			*timer = nil;
 		}
+	} if (isWaitingForLockDoubleTap) {
+		isWaitingForLockDoubleTap = NO;
+		NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _lockButtonTimer, NSTimer *);
+		if (timer) {
+			[*timer invalidate];
+			[*timer release];
+			*timer = nil;
+		}
+		if (!wasLockedBefore) {
+			BOOL oldAnimationsEnabled = [UIView areAnimationsEnabled];
+			[UIView setAnimationsEnabled:NO];
+			[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:NO];
+			[UIView setAnimationsEnabled:oldAnimationsEnabled];
+		}
+		LASendEventWithName(LAEventNameLockPressDouble);
 	} else {
+		isWaitingForLockDoubleTap = YES;
 		CHSuper1(SpringBoard, lockButtonUp, event);
 	}
 }
@@ -106,13 +130,18 @@ CHMethod0(void, SpringBoard, lockButtonWasHeld)
 	CHSuper0(SpringBoard, lockButtonWasHeld);
 }
 
-CHMethod0(void, SpringBoard, activatorLockButtonTimerCompleted)
+CHMethod0(void, SpringBoard, activatorLockButtonHoldCompleted)
 {
 	[lockEventToAbort release];
 	lockEventToAbort = nil;
 	LAEvent *event = LASendEventWithName(LAEventNameLockHoldShort);
 	if ([event isHandled])
 		lockEventToAbort = [event retain];
+}
+
+CHMethod0(void, SpringBoard, activatorLockButtonDoubleTapAborted)
+{
+	isWaitingForLockDoubleTap = NO;
 }
 
 static LAEvent *menuEventToAbort;
@@ -317,37 +346,40 @@ CHMethod2(void, SBStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEvent 
 CHConstructor
 {
 	CHLoadLateClass(SpringBoard);
-	CHHook0(SpringBoard, _handleMenuButtonEvent);
-	CHHook0(SpringBoard, allowMenuDoubleTap);
-	CHHook0(SpringBoard, handleMenuDoubleTap);
-	CHHook1(SpringBoard, lockButtonDown);
-	CHHook1(SpringBoard, lockButtonUp);
-	CHHook0(SpringBoard, lockButtonWasHeld);
-	CHHook0(SpringBoard, activatorLockButtonTimerCompleted);
-	CHHook1(SpringBoard, menuButtonDown);
-	CHHook1(SpringBoard, menuButtonUp);
-	CHHook0(SpringBoard, menuButtonWasHeld);
-	CHHook0(SpringBoard, activatorMenuButtonTimerCompleted);
+	CHAddHook0(void, SpringBoard, _handleMenuButtonEvent);
+	CHAddHook0(BOOL, SpringBoard, allowMenuDoubleTap);
+	CHAddHook0(void, SpringBoard, handleMenuDoubleTap);
+	CHAddHook1(void, SpringBoard, lockButtonDown, GSEventRef);
+	CHAddHook1(void, SpringBoard, lockButtonUp, GSEventRef);
+	CHAddHook0(void, SpringBoard, lockButtonWasHeld);
+	CHAddHook0(void, SpringBoard, activatorLockButtonHoldCompleted);
+	CHAddHook0(void, SpringBoard, activatorLockButtonDoubleTapAborted);
+	CHAddHook1(void, SpringBoard, menuButtonDown, GSEventRef);
+	CHAddHook1(void, SpringBoard, menuButtonUp, GSEventRef);
+	CHAddHook0(void, SpringBoard, menuButtonWasHeld);
+	CHAddHook0(void, SpringBoard, activatorMenuButtonTimerCompleted);
 	
 	CHLoadLateClass(SBUIController);
-	CHHook0(SBUIController, clickedMenuButton);
+	CHAddHook0(BOOL, SBUIController, clickedMenuButton);
 
 	CHLoadLateClass(SBIconController);
-	CHHook2(SBIconController, scrollToIconListAtIndex, animate);
+	CHAddHook2(void, SBIconController, scrollToIconListAtIndex, NSInteger, animate, BOOL);
 	
 	CHLoadLateClass(SBIconScrollView);
-	CHHook1(SBIconScrollView, initWithFrame);
-	CHHook2(SBIconScrollView, touchesBegan, withEvent);
-	CHHook1(SBIconScrollView, handlePinch);
+	CHAddHook1(id, SBIconScrollView, initWithFrame, CGRect);
+	CHAddHook2(void, SBIconScrollView, touchesBegan, NSSet *, withEvent, UIEvent *);
+	CHAddHook1(void, SBIconScrollView, handlePinch, UIPinchGestureRecognizer *);
 	
 	CHLoadLateClass(SBIcon);
-	CHHook0(SBIcon, initWithDefaultSize);
-	CHHook2(SBIcon, touchesBegan, withEvent);
-	CHHook2(SBIcon, touchesMoved, withEvent);
+	CHAddHook0(id, SBIcon, initWithDefaultSize);
+	CHAddHook2(void, SBIcon, touchesBegan, NSSet *, withEvent, UIEvent *);
+	CHAddHook2(void, SBIcon, touchesMoved, NSSet *, withEvent, UIEvent *);
 	
 	CHLoadLateClass(SBStatusBar);
-	CHHook0(SBStatusBar, activatorHoldEventCompleted);
-	CHHook2(SBStatusBar, touchesBegan, withEvent);
-	CHHook2(SBStatusBar, touchesMoved, withEvent);
-	CHHook2(SBStatusBar, touchesEnded, withEvent);
+	CHAddHook0(void, SBStatusBar, activatorHoldEventCompleted);
+	CHAddHook2(void, SBStatusBar, touchesBegan, NSSet *, withEvent, UIEvent *);
+	CHAddHook2(void, SBStatusBar, touchesMoved, NSSet *, withEvent, UIEvent *);
+	CHAddHook2(void, SBStatusBar, touchesEnded, NSSet *, withEvent, UIEvent *);
+	
+	CHLoadLateClass(SBAwayController);
 }
