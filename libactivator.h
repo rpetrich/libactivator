@@ -95,7 +95,6 @@ extern NSString * const LAEventModeLockScreen; // libactivator 1.1+
 extern NSString * const LAEventNameMenuPressAtSpringBoard;
 extern NSString * const LAEventNameMenuPressSingle;
 extern NSString * const LAEventNameMenuPressDouble;
-extern NSString * const LAEventNameMenuPressTriple; // libactivator 1.1+
 extern NSString * const LAEventNameMenuHoldShort;
 
 extern NSString * const LAEventNameLockHoldShort;
