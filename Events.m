@@ -108,6 +108,7 @@ CHDeclareClass(SBIconController);
 CHDeclareClass(SBIconScrollView);
 CHDeclareClass(SBIcon);
 CHDeclareClass(SBStatusBar);
+CHDeclareClass(SBNowPlayingAlertItem);
 CHDeclareClass(SBAwayController);
 CHDeclareClass(SBStatusBarController);
 
@@ -127,8 +128,9 @@ CHMethod(0, BOOL, SpringBoard, allowMenuDoubleTap)
 
 CHMethod(0, void, SpringBoard, handleMenuDoubleTap)
 {
-	if ([LASendEventWithName(LAEventNameMenuPressDouble) isHandled])
-		return;
+	if (![self canShowNowPlayingHUD])
+		if ([LASendEventWithName(LAEventNameMenuPressDouble) isHandled])
+			return;
 	CHSuper(0, SpringBoard, handleMenuDoubleTap);
 }
 
@@ -445,6 +447,31 @@ CHMethod(2, void, SBStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEven
 	CHSuper(2, SBStatusBar, touchesEnded, touches, withEvent, event);
 }
 
+NSInteger nowPlayingButtonIndex;
+
+CHMethod(2, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePasscodeForActions, BOOL, requirePasscode)
+{
+	LAActivator *activator = [LAActivator sharedInstance];
+	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
+	NSString *listenerName = [activator assignedListenerNameForEvent:event];
+	if ([activator listenerForEvent:event]) {
+		CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
+		NSString *title = [[activator infoForListenerWithName:listenerName] objectForKey:@"title"];
+		id alertSheet = [self alertSheet];
+		//[alertSheet setNumberOfRows:2];
+		nowPlayingButtonIndex = [alertSheet addButtonWithTitle:title];
+	} else {
+		CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
+	}
+}
+
+CHMethod(2, void, SBNowPlayingAlertItem, alertSheet, id, sheet, buttonClicked, NSInteger, buttonIndex)
+{
+	CHSuper(2, SBNowPlayingAlertItem, alertSheet, sheet, buttonClicked, buttonIndex);
+	if (buttonIndex == nowPlayingButtonIndex + 1)
+		LASendEventWithName(LAEventNameMenuPressDouble);
+}
+
 CHConstructor
 {
 	CHLoadLateClass(SpringBoard);
@@ -485,6 +512,10 @@ CHConstructor
 	CHHook(2, SBStatusBar, touchesBegan, withEvent);
 	CHHook(2, SBStatusBar, touchesMoved, withEvent);
 	CHHook(2, SBStatusBar, touchesEnded, withEvent);
+	
+	CHLoadLateClass(SBNowPlayingAlertItem);
+	CHHook(2, SBNowPlayingAlertItem, configure, requirePasscodeForActions);
+	CHHook(2, SBNowPlayingAlertItem, alertSheet, buttonClicked);
 	
 	CHLoadLateClass(SBAwayController);
 	CHLoadLateClass(SBStatusBarController);
