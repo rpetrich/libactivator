@@ -55,6 +55,7 @@ CHDeclareClass(SBIconScrollView);
 CHDeclareClass(SBIcon);
 CHDeclareClass(SBStatusBar);
 CHDeclareClass(SBAwayController);
+CHDeclareClass(SBStatusBarController);
 
 CHMethod0(void, SpringBoard, _handleMenuButtonEvent)
 {
@@ -105,19 +106,24 @@ CHMethod1(void, SpringBoard, lockButtonUp, GSEventRef, event)
 		}
 	} if (isWaitingForLockDoubleTap) {
 		isWaitingForLockDoubleTap = NO;
-		NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _lockButtonTimer, NSTimer *);
-		if (timer) {
-			[*timer invalidate];
-			[*timer release];
-			*timer = nil;
-		}
 		if (!wasLockedBefore) {
 			BOOL oldAnimationsEnabled = [UIView areAnimationsEnabled];
 			[UIView setAnimationsEnabled:NO];
 			[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:NO];
+			[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
 			[UIView setAnimationsEnabled:oldAnimationsEnabled];
 		}
-		LASendEventWithName(LAEventNameLockPressDouble);
+		if ([LASendEventWithName(LAEventNameLockPressDouble) isHandled]) {
+			NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _lockButtonTimer, NSTimer *);
+			if (timer) {
+				[*timer invalidate];
+				[*timer release];
+				*timer = nil;
+			}
+		} else {
+			[CHSharedInstance(SBUIController) lock];
+			CHSuper1(SpringBoard, lockButtonUp, event);
+		}
 	} else {
 		isWaitingForLockDoubleTap = YES;
 		CHSuper1(SpringBoard, lockButtonUp, event);
@@ -421,4 +427,5 @@ CHConstructor
 	CHAddHook2(void, SBStatusBar, touchesEnded, NSSet *, withEvent, UIEvent *);
 	
 	CHLoadLateClass(SBAwayController);
+	CHLoadLateClass(SBStatusBarController);
 }
