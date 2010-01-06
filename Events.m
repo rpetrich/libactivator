@@ -26,7 +26,7 @@ NSString * const LAEventNameVolumeUpDown           = @"libactivator.volume.up-do
 
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
-#define kButtonHoldDelay                   1.0f
+#define kButtonHoldDelay                   0.8f
 #define kStatusBarHorizontalSwipeThreshold 50.0f
 #define kStatusBarVerticalSwipeThreshold   10.0f
 #define kStatusBarHoldDelay                0.5f
