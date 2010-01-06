@@ -147,6 +147,11 @@ CHMethod(1, void, SpringBoard, lockButtonDown, GSEventRef, event)
 	CHSuper(1, SpringBoard, lockButtonDown, event);
 }
 
+CHMethod(0, void, SpringBoard, activatorFixStatusBar)
+{
+	[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
+}
+
 CHMethod(1, void, SpringBoard, lockButtonUp, GSEventRef, event)
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonHoldCompleted) object:nil];
@@ -168,8 +173,8 @@ CHMethod(1, void, SpringBoard, lockButtonUp, GSEventRef, event)
 			[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:NO];
 			[UIView setAnimationsEnabled:oldAnimationsEnabled];
 		}
-		[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
 		if ([LASendEventWithName(LAEventNameLockPressDouble) isHandled]) {
+			[self performSelector:@selector(activatorFixStatusBar) withObject:nil afterDelay:0.0f];
 			NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _lockButtonTimer, NSTimer *);
 			if (timer) {
 				[*timer invalidate];
@@ -479,6 +484,7 @@ CHConstructor
 	CHHook(0, SpringBoard, allowMenuDoubleTap);
 	CHHook(0, SpringBoard, handleMenuDoubleTap);
 	CHHook(1, SpringBoard, lockButtonDown);
+	CHHook(0, SpringBoard, activatorFixStatusBar);
 	CHHook(1, SpringBoard, lockButtonUp);
 	CHHook(0, SpringBoard, lockButtonWasHeld);
 	CHHook(0, SpringBoard, activatorLockButtonHoldCompleted);
