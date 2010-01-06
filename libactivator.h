@@ -114,3 +114,5 @@ extern NSString * const LAEventNameVolumeDownUp; // libactivator 1.1+
 extern NSString * const LAEventNameVolumeUpDown; // libactivator 1.1+
 
 extern NSString * const LAEventNameSlideInFromBottom; // libactivator 1.1+
+extern NSString * const LAEventNameSlideInFromBottomLeft; // libactivator 1.1+
+extern NSString * const LAEventNameSlideInFromBottomRight; // libactivator 1.1+

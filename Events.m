@@ -24,12 +24,17 @@ NSString * const LAEventNameStatusBarHold          = @"libactivator.statusbar.ho
 NSString * const LAEventNameVolumeDownUp           = @"libactivator.volume.down-up";
 NSString * const LAEventNameVolumeUpDown           = @"libactivator.volume.up-down";
 
+NSString * const LAEventNameSlideInFromBottom      = @"libactivator.slide-in.bottom";
+NSString * const LAEventNameSlideInFromBottomLeft  = @"libactivator.slide-in.bottom-left";
+NSString * const LAEventNameSlideInFromBottomRight = @"libactivator.slide-in.bottom-right";
+
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
 #define kButtonHoldDelay                   0.8f
 #define kStatusBarHorizontalSwipeThreshold 50.0f
 #define kStatusBarVerticalSwipeThreshold   10.0f
 #define kStatusBarHoldDelay                0.5f
+#define kSlideGestureWindowHeight          12.0f
 
 CHInline
 static LAEvent *LASendEventWithName(NSString *eventName)
@@ -45,6 +50,55 @@ static void LAAbortEvent(LAEvent *event)
 {
 	[[LAActivator sharedInstance] sendAbortToListener:event];
 }
+
+@interface LASlideGestureWindow : UIWindow {
+	BOOL hasSentEvent;
+}
++ (id)sharedInstance;
+@end
+
+static LASlideGestureWindow *slideGestureWindow;
+
+@implementation LASlideGestureWindow
+
++ (id)sharedInstance
+{
+	if (!slideGestureWindow) {
+		CGRect frame = [[UIScreen mainScreen] bounds];
+		frame.origin.y += frame.size.height - kSlideGestureWindowHeight;
+		frame.size.height = kSlideGestureWindowHeight;
+		slideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame];
+		[slideGestureWindow setWindowLevel:9999.0f];
+	}
+	return slideGestureWindow;
+}
+
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	hasSentEvent = NO;
+}
+
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	if (!hasSentEvent) {
+		hasSentEvent = YES;
+		UITouch *touch = [touches anyObject];
+		CGFloat xFactor = [touch locationInView:self].x / [self bounds].size.width;
+		if (xFactor < 0.25f)
+			LASendEventWithName(LAEventNameSlideInFromBottomLeft);
+		else if (xFactor < 0.75f)
+			LASendEventWithName(LAEventNameSlideInFromBottom);
+		else
+			LASendEventWithName(LAEventNameSlideInFromBottomRight);
+	}
+}
+
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	hasSentEvent = NO;
+}
+
+@end
 
 static BOOL shouldInterceptMenuPresses;
 
@@ -240,6 +294,11 @@ CHMethod0(BOOL, SBUIController, clickedMenuButton)
 	return CHSuper0(SBUIController, clickedMenuButton);
 }
 
+CHMethod0(void, SBUIController, finishLaunching)
+{
+	[[LASlideGestureWindow sharedInstance] setHidden:NO];
+	CHSuper0(SBUIController, finishLaunching);
+}
 
 CHMethod2(void, SBIconController, scrollToIconListAtIndex, NSInteger, index, animate, BOOL, animate)
 {
@@ -406,6 +465,7 @@ CHConstructor
 	
 	CHLoadLateClass(SBUIController);
 	CHAddHook0(BOOL, SBUIController, clickedMenuButton);
+	CHAddHook0(BOOL, SBUIController, finishLaunching);
 
 	CHLoadLateClass(SBIconController);
 	CHAddHook2(void, SBIconController, scrollToIconListAtIndex, NSInteger, animate, BOOL);
