@@ -166,9 +166,9 @@ CHMethod(1, void, SpringBoard, lockButtonUp, GSEventRef, event)
 			BOOL oldAnimationsEnabled = [UIView areAnimationsEnabled];
 			[UIView setAnimationsEnabled:NO];
 			[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:NO];
-			[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
 			[UIView setAnimationsEnabled:oldAnimationsEnabled];
 		}
+		[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
 		if ([LASendEventWithName(LAEventNameLockPressDouble) isHandled]) {
 			NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _lockButtonTimer, NSTimer *);
 			if (timer) {
