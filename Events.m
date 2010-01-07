@@ -4,6 +4,8 @@
 #import <SpringBoard/SpringBoard.h>
 #import <UIKit/UIKit-Private.h>
 
+#include <dlfcn.h>
+
 NSString * const LAEventNameMenuPressAtSpringBoard = @"libactivator.menu.press.at-springboard";
 NSString * const LAEventNameMenuPressSingle        = @"libactivator.menu.press.single";
 NSString * const LAEventNameMenuPressDouble        = @"libactivator.menu.press.double";
@@ -27,6 +29,8 @@ NSString * const LAEventNameVolumeUpDown           = @"libactivator.volume.up-do
 NSString * const LAEventNameSlideInFromBottom      = @"libactivator.slide-in.bottom";
 NSString * const LAEventNameSlideInFromBottomLeft  = @"libactivator.slide-in.bottom-left";
 NSString * const LAEventNameSlideInFromBottomRight = @"libactivator.slide-in.bottom-right";
+
+NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake";
 
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
@@ -218,6 +222,12 @@ CHMethod(0, void, SpringBoard, activatorLockButtonHoldCompleted)
 CHMethod(0, void, SpringBoard, activatorLockButtonDoubleTapAborted)
 {
 	isWaitingForLockDoubleTap = NO;
+}
+
+CHMethod(0, void, SpringBoard, _showEditAlertView)
+{
+	if (![LASendEventWithName(LAEventNameMotionShake) isHandled])
+		CHSuper(0, SpringBoard, _showEditAlertView);
 }
 
 static LAEvent *menuEventToAbort;
@@ -506,6 +516,7 @@ CHConstructor
 	CHHook(0, SpringBoard, activatorMenuButtonTimerCompleted);
 	CHHook(1, SpringBoard, volumeChanged);
 	CHHook(0, SpringBoard, activatorCancelVolumeChord);
+	CHHook(0, SpringBoard, _showEditAlertView);
 	
 	CHLoadLateClass(SBUIController);
 	CHHook(0, SBUIController, clickedMenuButton);
