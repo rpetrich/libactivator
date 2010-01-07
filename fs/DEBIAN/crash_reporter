@@ -1,0 +1,4 @@
+include as "Activator Configuration" plist /User/Library/Caches/LibActivator/libactivator.plist
+include as "Package List" dpkg --get-selections
+link as "Report issue" url http://github.com/rpetrich/libactivator/issues
+link as "Email Bug Report" email rpetrich+crash@gmail.com
