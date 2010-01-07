@@ -57,7 +57,21 @@ static void LAAbortEvent(LAEvent *event)
 + (id)sharedInstance;
 @end
 
+CHDeclareClass(SpringBoard);
+CHDeclareClass(SBUIController);
+CHDeclareClass(SBIconController);
+CHDeclareClass(SBIconScrollView);
+CHDeclareClass(SBIcon);
+CHDeclareClass(SBStatusBar);
+CHDeclareClass(SBNowPlayingAlertItem);
+CHDeclareClass(iHome);
+CHDeclareClass(SBAwayController);
+CHDeclareClass(SBStatusBarController);
+
+static BOOL shouldInterceptMenuPresses;
+
 static LASlideGestureWindow *slideGestureWindow;
+static UIView *quickDoButton;
 
 @implementation LASlideGestureWindow
 
@@ -76,10 +90,12 @@ static LASlideGestureWindow *slideGestureWindow;
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	hasSentEvent = NO;
+	[quickDoButton touchesBegan:touches withEvent:event];
 }
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
+	[quickDoButton touchesMoved:touches withEvent:event];
 	if (!hasSentEvent) {
 		hasSentEvent = YES;
 		UITouch *touch = [touches anyObject];
@@ -96,21 +112,10 @@ static LASlideGestureWindow *slideGestureWindow;
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	hasSentEvent = NO;
+	[quickDoButton touchesEnded:touches withEvent:event];
 }
 
 @end
-
-static BOOL shouldInterceptMenuPresses;
-
-CHDeclareClass(SpringBoard);
-CHDeclareClass(SBUIController);
-CHDeclareClass(SBIconController);
-CHDeclareClass(SBIconScrollView);
-CHDeclareClass(SBIcon);
-CHDeclareClass(SBStatusBar);
-CHDeclareClass(SBNowPlayingAlertItem);
-CHDeclareClass(SBAwayController);
-CHDeclareClass(SBStatusBarController);
 
 CHMethod(0, void, SpringBoard, _handleMenuButtonEvent)
 {
@@ -477,8 +482,14 @@ CHMethod(2, void, SBNowPlayingAlertItem, alertSheet, id, sheet, buttonClicked, N
 		LASendEventWithName(LAEventNameMenuPressDouble);
 }
 
-CHConstructor
+CHMethod(0, void, iHome, inject)
 {
+	CHSuper(0, iHome, inject);
+	quickDoButton = [CHIvar(self, touchButton, UIButton *) retain];
+}
+
+CHConstructor
+{  
 	CHLoadLateClass(SpringBoard);
 	CHHook(0, SpringBoard, _handleMenuButtonEvent);
 	CHHook(0, SpringBoard, allowMenuDoubleTap);
@@ -522,6 +533,10 @@ CHConstructor
 	CHLoadLateClass(SBNowPlayingAlertItem);
 	CHHook(2, SBNowPlayingAlertItem, configure, requirePasscodeForActions);
 	CHHook(2, SBNowPlayingAlertItem, alertSheet, buttonClicked);
+	
+	dlopen("/Library/MobileSubstrate/DynamicLibraries/mQuickDo.dylib", RTLD_LAZY);
+	CHLoadLateClass(iHome);
+	CHHook(0, iHome, inject);
 	
 	CHLoadLateClass(SBAwayController);
 	CHLoadLateClass(SBStatusBarController);
