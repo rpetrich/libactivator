@@ -318,7 +318,8 @@ CHMethod(0, BOOL, SBUIController, clickedMenuButton)
 
 CHMethod(0, void, SBUIController, finishLaunching)
 {
-	[[LASlideGestureWindow sharedInstance] setHidden:NO];
+	if (!quickDoButton)
+		[[LASlideGestureWindow sharedInstance] setHidden:NO];
 	CHSuper(0, SBUIController, finishLaunching);
 }
 
@@ -496,6 +497,8 @@ CHMethod(0, void, iHome, inject)
 {
 	CHSuper(0, iHome, inject);
 	quickDoButton = [CHIvar(self, touchButton, UIButton *) retain];
+	if (quickDoButton)
+		[[LASlideGestureWindow sharedInstance] setHidden:NO];
 }
 
 CHConstructor
