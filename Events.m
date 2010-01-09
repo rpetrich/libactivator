@@ -56,9 +56,10 @@ static void LAAbortEvent(LAEvent *event)
 }
 
 @interface LASlideGestureWindow : UIWindow {
-	BOOL hasSentEvent;
+	BOOL hasSentSlideEvent;
 }
 + (id)sharedInstance;
+- (void)acceptEventsFromControl:(UIControl *)control;
 @end
 
 CHDeclareClass(SpringBoard);
@@ -75,7 +76,7 @@ CHDeclareClass(SBStatusBarController);
 static BOOL shouldInterceptMenuPresses;
 
 static LASlideGestureWindow *slideGestureWindow;
-static UIView *quickDoButton;
+static UIButton *quickDoButton;
 
 @implementation LASlideGestureWindow
 
@@ -93,15 +94,18 @@ static UIView *quickDoButton;
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
-	hasSentEvent = NO;
-	[quickDoButton touchesBegan:touches withEvent:event];
+	hasSentSlideEvent = NO;
+}
+
+- (void)controlTouchesBegan:(UIControl *)control withEvent:(UIEvent *)event
+{
+	hasSentSlideEvent = NO;
 }
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
-	[quickDoButton touchesMoved:touches withEvent:event];
-	if (!hasSentEvent) {
-		hasSentEvent = YES;
+	if (!hasSentSlideEvent) {
+		hasSentSlideEvent = YES;
 		UITouch *touch = [touches anyObject];
 		CGFloat xFactor = [touch locationInView:self].x / [self bounds].size.width;
 		if (xFactor < 0.25f)
@@ -113,10 +117,36 @@ static UIView *quickDoButton;
 	}
 }
 
+- (void)controlTouchesEnded:(UIControl *)control withEvent:(UIEvent *)event
+{
+	if (!hasSentSlideEvent) {
+		hasSentSlideEvent = YES;
+		UITouch *touch = [[event allTouches] anyObject];
+		CGFloat xFactor = [touch locationInView:control].x / [control bounds].size.width;
+		if (xFactor < 0.25f)
+			LASendEventWithName(LAEventNameSlideInFromBottomLeft);
+		else if (xFactor < 0.75f)
+			LASendEventWithName(LAEventNameSlideInFromBottom);
+		else
+			LASendEventWithName(LAEventNameSlideInFromBottomRight);
+	}
+}
+
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
-	hasSentEvent = NO;
-	[quickDoButton touchesEnded:touches withEvent:event];
+	hasSentSlideEvent = NO;
+}
+
+- (void)controlTouchesMoved:(UIControl *)control withEvent:(UIEvent *)event
+{
+	hasSentSlideEvent = NO;
+}
+
+- (void)acceptEventsFromControl:(UIControl *)control
+{
+	[control addTarget:self action:@selector(controlTouchesBegan:withEvent:) forControlEvents:UIControlEventTouchDown];
+	[control addTarget:self action:@selector(controlTouchesMoved:withEvent:) forControlEvents:UIControlEventTouchDragInside | UIControlEventTouchDragOutside];
+	[control addTarget:self action:@selector(controlTouchesEnded:withEvent:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel];
 }
 
 @end
@@ -497,8 +527,11 @@ CHMethod(0, void, iHome, inject)
 {
 	CHSuper(0, iHome, inject);
 	quickDoButton = [CHIvar(self, touchButton, UIButton *) retain];
-	if (quickDoButton)
-		[[LASlideGestureWindow sharedInstance] setHidden:NO];
+	if (quickDoButton) {
+		LASlideGestureWindow *sgw = [LASlideGestureWindow sharedInstance];
+		[sgw setHidden:YES];
+		[sgw acceptEventsFromControl:quickDoButton];
+	}
 }
 
 CHConstructor
