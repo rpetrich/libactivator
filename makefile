@@ -4,9 +4,6 @@ TARGET=fs/usr/lib/libactivator.dylib
 PREFS_OBJECTS=Preferences.o
 PREFS_TARGET=fs/System/Library/PreferenceBundles/LibActivator.bundle/LibActivator
 
-CONFIG_OBJECTS=activator-config.o
-CONFIG_TARGET=fs/usr/bin/activator-config
-
 export NEXT_ROOT=/var/sdk
 
 COMPILER=arm-apple-darwin9-gcc
@@ -40,7 +37,7 @@ endif
 all:	install
 
 clean:
-		rm -f $(OBJECTS) $(TARGET) $(PREFS_OBJECTS) $(PREFS_TARGET) $(CONFIG_OBJECTS) $(CONFIG_TARGET) Common.h
+		rm -f $(OBJECTS) $(TARGET) $(PREFS_OBJECTS) $(PREFS_TARGET) Common.h
 		rm -rf package
 		find . -name '.svn' -prune -o -name '.git' -prune -o -name '._*' -delete -or -name '.DS_Store' -delete
 
@@ -60,13 +57,8 @@ $(PREFS_TARGET): $(PREFS_OBJECTS) $(TARGET)
 		mkdir -p fs/System/Library/PreferenceBundles/LibActivator.bundle/
 		$(COMPILER) -L./fs/usr/lib $(LDFLAGS) -lactivator -framework Preferences -bundle -o $@ $(filter %.o,$^)
 		ldid -S $@
-
-$(CONFIG_TARGET): $(CONFIG_OBJECTS)
-		mkdir -p fs/usr/bin
-		$(COMPILER) $(LDFLAGS) -o $@ $^
-		ldid -S $@
 				
-package: $(TARGET) $(PREFS_TARGET) $(CONFIG_TARGET) control
+package: $(TARGET) $(PREFS_TARGET) control
 		rm -rf package
 		mkdir -p package/DEBIAN
 		cp -a control package/DEBIAN
