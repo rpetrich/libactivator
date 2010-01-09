@@ -30,8 +30,11 @@
 @private
 	NSMutableDictionary *_listeners;
 	NSMutableDictionary *_preferences;
+	NSUInteger _suppressReload;
 }
 + (LAActivator *)sharedInstance;
+
+@property (nonatomic, readonly) NSString *settingsFilePath;
 
 - (id<LAListener>)listenerForEvent:(LAEvent *)event;
 - (void)sendEventToListener:(LAEvent *)event;
@@ -48,13 +51,23 @@
 - (NSArray *)eventsAssignedToListenerWithName:(NSString *)listenerName; // libactivator 1.1+
 
 @property (nonatomic, readonly) NSArray *availableEventNames; // libactivator 1.0.1+
-- (NSDictionary *)infoForEventWithName:(NSString *)name;
+- (BOOL)eventWithNameIsHidden:(NSString *)name;
+
 @property (nonatomic, readonly) NSArray *availableListenerNames; // libactivator 1.0.1+
-- (NSDictionary *)infoForListenerWithName:(NSString *)name;
+- (BOOL)listenerWithNameRequiresAssignment:(NSString *)name;
+- (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
 
 @property (nonatomic, readonly) NSArray *availableEventModes; // libactivator 1.0.1+
 - (NSString *)currentEventMode; // libactivator 1.1+
 
+@end
+
+@interface LAActivator (Localization)
+- (NSString *)localizedTitleForEventMode:(NSString *)eventMode;
+- (NSString *)localizedTitleForEventName:(NSString *)eventName;
+- (NSString *)localizedTitleForListenerName:(NSString *)listenerName;
+
+- (NSString *)localizedGroupForEventName:(NSString *)eventName;
 @end
 
 // Listeners
@@ -74,19 +87,13 @@
 	NSString *_listenerName;
 	NSString *_eventMode;
 	NSMutableDictionary *_events;
-	NSMutableDictionary *_eventData;
 }
 
 - (id)init;
 @property (nonatomic, copy) NSString *listenerName;
-@property (nonatomic, copy) NSString *eventMode; // libactivator 1.1+
 
 @end
 
-extern NSString * const LAActivatorSettingsFilePath;
-
-
-extern NSString * const LAEventModeAny; // libactivator 1.1+
 extern NSString * const LAEventModeSpringBoard; // libactivator 1.1+
 extern NSString * const LAEventModeApplication; // libactivator 1.1+
 extern NSString * const LAEventModeLockScreen; // libactivator 1.1+

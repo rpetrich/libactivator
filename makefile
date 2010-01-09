@@ -72,8 +72,6 @@ package: $(TARGET) $(PREFS_TARGET) $(CONFIG_TARGET) control
 		cp -a control package/DEBIAN
 		cp -a fs/* package
 		cp -a libactivator.h package/usr/include/libactivator/
-		mkdir -p package/User/Library/Caches/LibActivator
-		chmod 777 package/User/Library/Caches/LibActivator
 		- plutil -convert binary1 package/Library/MobileSubstrate/DynamicLibraries/Activator.plist
 		dpkg-deb -b package $(shell grep ^Package: control | cut -d ' ' -f 2)_$(shell grep ^Version: control | cut -d ' ' -f 2)_iphoneos-arm.deb
 		

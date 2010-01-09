@@ -117,7 +117,7 @@ static UIButton *quickDoButton;
 	}
 }
 
-- (void)controlTouchesEnded:(UIControl *)control withEvent:(UIEvent *)event
+- (void)controlTouchesMoved:(UIControl *)control withEvent:(UIEvent *)event
 {
 	if (!hasSentSlideEvent) {
 		hasSentSlideEvent = YES;
@@ -137,7 +137,7 @@ static UIButton *quickDoButton;
 	hasSentSlideEvent = NO;
 }
 
-- (void)controlTouchesMoved:(UIControl *)control withEvent:(UIEvent *)event
+- (void)controlTouchesEnded:(UIControl *)control withEvent:(UIEvent *)event
 {
 	hasSentSlideEvent = NO;
 }
@@ -507,7 +507,7 @@ CHMethod(2, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePass
 	NSString *listenerName = [activator assignedListenerNameForEvent:event];
 	if ([activator listenerForEvent:event]) {
 		CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
-		NSString *title = [[activator infoForListenerWithName:listenerName] objectForKey:@"title"];
+		NSString *title = [activator localizedTitleForListenerName:listenerName];
 		id alertSheet = [self alertSheet];
 		//[alertSheet setNumberOfRows:2];
 		nowPlayingButtonIndex = [alertSheet addButtonWithTitle:title];

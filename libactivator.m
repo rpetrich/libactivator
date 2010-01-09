@@ -7,9 +7,6 @@
 #include <sys/stat.h>
 #include <notify.h>
 
-NSString * const LAActivatorSettingsFilePath = @"/User/Library/Caches/LibActivator/libactivator.plist";
-
-NSString * const LAEventModeAny         = @"any";
 NSString * const LAEventModeSpringBoard = @"springboard";
 NSString * const LAEventModeApplication = @"application";
 NSString * const LAEventModeLockScreen  = @"lockscreen";
@@ -21,6 +18,10 @@ CHConstructor {
 }
 
 @implementation LAEvent
+
+@synthesize name = _name;
+@synthesize mode = _mode;
+@synthesize handled = _handled;
 
 + (id)eventWithName:(NSString *)name
 {
@@ -36,7 +37,6 @@ CHConstructor {
 {
 	if ((self = [super init])) {
 		_name = [name copy];
-		_mode = [LAEventModeAny copy];
 	}
 	return self;
 }
@@ -57,26 +57,6 @@ CHConstructor {
 	[super dealloc];
 }
 
-- (NSString *)name
-{
-	return _name;
-}
-
-- (NSString *)mode
-{
-	return _mode;
-}
-
-- (BOOL)isHandled
-{
-	return _handled;
-}
-
-- (void)setHandled:(BOOL)isHandled;
-{
-	_handled = isHandled;
-}
-
 - (NSString *)description
 {
 	return [NSString stringWithFormat:@"<%s name=%@ mode=%@ handled=%s %p>", class_getName([self class]), _name, _mode, _handled?"YES":"NO", self];
@@ -84,12 +64,8 @@ CHConstructor {
 
 @end
 
-#define AnyListenerKeyForEventName(eventName) [@"LAEventListener-" stringByAppendingString:(eventName)]
-#define ListenerKeyForEventNameAndMode(eventName, eventMode) ({ \
-	NSString *_eventName = eventName; \
-	NSString *_eventMode = eventMode; \
-	[_eventMode isEqualToString:LAEventModeAny]?AnyListenerKeyForEventName(_eventName):[NSString stringWithFormat:@"LAEventListener(%@)-%@", (_eventMode), (_eventName)]; \
-})
+#define ListenerKeyForEventNameAndMode(eventName, eventMode) \
+	[NSString stringWithFormat:@"LAEventListener(%@)-%@", (eventMode), (eventName)]
 
 static LAActivator *sharedActivator;
 
@@ -97,12 +73,14 @@ static LAActivator *sharedActivator;
 - (void)_loadPreferences;
 - (void)_savePreferences;
 - (void)_reloadPreferences;
-- (BOOL)_canUnassignEventName:(NSString *)eventName mode:(NSString *)mode;
+
+- (NSDictionary *)_infoForEventWithName:(NSString *)name;
+- (NSDictionary *)_infoForListenerWithName:(NSString *)name;
 @end
 
 static void PreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
 {
-	[[LAActivator sharedInstance] _reloadPreferences];
+	[sharedActivator _reloadPreferences];
 }
 
 @implementation LAActivator
@@ -118,6 +96,12 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 {
 	sharedActivator = [[LAActivator alloc] init];
 }
+
+- (NSString *)settingsFilePath
+{
+	return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Caches/libactivator.plist"];
+}
+
 
 - (id)init
 {
@@ -138,49 +122,64 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	[super dealloc];
 }
 
+// Preferences
+
 - (void)_reloadPreferences
 {
-	[_preferences release];
-	_preferences = nil;
+	if (_suppressReload == 0) {
+		[_preferences release];
+		_preferences = nil;
+	}
 }
 
 - (void)_loadPreferences
 {
-	if ((_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:LAActivatorSettingsFilePath]))
-		return;
-	if ((_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/User/Library/Preferences/libactivator.plist"]))
-		return;
-	_preferences = [[NSMutableDictionary alloc] init];
+	BOOL shouldResave = NO;
+	if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]])) {
+		if ((_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/User/Library/Preferences/libactivator.plist"])) {
+			// Load old path
+			[[NSFileManager defaultManager] removeItemAtPath:@"/User/Library/Preferences/libactivator.plist" error:NULL];
+			shouldResave = YES;
+		} else {
+			// Create a new preference file
+			_preferences = [[NSMutableDictionary alloc] init];
+			return;
+		}
+	}
+	// Convert old-style preferences
+	for (NSString *eventName in [self availableEventNames]) {
+		NSString *oldPref = [@"LAEventListener-" stringByAppendingString:eventName];
+		NSString *oldValue = [_preferences objectForKey:oldPref];
+		if (oldValue) {
+			[_preferences removeObjectForKey:oldPref];
+			for (NSString *mode in [self availableEventModes])
+				[_preferences setObject:oldValue forKey:ListenerKeyForEventNameAndMode(eventName, mode)];
+			shouldResave = YES;
+		}
+	}
+	// Save if necessary
+	if (shouldResave)
+		[self _savePreferences];
 }
 
 - (void)_savePreferences
 {
 	if (_preferences) {
-		CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)LAActivatorSettingsFilePath, kCFURLPOSIXPathStyle, NO);
+		_suppressReload++;
+		CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
 		CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
 		CFRelease(url);
 		CFWriteStreamOpen(stream);
 		CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, NULL);
 		CFWriteStreamClose(stream);
 		CFRelease(stream);
-		chmod([LAActivatorSettingsFilePath UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+		chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 		notify_post("libactivator.preferenceschanged");
+		_suppressReload--;
 	}
 }
 
-- (BOOL)_canUnassignEventName:(NSString *)eventName mode:(NSString *)mode
-{
-	LoadPreferences();
-	NSString *pref = ListenerKeyForEventNameAndMode(eventName, mode);
-	NSString *listenerName = [_preferences objectForKey:pref];
-	NSDictionary *infoList = [self infoForListenerWithName:listenerName];
-	if ([[infoList objectForKey:@"sticky"] boolValue])
-		return NO;
-	if ([[infoList objectForKey:@"require-event"] boolValue])
-		if ([[self eventsAssignedToListenerWithName:listenerName] count] == 0)
-			return NO;
-	return YES;
-}
+// Sending Events
 
 - (id<LAListener>)listenerForEvent:(LAEvent *)event
 {
@@ -206,6 +205,8 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 		[listener activator:self abortEvent:event];
 }
 
+// Registration of listeners
+
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name
 {
 	[_listeners setObject:listener forKey:name];
@@ -228,32 +229,19 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	return [[_preferences objectForKey:[@"LAHasSeenListener-" stringByAppendingString:name]] boolValue];
 }
 
+// Setting Assignments
+
 - (BOOL)assignEvent:(LAEvent *)event toListenerWithName:(NSString *)listenerName
 {
 	LoadPreferences();
-	NSString *mode = [event mode];
 	NSString *eventName = [event name];
-	NSString *prefName = ListenerKeyForEventNameAndMode(eventName, mode);
-	if ([mode isEqualToString:LAEventModeAny]) {
-		// Abort if unable to unassign event
-		NSArray *availableModes = [self availableEventModes];
-		for (NSString *em in availableModes)
-			if (![self _canUnassignEventName:eventName mode:em])
-				return NO;
-		// Remove all assignments
-		for (NSString *em in availableModes)
-			[_preferences removeObjectForKey:ListenerKeyForEventNameAndMode(eventName, em)];
-	} else {
-		// Abort if unable to unassign event
-		if (![self _canUnassignEventName:eventName mode:LAEventModeAny])
-			return NO;
-		if (![self _canUnassignEventName:eventName mode:mode])
-			return NO;
-		// Remove "any" assignment
-		[_preferences removeObjectForKey:ListenerKeyForEventNameAndMode(eventName, LAEventModeAny)];
+	NSString *eventMode = [event mode];
+	if ([eventMode length])
+		[_preferences setObject:listenerName forKey:ListenerKeyForEventNameAndMode(eventName, eventMode)];
+	else {
+		for (NSString *mode in [self availableEventModes])
+			[_preferences setObject:listenerName forKey:ListenerKeyForEventNameAndMode(eventName, mode)];
 	}
-	// Add new Mapping
-	[_preferences setObject:listenerName forKey:prefName];
 	// Save Preferences
 	[self _savePreferences];
 	return YES;
@@ -262,22 +250,34 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 - (void)unassignEvent:(LAEvent *)event
 {
 	LoadPreferences();
-	NSString *prefName = ListenerKeyForEventNameAndMode([event name], [event mode]);
-	if ([_preferences objectForKey:prefName]) {
-		[_preferences removeObjectForKey:prefName];
-		[self _savePreferences];
+	BOOL shouldSave = NO;
+	NSString *eventName = [event name];
+	NSString *eventMode = [event mode];
+	if ([eventMode length]) {
+		NSString *prefName = ListenerKeyForEventNameAndMode(eventName, eventMode);
+		if ([_preferences objectForKey:prefName]) {
+			[_preferences removeObjectForKey:prefName];
+			shouldSave = YES;
+		}
+	} else {
+		for (NSString *mode in [self availableEventModes]) {
+			NSString *prefName = ListenerKeyForEventNameAndMode(eventName, mode);
+			if ([_preferences objectForKey:prefName]) {
+				[_preferences removeObjectForKey:prefName];
+				shouldSave = YES;
+			}
+		}
 	}
+	if (shouldSave)
+		[self _savePreferences];
 }
+
+// Getting Assignments
 
 - (NSString *)assignedListenerNameForEvent:(LAEvent *)event
 {
 	LoadPreferences();
-	NSString *eventName = [event name];
-	NSString *prefName = ListenerKeyForEventNameAndMode(eventName, [event mode]);
-	NSString *result = [_preferences objectForKey:prefName];
-	if (result)
-		return result;
-	prefName = AnyListenerKeyForEventName(eventName);
+	NSString *prefName = ListenerKeyForEventNameAndMode([event name], [event mode] ?: [self currentEventMode]);
 	return [_preferences objectForKey:prefName];
 }
 
@@ -297,8 +297,11 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	return result;
 }
 
+// Events
+
 - (NSArray *)availableEventNames
 {
+	// TODO: Possibly cache this
 	NSMutableArray *result = [NSMutableArray array];
 	for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Events" error:NULL])
 		if (![fileName hasPrefix:@"."])
@@ -306,10 +309,18 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	return result;
 }
 
-- (NSDictionary *)infoForEventWithName:(NSString *)name
+- (NSDictionary *)_infoForEventWithName:(NSString *)name
 {
+	// TODO: Possibly cache this
 	return [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Events/%@/Info.plist", name]];
 }
+
+- (BOOL)eventWithNameIsHidden:(NSString *)name
+{
+	return [[[self _infoForEventWithName:name] objectForKey:@"hidden"] boolValue];
+}
+
+// Listeners
 
 - (NSArray *)availableListenerNames
 {
@@ -320,14 +331,27 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	return result;
 }
 
-- (NSDictionary *)infoForListenerWithName:(NSString *)name
+- (NSDictionary *)_infoForListenerWithName:(NSString *)name
 {
 	return [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Listeners/%@/Info.plist", name]];
 }
 
+- (BOOL)listenerWithNameRequiresAssignment:(NSString *)name
+{
+	return [[[self _infoForListenerWithName:name] objectForKey:@"requires-event"] boolValue];
+}
+
+- (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
+{
+	NSArray *setting = [[self _infoForListenerWithName:name] objectForKey:@"compatible-modes"];
+	return setting ?: [self availableEventModes];
+}
+
+// Event Modes
+
 - (NSArray *)availableEventModes
 {
-	return [NSArray arrayWithObjects:LAEventModeAny, LAEventModeSpringBoard, LAEventModeApplication, LAEventModeLockScreen, nil];
+	return [NSArray arrayWithObjects:LAEventModeSpringBoard, LAEventModeApplication, LAEventModeLockScreen, nil];
 }
 
 - (NSString *)currentEventMode
@@ -342,6 +366,36 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 - (NSString *)description
 {
 	return [NSString stringWithFormat:@"<%s listeners=%@ %p>", class_getName([self class]), _listeners, self];
+}
+
+@end
+
+@implementation LAActivator (Localization)
+
+- (NSString *)localizedTitleForEventMode:(NSString *)eventMode
+{
+	if ([eventMode isEqualToString:LAEventModeSpringBoard])
+		return @"At SpringBoard";
+	if ([eventMode isEqualToString:LAEventModeApplication])
+		return @"In Application";
+	if ([eventMode isEqualToString:LAEventModeLockScreen])
+		return @"At Lock Screen";
+	return @"Anywhere";
+}
+
+- (NSString *)localizedTitleForEventName:(NSString *)eventName
+{	
+	return [[self _infoForEventWithName:eventName] objectForKey:@"title"] ?: eventName;
+}
+
+- (NSString *)localizedTitleForListenerName:(NSString *)listenerName
+{
+	return [[self _infoForListenerWithName:listenerName] objectForKey:@"title"] ?: listenerName;
+}
+
+- (NSString *)localizedGroupForEventName:(NSString *)eventName
+{
+	return [[self _infoForEventWithName:eventName] objectForKey:@"group"];
 }
 
 @end
