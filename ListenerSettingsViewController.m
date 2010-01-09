@@ -170,7 +170,7 @@
 		}
 	}
 	[cell setAccessoryType:accessory];
-	[cell setSelected:NO animated:YES];
+	[tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
@@ -184,7 +184,7 @@
 		[[LAActivator sharedInstance] assignEvent:event toListenerWithName:_listenerName];
 		[cell setAccessoryType:UITableViewCellAccessoryCheckmark];		
 	}
-	[cell setSelected:NO animated:YES];
+	[tableView deselectRowAtIndexPath:indexPath animated:YES];
 	[self release];
 }
 
