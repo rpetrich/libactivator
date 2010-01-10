@@ -10,6 +10,8 @@ Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=libactivat
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Author: Ryan Petrich <rpetrich@gmail.com>
 Sponsor: thebigboss.org <http://thebigboss.org>
+Conflicts: com.booleanmagic.overboard (<= 1.0), com.sinfuliphone.overboard (<= 1.0)
+Replaces: com.booleanmagic.overboard (<= 1.0), com.sinfuliphone.overboard (<= 1.0)
 Section: System
 Installed-Size: 72
 dev: rpetrich
