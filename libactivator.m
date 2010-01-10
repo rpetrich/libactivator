@@ -151,9 +151,9 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 		NSString *oldPref = [@"LAEventListener-" stringByAppendingString:eventName];
 		NSString *oldValue = [_preferences objectForKey:oldPref];
 		if (oldValue) {
-			[_preferences removeObjectForKey:oldPref];
 			for (NSString *mode in [self availableEventModes])
 				[_preferences setObject:oldValue forKey:ListenerKeyForEventNameAndMode(eventName, mode)];
+			[_preferences removeObjectForKey:oldPref];
 			shouldResave = YES;
 		}
 	}
