@@ -87,7 +87,7 @@ static LAActivator *activator;
 
 - (NSArray *)compatibleModesAssignedToListener:(NSString *)name eventName:(NSString *)eventName
 {
-	NSMutableArray *result = [[NSMutableArray alloc] init];
+	NSMutableArray *result = [NSMutableArray array];
 	for (NSString *mode in [activator compatibleEventModesForListenerWithName:_listenerName]) {
 		NSString *assignedName = [activator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]];
 		if ([assignedName isEqualToString:name])
