@@ -102,7 +102,7 @@ static LAActivator *activator;
 		return YES;
 	NSInteger assignedCount = [[activator eventsAssignedToListenerWithName:listenerName] count];
 	for (NSString *mode in [activator compatibleEventModesForListenerWithName:_listenerName])
-		if ([[activator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]] isEqualToString:listenerName])
+		if ([[activator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]] isEqual:listenerName])
 			assignedCount--;
 	return assignedCount > 0;	
 }
