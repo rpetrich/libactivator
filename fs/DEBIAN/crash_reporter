@@ -1,4 +1,6 @@
 include as "Activator Configuration" plist /User/Library/Caches/LibActivator/libactivator.plist
-include as "Package List" dpkg --get-selections
+include as "Package List" command dpkg --get-selections
+include as "Package Details" command dpkg -s libactivator | grep Version:
+include as "Installed Listeners" command ls /Library/Activator/Listeners/
 link as "Report issue" url http://github.com/rpetrich/libactivator/issues
 link as "Email Bug Report" email rpetrich+crash@gmail.com
