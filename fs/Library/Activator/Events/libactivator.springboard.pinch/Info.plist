@@ -2,4 +2,5 @@
 	title = "Icon Pinch";
 	group = "SpringBoard";
 	description = "Pinch springboard icons with 2 fingers";
+	"compatible-modes" = ("springboard");
 }

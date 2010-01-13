@@ -2,4 +2,5 @@
 	title = "Icon Spread";
 	group = "SpringBoard";
 	description = "Spread springboard icons with 2 fingers";
+	"compatible-modes" = ("springboard");
 }
