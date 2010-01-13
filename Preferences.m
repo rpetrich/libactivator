@@ -61,7 +61,7 @@ static LAActivator *activator;
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	return [tableView dequeueReusableCellWithIdentifier:@"cell"] ?: [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"cell"] autorelease];
+	return [tableView dequeueReusableCellWithIdentifier:@"cell"] ?: [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"] autorelease];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -143,7 +143,7 @@ static LAActivator *activator;
 {
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
 	NSString *listenerName = [_listeners objectAtIndex:[indexPath row]];
-	[cell setText:[activator localizedTitleForListenerName:listenerName]];
+	[[cell textLabel] setText:[activator localizedTitleForListenerName:listenerName]];
 	UITableViewCellAccessoryType accessory = 
 		[self countOfModesAssignedToListener:listenerName] ?
 		UITableViewCellAccessoryCheckmark :
@@ -258,13 +258,14 @@ static LAActivator *activator;
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
 	NSInteger row = [indexPath row];
 	NSString *eventName = [self eventNameForIndexPath:indexPath];
-	[cell setText:[activator localizedTitleForEventName:eventName]];
+	UILabel *label = [cell textLabel];
+	[label setText:[activator localizedTitleForEventName:eventName]];
 	if ([activator eventWithNameIsHidden:eventName]) {
-		[cell setTextColor:[[UIColor darkTextColor] colorWithAlphaComponent:0.75f]];
-		[cell setSelectedTextColor:[UIColor colorWithWhite:1.0f alpha:0.75f]];
+		[label setTextColor:[[UIColor darkTextColor] colorWithAlphaComponent:0.75f]];
+		[label setHighlightedTextColor:[UIColor colorWithWhite:1.0f alpha:0.75f]];
 	} else {
-		[cell setTextColor:[UIColor darkTextColor]];
-		[cell setSelectedTextColor:[UIColor whiteColor]];
+		[label setTextColor:[UIColor darkTextColor]];
+		[label setHighlightedTextColor:[UIColor whiteColor]];
 	}
 	[cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
 	return cell;	
@@ -364,7 +365,7 @@ static LAActivator *activator;
 {	
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
 	NSString *text = [activator localizedTitleForEventMode:[self eventModeForIndexPath:indexPath]];
-	[cell setText:text];
+	[[cell textLabel] setText:text];
 	[cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
 	return cell;
 }

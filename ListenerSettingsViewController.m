@@ -111,19 +111,20 @@ static LAActivator *activator;
 {
 	UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell"];
 	if (!cell)
-		cell = [[[UITableViewCell alloc] initWithFrame:CGRectZero reuseIdentifier:@"cell"] autorelease];
+		cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"] autorelease];
 	NSString *eventName = [self eventNameForRowAtIndexPath:indexPath];
 	[cell setAccessoryType:
 		[[self compatibleModesAssignedToListener:_listenerName eventName:eventName] count] ?
 		UITableViewCellAccessoryCheckmark :
 		UITableViewCellAccessoryNone];
-	[cell setText:[activator localizedTitleForEventName:eventName]];
+	UILabel *label = [cell textLabel];
+	[label setText:[activator localizedTitleForEventName:eventName]];
 	if ([activator eventWithNameIsHidden:eventName]) {
-		[cell setTextColor:[[UIColor darkTextColor] colorWithAlphaComponent:0.66f]];
-		[cell setSelectedTextColor:[UIColor colorWithWhite:1.0f alpha:0.66f]];
+		[label setTextColor:[[UIColor darkTextColor] colorWithAlphaComponent:0.66f]];
+		[label setHighlightedTextColor:[UIColor colorWithWhite:1.0f alpha:0.66f]];
 	} else {
-		[cell setTextColor:[UIColor darkTextColor]];
-		[cell setSelectedTextColor:[UIColor whiteColor]];
+		[label setTextColor:[UIColor darkTextColor]];
+		[label setHighlightedTextColor:[UIColor whiteColor]];
 	}
 	return cell;	
 }
