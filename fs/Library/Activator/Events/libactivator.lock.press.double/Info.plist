@@ -1,4 +1,5 @@
 {
 	title = "Double Press";
 	group = "Sleep Button";
+	description = "Quickly press sleep button twice";
 }

@@ -1,4 +1,5 @@
 {
 	title = "Up, Down";
 	group = "Volume Buttons";
+	description = "Press volume up, then down";
 }

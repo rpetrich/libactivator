@@ -54,6 +54,7 @@ static LAActivator *activator;
 - (void)loadView
 {
 	UITableView *tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleGrouped];
+	[tableView setRowHeight:60.0f];
 	[tableView setDelegate:self];
 	[tableView setDataSource:self];
 	[self setView:tableView];
@@ -111,22 +112,20 @@ static LAActivator *activator;
 {
 	UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell"];
 	if (!cell)
-		cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"] autorelease];
+		cell = [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"cell"] autorelease];
 	NSString *eventName = [self eventNameForRowAtIndexPath:indexPath];
 	[cell setAccessoryType:
 		[[self compatibleModesAssignedToListener:_listenerName eventName:eventName] count] ?
 		UITableViewCellAccessoryCheckmark :
 		UITableViewCellAccessoryNone];
+	CGFloat alpha = [activator eventWithNameIsHidden:eventName] ? 0.66f : 1.0f;
 	UILabel *label = [cell textLabel];
 	[label setText:[activator localizedTitleForEventName:eventName]];
-	if ([activator eventWithNameIsHidden:eventName]) {
-		[label setTextColor:[[UIColor darkTextColor] colorWithAlphaComponent:0.66f]];
-		[label setHighlightedTextColor:[UIColor colorWithWhite:1.0f alpha:0.66f]];
-	} else {
-		[label setTextColor:[UIColor darkTextColor]];
-		[label setHighlightedTextColor:[UIColor whiteColor]];
-	}
-	return cell;	
+	[label setAlpha:alpha];
+	UILabel *detailLabel = [cell detailTextLabel];
+	[detailLabel setText:[activator localizedDescriptionForEventName:eventName]];
+	[detailLabel setAlpha:alpha];
+	return cell;
 }
 
 - (void)showLastEventMessageForListener:(NSString *)listenerName

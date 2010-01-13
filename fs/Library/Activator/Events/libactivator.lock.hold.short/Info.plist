@@ -1,4 +1,5 @@
 {
 	title = "Short Hold";
 	group = "Sleep Button";
+	description = "Press and hold sleep button";
 }

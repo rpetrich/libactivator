@@ -68,6 +68,7 @@
 - (NSString *)localizedTitleForListenerName:(NSString *)listenerName;
 
 - (NSString *)localizedGroupForEventName:(NSString *)eventName;
+- (NSString *)localizedDescriptionForEventName:(NSString *)eventName;
 @end
 
 // Listeners

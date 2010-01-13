@@ -59,9 +59,14 @@ static LAActivator *activator;
 	return 0;
 }
 
+- (UITableViewCellStyle)tableViewCellStyle
+{
+	return UITableViewCellStyleDefault;
+}
+
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	return [tableView dequeueReusableCellWithIdentifier:@"cell"] ?: [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"] autorelease];
+	return [tableView dequeueReusableCellWithIdentifier:@"cell"] ?: [[[UITableViewCell alloc] initWithStyle:[self tableViewCellStyle] reuseIdentifier:@"cell"] autorelease];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -217,6 +222,7 @@ static LAActivator *activator;
 				[groupList addObject:eventName];
 			}
 		}
+		[[self tableView] setRowHeight:60.0f];
 	}
 	return self;
 }
@@ -236,6 +242,11 @@ static LAActivator *activator;
 - (NSString *)eventNameForIndexPath:(NSIndexPath *)indexPath
 {
 	return [[self groupAtIndex:[indexPath section]] objectAtIndex:[indexPath row]];
+}
+
+- (UITableViewCellStyle)tableViewCellStyle
+{
+	return UITableViewCellStyleSubtitle;
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
@@ -258,15 +269,13 @@ static LAActivator *activator;
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
 	NSInteger row = [indexPath row];
 	NSString *eventName = [self eventNameForIndexPath:indexPath];
+	CGFloat alpha = [activator eventWithNameIsHidden:eventName] ? 0.66f : 1.0f;
 	UILabel *label = [cell textLabel];
 	[label setText:[activator localizedTitleForEventName:eventName]];
-	if ([activator eventWithNameIsHidden:eventName]) {
-		[label setTextColor:[[UIColor darkTextColor] colorWithAlphaComponent:0.75f]];
-		[label setHighlightedTextColor:[UIColor colorWithWhite:1.0f alpha:0.75f]];
-	} else {
-		[label setTextColor:[UIColor darkTextColor]];
-		[label setHighlightedTextColor:[UIColor whiteColor]];
-	}
+	[label setAlpha:alpha];
+	UILabel *detailLabel = [cell detailTextLabel];
+	[detailLabel setText:[activator localizedDescriptionForEventName:eventName]];
+	[detailLabel setAlpha:alpha];
 	[cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
 	return cell;	
 }

@@ -1,4 +1,5 @@
 {
 	title = "Shake Device";
 	group = "Motion";
+	description = "Shake and bake!";
 }

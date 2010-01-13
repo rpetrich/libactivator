@@ -1,4 +1,5 @@
 {
 	title = "From Screen Bottom";
 	group = "Slide In Gesture";
+	description = "Drag onto screen from below";
 }

@@ -398,4 +398,9 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	return [[self _infoForEventWithName:eventName] objectForKey:@"group"];
 }
 
+- (NSString *)localizedDescriptionForEventName:(NSString *)eventName
+{
+	return [[self _infoForEventWithName:eventName] objectForKey:@"description"];
+}
+
 @end

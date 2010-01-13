@@ -2,4 +2,5 @@
 	title = "Swipe Down";
 	group = "Status Bar";
 	hidden = 1;
+	description = "Tap and drag down from statusbar";
 }
