@@ -73,9 +73,6 @@ static LAActivator *sharedActivator;
 - (void)_loadPreferences;
 - (void)_savePreferences;
 - (void)_reloadPreferences;
-
-- (NSDictionary *)_infoForEventWithName:(NSString *)name;
-- (NSDictionary *)_infoForListenerWithName:(NSString *)name;
 @end
 
 static void PreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
@@ -110,15 +107,31 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 		_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
 		// Register for notification
 		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), self, PreferencesChangedCallback, CFSTR("libactivator.preferenceschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+		// Cache event data
+		_eventData = [[NSMutableArray alloc] init];
+		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Events" error:NULL])
+			if (![fileName hasPrefix:@"."]) {
+				NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Events/%@/Info.plist", fileName]];
+				[_eventData setObject:dict forKey:fileName];
+			}
+		// Cache listener data
+		_listenerData = [[NSMutableArray alloc] init];
+		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Listeners" error:NULL])
+			if (![fileName hasPrefix:@"."]) {
+				NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Listeners/%@/Info.plist", fileName]];
+				[_listenerData setObject:dict forKey:fileName];
+			}
 	}
 	return self;
 }
 
 - (void)dealloc
 {
+	[_listenerData release];
 	CFNotificationCenterRemoveObserver(CFNotificationCenterGetDarwinNotifyCenter(), self, CFSTR("libactivator.preferencechanged"), NULL);
 	[_preferences release];
 	[_listeners release];
+	[_eventData release];
 	[super dealloc];
 }
 
@@ -303,33 +316,22 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSArray *)availableEventNames
 {
-	// TODO: Possibly cache this
-	NSMutableArray *result = [NSMutableArray array];
-	for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Events" error:NULL])
-		if (![fileName hasPrefix:@"."])
-			[result addObject:fileName];
-	return result;
-}
-
-- (NSDictionary *)_infoForEventWithName:(NSString *)name
-{
-	// TODO: Possibly cache this
-	return [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Events/%@/Info.plist", name]];
+	return [_eventData allKeys];
 }
 
 - (BOOL)eventWithNameIsHidden:(NSString *)name
 {
-	return [[[self _infoForEventWithName:name] objectForKey:@"hidden"] boolValue];
+	return [[[_eventData objectForKey:name] objectForKey:@"hidden"] boolValue];
 }
 
 - (NSArray *)compatibleModesForEventWithName:(NSString *)name
 {
-	return [[self _infoForEventWithName:name] objectForKey:@"compatible-modes"] ?: [self availableEventModes];
+	return [[_eventData objectForKey:name] objectForKey:@"compatible-modes"] ?: [self availableEventModes];
 }
 
 - (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
 {
-	NSArray *compatibleModes = [[self _infoForEventWithName:eventName] objectForKey:@"compatible-modes"];
+	NSArray *compatibleModes = [[_eventData objectForKey:eventName] objectForKey:@"compatible-modes"];
 	if (compatibleModes)
 		return [compatibleModes containsObject:eventMode];
 	return YES;
@@ -339,31 +341,22 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSArray *)availableListenerNames
 {
-	NSMutableArray *result = [NSMutableArray array];
-	for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Listeners" error:NULL])
-		if (![fileName hasPrefix:@"."])
-			[result addObject:fileName];
-	return result;
-}
-
-- (NSDictionary *)_infoForListenerWithName:(NSString *)name
-{
-	return [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Listeners/%@/Info.plist", name]];
+	return [_listenerData allKeys];
 }
 
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name
 {
-	return [[[self _infoForListenerWithName:name] objectForKey:@"requires-event"] boolValue];
+	return [[[_listenerData objectForKey:name] objectForKey:@"requires-event"] boolValue];
 }
 
 - (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
 {
-	return [[self _infoForListenerWithName:name] objectForKey:@"compatible-modes"] ?: [self availableEventModes];
+	return [[_listenerData objectForKey:name] objectForKey:@"compatible-modes"] ?: [self availableEventModes];
 }
 
 - (BOOL)listenerWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
 {
-	NSArray *compatibleModes = [[self _infoForListenerWithName:eventName] objectForKey:@"compatible-modes"];
+	NSArray *compatibleModes = [[_listenerData objectForKey:eventName] objectForKey:@"compatible-modes"];
 	if (compatibleModes)
 		return [compatibleModes containsObject:eventMode];
 	return NO;
@@ -418,17 +411,17 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSString *)localizedTitleForEventName:(NSString *)eventName
 {	
-	return [[self _infoForEventWithName:eventName] objectForKey:@"title"] ?: eventName;
+	return [[_eventData objectForKey:eventName] objectForKey:@"title"] ?: eventName;
 }
 
 - (NSString *)localizedTitleForListenerName:(NSString *)listenerName
 {
-	return [[self _infoForListenerWithName:listenerName] objectForKey:@"title"] ?: listenerName;
+	return [[_listenerData objectForKey:listenerName] objectForKey:@"title"] ?: listenerName;
 }
 
 - (NSString *)localizedGroupForEventName:(NSString *)eventName
 {
-	return [[self _infoForEventWithName:eventName] objectForKey:@"group"];
+	return [[_eventData objectForKey:eventName] objectForKey:@"group"];
 }
 
 - (NSString *)localizedDescriptionForEventMode:(NSString *)eventMode
@@ -444,12 +437,12 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName
 {
-	return [[self _infoForEventWithName:eventName] objectForKey:@"description"];
+	return [[_eventData objectForKey:eventName] objectForKey:@"description"];
 }
 
 - (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName
 {
-	return [[self _infoForListenerWithName:listenerName] objectForKey:@"description"];
+	return [[_listenerData objectForKey:listenerName] objectForKey:@"description"];
 }
 
 @end

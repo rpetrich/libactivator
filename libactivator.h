@@ -31,6 +31,8 @@
 	NSMutableDictionary *_listeners;
 	NSMutableDictionary *_preferences;
 	NSUInteger _suppressReload;
+	NSMutableDictionary *_eventData;
+	NSMutableDictionary *_listenerData;
 }
 + (LAActivator *)sharedInstance;
 
