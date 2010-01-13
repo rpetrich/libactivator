@@ -231,20 +231,22 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 // Setting Assignments
 
-- (BOOL)assignEvent:(LAEvent *)event toListenerWithName:(NSString *)listenerName
+- (void)assignEvent:(LAEvent *)event toListenerWithName:(NSString *)listenerName
 {
 	LoadPreferences();
 	NSString *eventName = [event name];
 	NSString *eventMode = [event mode];
-	if ([eventMode length])
-		[_preferences setObject:listenerName forKey:ListenerKeyForEventNameAndMode(eventName, eventMode)];
-	else {
-		for (NSString *mode in [self availableEventModes])
-			[_preferences setObject:listenerName forKey:ListenerKeyForEventNameAndMode(eventName, mode)];
+	if ([eventMode length]) {
+		if ([self listenerWithName:listenerName isCompatibleWithMode:eventMode])
+			if ([self eventWithName:eventName isCompatibleWithMode:eventMode])
+				[_preferences setObject:listenerName forKey:ListenerKeyForEventNameAndMode(eventName, eventMode)];
+	} else {
+		for (NSString *mode in [self compatibleEventModesForListenerWithName:listenerName])
+			if ([self eventWithName:eventName isCompatibleWithMode:mode])
+				[_preferences setObject:listenerName forKey:ListenerKeyForEventNameAndMode(eventName, mode)];
 	}
 	// Save Preferences
 	[self _savePreferences];
-	return YES;
 }
 
 - (void)unassignEvent:(LAEvent *)event
@@ -320,6 +322,19 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	return [[[self _infoForEventWithName:name] objectForKey:@"hidden"] boolValue];
 }
 
+- (NSArray *)compatibleModesForEventWithName:(NSString *)name
+{
+	return [[self _infoForEventWithName:name] objectForKey:@"compatible-modes"] ?: [self availableEventModes];
+}
+
+- (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
+{
+	NSArray *compatibleModes = [[self _infoForEventWithName:eventName] objectForKey:@"compatible-modes"];
+	if (compatibleModes)
+		return [compatibleModes containsObject:eventMode];
+	return YES;
+}
+
 // Listeners
 
 - (NSArray *)availableListenerNames
@@ -343,8 +358,15 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
 {
-	NSArray *setting = [[self _infoForListenerWithName:name] objectForKey:@"compatible-modes"];
-	return setting ?: [self availableEventModes];
+	return [[self _infoForListenerWithName:name] objectForKey:@"compatible-modes"] ?: [self availableEventModes];
+}
+
+- (BOOL)listenerWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
+{
+	NSArray *compatibleModes = [[self _infoForListenerWithName:eventName] objectForKey:@"compatible-modes"];
+	if (compatibleModes)
+		return [compatibleModes containsObject:eventMode];
+	return NO;
 }
 
 - (UIImage *)iconForListenerName:(NSString *)listenerName

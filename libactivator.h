@@ -12,12 +12,12 @@
 	BOOL _handled;
 }
 + (id)eventWithName:(NSString *)name;
-+ (id)eventWithName:(NSString *)name mode:(NSString *)mode; // libactivator 1.1+
++ (id)eventWithName:(NSString *)name mode:(NSString *)mode;
 - (id)initWithName:(NSString *)name;
-- (id)initWithName:(NSString *)name mode:(NSString *)mode; // libactivator 1.1+
+- (id)initWithName:(NSString *)name mode:(NSString *)mode;
 
 @property (nonatomic, readonly) NSString *name;
-@property (nonatomic, readonly) NSString *mode; // libactivator 1.1+
+@property (nonatomic, readonly) NSString *mode;
 @property (nonatomic, getter=isHandled) BOOL handled;
 
 @end
@@ -43,24 +43,27 @@
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name;
 - (void)unregisterListenerWithName:(NSString *)name;
 
-- (BOOL)hasSeenListenerWithName:(NSString *)name; // libactivator 1.0.1+
+- (BOOL)hasSeenListenerWithName:(NSString *)name;
 
-- (BOOL)assignEvent:(LAEvent *)event toListenerWithName:(NSString *)listenerName; // libactivator 1.1+
-- (void)unassignEvent:(LAEvent *)event; // libactivator 1.1+
-- (NSString *)assignedListenerNameForEvent:(LAEvent *)event; // libactivator 1.1+
-- (NSArray *)eventsAssignedToListenerWithName:(NSString *)listenerName; // libactivator 1.1+
+- (void)assignEvent:(LAEvent *)event toListenerWithName:(NSString *)listenerName;
+- (void)unassignEvent:(LAEvent *)event;
+- (NSString *)assignedListenerNameForEvent:(LAEvent *)event;
+- (NSArray *)eventsAssignedToListenerWithName:(NSString *)listenerName;
 
-@property (nonatomic, readonly) NSArray *availableEventNames; // libactivator 1.0.1+
+@property (nonatomic, readonly) NSArray *availableEventNames;
 - (BOOL)eventWithNameIsHidden:(NSString *)name;
+- (NSArray *)compatibleModesForEventWithName:(NSString *)name;
+- (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
 
-@property (nonatomic, readonly) NSArray *availableListenerNames; // libactivator 1.0.1+
+@property (nonatomic, readonly) NSArray *availableListenerNames;
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name;
 - (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
+- (BOOL)listenerWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
 - (UIImage *)iconForListenerName:(NSString *)listenerName;
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName;
 
-@property (nonatomic, readonly) NSArray *availableEventModes; // libactivator 1.0.1+
-- (NSString *)currentEventMode; // libactivator 1.1+
+@property (nonatomic, readonly) NSArray *availableEventModes;
+- (NSString *)currentEventMode;
 
 @end
 
@@ -100,9 +103,9 @@
 
 @end
 
-extern NSString * const LAEventModeSpringBoard; // libactivator 1.1+
-extern NSString * const LAEventModeApplication; // libactivator 1.1+
-extern NSString * const LAEventModeLockScreen; // libactivator 1.1+
+extern NSString * const LAEventModeSpringBoard;
+extern NSString * const LAEventModeApplication;
+extern NSString * const LAEventModeLockScreen;
 
 
 extern NSString * const LAEventNameMenuPressAtSpringBoard;
@@ -111,7 +114,7 @@ extern NSString * const LAEventNameMenuPressDouble;
 extern NSString * const LAEventNameMenuHoldShort;
 
 extern NSString * const LAEventNameLockHoldShort;
-extern NSString * const LAEventNameLockPressDouble; // libactivator 1.1+
+extern NSString * const LAEventNameLockPressDouble;
 
 extern NSString * const LAEventNameSpringBoardPinch;
 extern NSString * const LAEventNameSpringBoardSpread;
@@ -122,11 +125,11 @@ extern NSString * const LAEventNameStatusBarSwipeDown;
 extern NSString * const LAEventNameStatusBarTapDouble;
 extern NSString * const LAEventNameStatusBarHold;
 
-extern NSString * const LAEventNameVolumeDownUp; // libactivator 1.1+
-extern NSString * const LAEventNameVolumeUpDown; // libactivator 1.1+
+extern NSString * const LAEventNameVolumeDownUp;
+extern NSString * const LAEventNameVolumeUpDown;
 
-extern NSString * const LAEventNameSlideInFromBottom; // libactivator 1.1+
-extern NSString * const LAEventNameSlideInFromBottomLeft; // libactivator 1.1+
-extern NSString * const LAEventNameSlideInFromBottomRight; // libactivator 1.1+
+extern NSString * const LAEventNameSlideInFromBottom;
+extern NSString * const LAEventNameSlideInFromBottomLeft;
+extern NSString * const LAEventNameSlideInFromBottomRight;
 
-extern NSString * const LAEventNameMotionShake; // libactivator 1.1+
+extern NSString * const LAEventNameMotionShake;
