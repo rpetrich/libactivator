@@ -40,21 +40,6 @@ NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake
 #define kStatusBarHoldDelay                0.5f
 #define kSlideGestureWindowHeight          12.0f
 
-CHInline
-static LAEvent *LASendEventWithName(NSString *eventName)
-{
-	LAActivator *la = [LAActivator sharedInstance];
-	LAEvent *event = [[[LAEvent alloc] initWithName:eventName mode:[la currentEventMode]] autorelease];
-	[la sendEventToListener:event];
-	return event;
-}
-
-CHInline
-static void LAAbortEvent(LAEvent *event)
-{
-	[[LAActivator sharedInstance] sendAbortToListener:event];
-}
-
 @interface LASlideGestureWindow : UIWindow {
 	BOOL hasSentSlideEvent;
 }
@@ -77,6 +62,26 @@ static BOOL shouldInterceptMenuPresses;
 
 static LASlideGestureWindow *slideGestureWindow;
 static UIButton *quickDoButton;
+
+static LAActivator *activator;
+
+CHConstructor {
+	activator = [LAActivator sharedInstance];
+}
+
+CHInline
+static LAEvent *LASendEventWithName(NSString *eventName)
+{
+	LAEvent *event = [[[LAEvent alloc] initWithName:eventName mode:[activator currentEventMode]] autorelease];
+	[activator sendEventToListener:event];
+	return event;
+}
+
+CHInline
+static void LAAbortEvent(LAEvent *event)
+{
+	[activator sendAbortToListener:event];
+}
 
 @implementation LASlideGestureWindow
 
@@ -161,8 +166,13 @@ CHMethod(0, void, SpringBoard, _handleMenuButtonEvent)
 
 CHMethod(0, BOOL, SpringBoard, allowMenuDoubleTap)
 {
-	CHSuper(0, SpringBoard, allowMenuDoubleTap);
-	return YES;
+	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble mode:[activator currentEventMode]];
+	if ([activator listenerForEvent:event]) {
+		CHSuper(0, SpringBoard, allowMenuDoubleTap);
+		return YES;
+	} else {
+		return CHSuper(0, SpringBoard, allowMenuDoubleTap);
+	}
 }
 
 CHMethod(0, void, SpringBoard, handleMenuDoubleTap)
@@ -502,7 +512,6 @@ NSInteger nowPlayingButtonIndex;
 
 CHMethod(2, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePasscodeForActions, BOOL, requirePasscode)
 {
-	LAActivator *activator = [LAActivator sharedInstance];
 	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
 	NSString *listenerName = [activator assignedListenerNameForEvent:event];
 	if ([activator listenerForEvent:event]) {
