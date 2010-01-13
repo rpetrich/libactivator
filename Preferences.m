@@ -25,6 +25,7 @@ static LAActivator *activator;
 		frame.origin = CGPointZero;
 		frame.size = size;
 		_tableView = [[UITableView alloc] initWithFrame:frame style:UITableViewStyleGrouped];
+		[_tableView setRowHeight:60.0f];
 		[_tableView setDataSource:self];
 		[_tableView setDelegate:self];
 	}
@@ -59,14 +60,9 @@ static LAActivator *activator;
 	return 0;
 }
 
-- (UITableViewCellStyle)tableViewCellStyle
-{
-	return UITableViewCellStyleDefault;
-}
-
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	return [tableView dequeueReusableCellWithIdentifier:@"cell"] ?: [[[UITableViewCell alloc] initWithStyle:[self tableViewCellStyle] reuseIdentifier:@"cell"] autorelease];
+	return [tableView dequeueReusableCellWithIdentifier:@"cell"] ?: [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"cell"] autorelease];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -99,7 +95,6 @@ static LAActivator *activator;
 		_modes = [modes copy];
 		_eventName = [eventName copy];
 		_listeners = [[activator availableListenerNames] copy];
-		[[self tableView] setRowHeight:60.0f];
 	}
 	return self;
 }
@@ -128,11 +123,6 @@ static LAActivator *activator;
 		if ([[activator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:mode]] isEqualToString:listenerName])
 			assignedCount--;
 	return assignedCount > 0;
-}
-
-- (UITableViewCellStyle)tableViewCellStyle
-{
-	return UITableViewCellStyleSubtitle;
 }
 
 - (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section
@@ -230,7 +220,6 @@ static LAActivator *activator;
 				[groupList addObject:eventName];
 			}
 		}
-		[[self tableView] setRowHeight:60.0f];
 	}
 	return self;
 }
@@ -250,11 +239,6 @@ static LAActivator *activator;
 - (NSString *)eventNameForIndexPath:(NSIndexPath *)indexPath
 {
 	return [[self groupAtIndex:[indexPath section]] objectAtIndex:[indexPath row]];
-}
-
-- (UITableViewCellStyle)tableViewCellStyle
-{
-	return UITableViewCellStyleSubtitle;
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
@@ -381,8 +365,9 @@ static LAActivator *activator;
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {	
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
-	NSString *text = [activator localizedTitleForEventMode:[self eventModeForIndexPath:indexPath]];
-	[[cell textLabel] setText:text];
+	NSString *eventMode = [self eventModeForIndexPath:indexPath];
+	[[cell textLabel] setText:[activator localizedTitleForEventMode:eventMode]];
+	[[cell detailTextLabel] setText:[activator localizedDescriptionForEventMode:eventMode]];
 	[cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
 	return cell;
 }
