@@ -1,0 +1,5 @@
+#!/bin/sh
+ln -s /var/mobile /User 2> /dev/null
+touch /User/Library/Caches/libactivator.plist
+chmod 666 /User/Library/Caches/libactivator.plist
+exit 0;
