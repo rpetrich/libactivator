@@ -99,6 +99,7 @@ static LAActivator *activator;
 		_modes = [modes copy];
 		_eventName = [eventName copy];
 		_listeners = [[activator availableListenerNames] copy];
+		[[self tableView] setRowHeight:60.0f];
 	}
 	return self;
 }
@@ -129,6 +130,11 @@ static LAActivator *activator;
 	return assignedCount > 0;
 }
 
+- (UITableViewCellStyle)tableViewCellStyle
+{
+	return UITableViewCellStyleSubtitle;
+}
+
 - (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section
 {
 	return [_listeners count];
@@ -153,6 +159,8 @@ static LAActivator *activator;
 		[self countOfModesAssignedToListener:listenerName] ?
 		UITableViewCellAccessoryCheckmark :
 		UITableViewCellAccessoryNone;
+	[[cell detailTextLabel] setText:[activator localizedDescriptionForListenerName:listenerName]];
+	[[cell imageView] setImage:[activator smallIconForListenerName:listenerName]];
 	[cell setAccessoryType:accessory];
 	return cell;
 }

@@ -56,6 +56,8 @@
 @property (nonatomic, readonly) NSArray *availableListenerNames; // libactivator 1.0.1+
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name;
 - (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
+- (UIImage *)iconForListenerName:(NSString *)listenerName;
+- (UIImage *)smallIconForListenerName:(NSString *)listenerName;
 
 @property (nonatomic, readonly) NSArray *availableEventModes; // libactivator 1.0.1+
 - (NSString *)currentEventMode; // libactivator 1.1+
@@ -68,7 +70,9 @@
 - (NSString *)localizedTitleForListenerName:(NSString *)listenerName;
 
 - (NSString *)localizedGroupForEventName:(NSString *)eventName;
+
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName;
+- (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName;
 @end
 
 // Listeners

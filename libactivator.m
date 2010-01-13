@@ -347,6 +347,17 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	return setting ?: [self availableEventModes];
 }
 
+- (UIImage *)iconForListenerName:(NSString *)listenerName
+{
+	return [UIImage imageWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Listeners/%@/Icon.png", listenerName]];
+}
+
+- (UIImage *)smallIconForListenerName:(NSString *)listenerName
+{
+	return [UIImage imageWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Listeners/%@/Icon-small.png", listenerName]];
+}
+
+
 // Event Modes
 
 - (NSArray *)availableEventModes
@@ -401,6 +412,11 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName
 {
 	return [[self _infoForEventWithName:eventName] objectForKey:@"description"];
+}
+
+- (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName
+{
+	return [[self _infoForListenerWithName:listenerName] objectForKey:@"description"];
 }
 
 @end
