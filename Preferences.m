@@ -127,7 +127,7 @@ static LAActivator *activator;
 		return YES;
 	NSInteger assignedCount = [[activator eventsAssignedToListenerWithName:listenerName] count];
 	for (NSString *mode in _modes)
-		if ([[activator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:mode]] isEqualToString:listenerName])
+		if ([[activator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:mode]] isEqual:listenerName])
 			assignedCount--;
 	return assignedCount > 0;
 }
@@ -142,7 +142,7 @@ static LAActivator *activator;
 	NSInteger result = 0;
 	for (NSString *mode in _modes) {
 		NSString *assignedName = [activator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:mode]];
-		result += [assignedName isEqualToString:name];
+		result += [assignedName isEqual:name];
 	}
 	return result;
 }
@@ -179,7 +179,7 @@ static LAActivator *activator;
 	} else {
 		for (NSString *mode in _modes) {
 			NSString *otherListener = [activator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:mode]];
-			if (otherListener && ![otherListener isEqualToString:listenerName]) {
+			if (otherListener && ![otherListener isEqual:listenerName]) {
 				if (![self allowedToUnassignEventsFromListener:otherListener]) {
 					[self showLastEventMessageForListener:otherListener];
 					return;

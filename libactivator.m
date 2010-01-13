@@ -305,7 +305,7 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 		for (NSString *eventName in events) {
 			NSString *prefName = ListenerKeyForEventNameAndMode(eventName, eventMode);
 			NSString *assignedListener = [_preferences objectForKey:prefName];
-			if ([assignedListener isEqualToString:listenerName])
+			if ([assignedListener isEqual:listenerName])
 				[result addObject:[LAEvent eventWithName:eventName mode:eventMode]];
 		}
 	}
@@ -404,11 +404,11 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSString *)localizedTitleForEventMode:(NSString *)eventMode
 {
-	if ([eventMode isEqualToString:LAEventModeSpringBoard])
+	if ([eventMode isEqual:LAEventModeSpringBoard])
 		return @"At Home Screen";
-	if ([eventMode isEqualToString:LAEventModeApplication])
+	if ([eventMode isEqual:LAEventModeApplication])
 		return @"In Application";
-	if ([eventMode isEqualToString:LAEventModeLockScreen])
+	if ([eventMode isEqual:LAEventModeLockScreen])
 		return @"At Lock Screen";
 	return @"Anytime";
 }
@@ -430,11 +430,11 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSString *)localizedDescriptionForEventMode:(NSString *)eventMode
 {
-	if ([eventMode isEqualToString:LAEventModeSpringBoard])
+	if ([eventMode isEqual:LAEventModeSpringBoard])
 		return @"When SpringBoard icons are visible";
-	if ([eventMode isEqualToString:LAEventModeApplication])
+	if ([eventMode isEqual:LAEventModeApplication])
 		return @"When an application is visible";
-	if ([eventMode isEqualToString:LAEventModeLockScreen])
+	if ([eventMode isEqual:LAEventModeLockScreen])
 		return @"When is locked and lock screen is visible";
 	return nil;
 }

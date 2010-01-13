@@ -43,7 +43,7 @@ static LAActivator *activator;
 
 - (void)setListenerName:(NSString *)listenerName
 {
-	if (![_listenerName isEqualToString:listenerName]) {
+	if (![_listenerName isEqual:listenerName]) {
 		[_listenerName release];
 		_listenerName = [listenerName copy];
 		if ([self isViewLoaded])
@@ -91,7 +91,7 @@ static LAActivator *activator;
 	NSMutableArray *result = [NSMutableArray array];
 	for (NSString *mode in [activator compatibleEventModesForListenerWithName:_listenerName]) {
 		NSString *assignedName = [activator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]];
-		if ([assignedName isEqualToString:name])
+		if ([assignedName isEqual:name])
 			[result addObject:mode];
 	}
 	return result;
@@ -157,7 +157,7 @@ static LAActivator *activator;
 		NSMutableArray *otherTitles = [NSMutableArray array];
 		for (NSString *mode in compatibleModes) {
 			NSString *otherListener = [activator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]];
-			if (otherListener && ![otherListener isEqualToString:_listenerName]) {
+			if (otherListener && ![otherListener isEqual:_listenerName]) {
 				NSString *otherTitle = [activator localizedTitleForListenerName:otherListener];
 				if (![otherTitles containsObject:otherTitle])
 					[otherTitles addObject:otherTitle];
