@@ -94,7 +94,14 @@ static LAActivator *activator;
 	if ((self = [super initForContentSize:contentSize])) {
 		_modes = [modes copy];
 		_eventName = [eventName copy];
-		_listeners = [[activator availableListenerNames] copy];
+		NSMutableArray *listeners = [NSMutableArray array];
+		for (NSString *listener in [activator availableListenerNames])
+			for (NSString *mode in modes)
+				if ([activator eventWithName:eventName isCompatibleWithMode:mode]) {
+					[listeners addObject:listener];
+					break;
+				}
+		_listeners = [listeners copy];
 	}
 	return self;
 }
@@ -210,14 +217,16 @@ static LAActivator *activator;
 		BOOL showHidden = [[[NSDictionary dictionaryWithContentsOfFile:[activator settingsFilePath]] objectForKey:@"LAShowHiddenEvents"] boolValue];
 		_events = [[NSMutableDictionary alloc] init];
 		for (NSString *eventName in [activator availableEventNames]) {
-			if (!([activator eventWithNameIsHidden:eventName] || showHidden)) {
-				NSString *key = [activator localizedGroupForEventName:eventName] ?: @"";
-				NSMutableArray *groupList = [_events objectForKey:key];
-				if (!groupList) {
-					groupList = [NSMutableArray array];
-					[_events setObject:groupList forKey:key];
+			if ([activator eventWithName:eventName isCompatibleWithMode:mode]) {
+				if (!([activator eventWithNameIsHidden:eventName] || showHidden)) {
+					NSString *key = [activator localizedGroupForEventName:eventName] ?: @"";
+					NSMutableArray *groupList = [_events objectForKey:key];
+					if (!groupList) {
+						groupList = [NSMutableArray array];
+						[_events setObject:groupList forKey:key];
+					}
+					[groupList addObject:eventName];
 				}
-				[groupList addObject:eventName];
 			}
 		}
 	}

@@ -108,14 +108,14 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 		// Register for notification
 		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), self, PreferencesChangedCallback, CFSTR("libactivator.preferenceschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 		// Cache event data
-		_eventData = [[NSMutableArray alloc] init];
+		_eventData = [[NSMutableDictionary alloc] init];
 		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Events" error:NULL])
 			if (![fileName hasPrefix:@"."]) {
 				NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Events/%@/Info.plist", fileName]];
 				[_eventData setObject:dict forKey:fileName];
 			}
 		// Cache listener data
-		_listenerData = [[NSMutableArray alloc] init];
+		_listenerData = [[NSMutableDictionary alloc] init];
 		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Listeners" error:NULL])
 			if (![fileName hasPrefix:@"."]) {
 				NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Listeners/%@/Info.plist", fileName]];
@@ -331,9 +331,11 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
 {
-	NSArray *compatibleModes = [[_eventData objectForKey:eventName] objectForKey:@"compatible-modes"];
-	if (compatibleModes)
-		return [compatibleModes containsObject:eventMode];
+	if (eventMode) {
+		NSArray *compatibleModes = [[_eventData objectForKey:eventName] objectForKey:@"compatible-modes"];
+		if (compatibleModes)
+			return [compatibleModes containsObject:eventMode];
+	}
 	return YES;
 }
 
@@ -356,10 +358,12 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (BOOL)listenerWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
 {
-	NSArray *compatibleModes = [[_listenerData objectForKey:eventName] objectForKey:@"compatible-modes"];
-	if (compatibleModes)
-		return [compatibleModes containsObject:eventMode];
-	return NO;
+	if (eventMode) {
+		NSArray *compatibleModes = [[_listenerData objectForKey:eventName] objectForKey:@"compatible-modes"];
+		if (compatibleModes)
+			return [compatibleModes containsObject:eventMode];
+	}
+	return YES;
 }
 
 - (UIImage *)iconForListenerName:(NSString *)listenerName
