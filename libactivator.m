@@ -149,18 +149,18 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 {
 	BOOL shouldResave = NO;
 	if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]])) {
-		if ((_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/User/Library/Preferences/libactivator.plist"])) {
+		/*if ((_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/User/Library/Preferences/libactivator.plist"])) {
 			// Load old path
 			[[NSFileManager defaultManager] removeItemAtPath:@"/User/Library/Preferences/libactivator.plist" error:NULL];
 			shouldResave = YES;
-		} else {
+		} else {*/
 			// Create a new preference file
 			_preferences = [[NSMutableDictionary alloc] init];
-			return;
-		}
+			/*return;
+		}*/
 	}
 	// Convert old-style preferences
-	for (NSString *eventName in [self availableEventNames]) {
+	/*for (NSString *eventName in [self availableEventNames]) {
 		NSString *oldPref = [@"LAEventListener-" stringByAppendingString:eventName];
 		NSString *oldValue = [_preferences objectForKey:oldPref];
 		if (oldValue) {
@@ -172,7 +172,7 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	}
 	// Save if necessary
 	if (shouldResave)
-		[self _savePreferences];
+		[self _savePreferences];*/
 }
 
 - (void)_savePreferences
