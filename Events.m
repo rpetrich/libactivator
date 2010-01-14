@@ -184,9 +184,20 @@ CHMethod(0, void, SpringBoard, handleMenuDoubleTap)
 	CHSuper(0, SpringBoard, handleMenuDoubleTap);
 }
 
-static LAEvent *lockEventToAbort;
+static LAEvent *lockHoldEventToAbort;
 static BOOL isWaitingForLockDoubleTap;
 static BOOL wasLockedBefore;
+static BOOL suppressIsLocked;
+
+CHMethod(0, BOOL, SpringBoard, isLocked)
+{
+	if (suppressIsLocked) {
+		CHSuper(0, SpringBoard, isLocked);
+		return NO;
+	} else {
+		return CHSuper(0, SpringBoard, isLocked);
+	}
+}
 
 CHMethod(1, void, SpringBoard, lockButtonDown, GSEventRef, event)
 {
@@ -204,18 +215,16 @@ CHMethod(0, void, SpringBoard, activatorFixStatusBar)
 
 CHMethod(1, void, SpringBoard, lockButtonUp, GSEventRef, event)
 {
-	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonHoldCompleted) object:nil];
-	[self performSelector:@selector(activatorLockButtonDoubleTapAborted) withObject:nil afterDelay:kButtonHoldDelay];
-	if (lockEventToAbort) {
-		[lockEventToAbort release];
-		lockEventToAbort = nil;
+	if (lockHoldEventToAbort) {
+		[lockHoldEventToAbort release];
+		lockHoldEventToAbort = nil;
 		NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _lockButtonTimer, NSTimer *);
 		if (timer) {
 			[*timer invalidate];
 			[*timer release];
 			*timer = nil;
 		}
-	} if (isWaitingForLockDoubleTap) {
+	} else if (isWaitingForLockDoubleTap) {
 		isWaitingForLockDoubleTap = NO;
 		if (!wasLockedBefore) {
 			BOOL oldAnimationsEnabled = [UIView areAnimationsEnabled];
@@ -223,7 +232,9 @@ CHMethod(1, void, SpringBoard, lockButtonUp, GSEventRef, event)
 			[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:NO];
 			[UIView setAnimationsEnabled:oldAnimationsEnabled];
 		}
+		suppressIsLocked = YES;
 		if ([LASendEventWithName(LAEventNameLockPressDouble) isHandled]) {
+			suppressIsLocked = NO;
 			[self performSelector:@selector(activatorFixStatusBar) withObject:nil afterDelay:0.0f];
 			NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _lockButtonTimer, NSTimer *);
 			if (timer) {
@@ -232,10 +243,13 @@ CHMethod(1, void, SpringBoard, lockButtonUp, GSEventRef, event)
 				*timer = nil;
 			}
 		} else {
+			suppressIsLocked = NO;
 			[CHSharedInstance(SBUIController) lock];
 			CHSuper(1, SpringBoard, lockButtonUp, event);
 		}
 	} else {
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonHoldCompleted) object:nil];
+		[self performSelector:@selector(activatorLockButtonDoubleTapAborted) withObject:nil afterDelay:kButtonHoldDelay];
 		isWaitingForLockDoubleTap = YES;
 		CHSuper(1, SpringBoard, lockButtonUp, event);
 	}
@@ -243,21 +257,21 @@ CHMethod(1, void, SpringBoard, lockButtonUp, GSEventRef, event)
 
 CHMethod(0, void, SpringBoard, lockButtonWasHeld)
 {
-	if (lockEventToAbort) {
-		LAAbortEvent(lockEventToAbort);
-		[lockEventToAbort release];
-		lockEventToAbort = nil;
+	if (lockHoldEventToAbort) {
+		LAAbortEvent(lockHoldEventToAbort);
+		[lockHoldEventToAbort release];
+		lockHoldEventToAbort = nil;
 	}
 	CHSuper(0, SpringBoard, lockButtonWasHeld);
 }
 
 CHMethod(0, void, SpringBoard, activatorLockButtonHoldCompleted)
 {
-	[lockEventToAbort release];
-	lockEventToAbort = nil;
+	[lockHoldEventToAbort release];
+	lockHoldEventToAbort = nil;
 	LAEvent *event = LASendEventWithName(LAEventNameLockHoldShort);
 	if ([event isHandled])
-		lockEventToAbort = [event retain];
+		lockHoldEventToAbort = [event retain];
 }
 
 CHMethod(0, void, SpringBoard, activatorLockButtonDoubleTapAborted)
@@ -298,7 +312,7 @@ CHMethod(1, void, SpringBoard, menuButtonUp, GSEventRef, event)
 
 CHMethod(0, void, SpringBoard, menuButtonWasHeld)
 {
-	if (lockEventToAbort) {
+	if (menuEventToAbort) {
 		LAAbortEvent(menuEventToAbort);
 		[menuEventToAbort release];
 		menuEventToAbort = nil;
@@ -550,6 +564,7 @@ CHConstructor
 	CHHook(0, SpringBoard, _handleMenuButtonEvent);
 	CHHook(0, SpringBoard, allowMenuDoubleTap);
 	CHHook(0, SpringBoard, handleMenuDoubleTap);
+	CHHook(0, SpringBoard, isLocked);
 	CHHook(1, SpringBoard, lockButtonDown);
 	CHHook(0, SpringBoard, activatorFixStatusBar);
 	CHHook(1, SpringBoard, lockButtonUp);
