@@ -1,0 +1,96 @@
+{
+	/* Settings Controller */
+	
+	CANT_DEACTIVATE_REMAINING = "Can't deactivate\nremaining event";
+	AT_LEAST_ONE_ASSIGNMENT_REQUIRED = "At least one event must be\nassigned to %@";
+	ALERT_OK = "OK";
+	ALERT_VALUE_AND = " and ";
+	ALREADY_ASSIGNED_TO = "Already assigned to\n%@";
+	ALERT_CANCEL = "Cancel";
+	ALERT_REASSIGN = "Reassign";
+	ACTIVATOR_SETTINGS = "Activator Settings";
+	
+	/* Modes */
+	
+	MODE_TITLE_all = "Anytime";
+	MODE_DESCRIPTION_all = "";
+	
+	MODE_TITLE_springboard = "At Home Screen";
+	MODE_DESCRIPTION_springboard = "When SpringBoard icons are visible";
+	
+	MODE_TITLE_application = "In Application";
+	MODE_DESCRIPTION_application = "When an application is visible";
+	
+	MODE_TITLE_lockscreen = "At Lock Screen";
+	MODE_DESCRIPTION_lockscreen = "When is locked and lock screen is visible";
+	
+	/* Event Groups */
+	
+	"EVENT_GROUP_TITLE_Slide In Gesture" = "Slide In Gesture";
+	"EVENT_GROUP_TITLE_Motion" = "Motion";
+	"EVENT_GROUP_TITLE_SpringBoard" = "SpringBoard";
+	"EVENT_GROUP_TITLE_Status Bar" = "Status Bar";
+	"EVENT_GROUP_TITLE_Home Button" = "Home Button";
+	"EVENT_GROUP_TITLE_Sleep Button" = "Sleep Button";
+	"EVENT_GROUP_TITLE_Volume Buttons" = "Volume Buttons";
+	
+	/* Events */
+	
+	"EVENT_TITLE_libactivator.lock.hold.short" = "Short Hold";
+	"EVENT_DESCRIPTION_libactivator.lock.hold.short" = "Press and hold sleep button";
+	
+	"EVENT_TITLE_libactivator.lock.press.double" = "Double Press";
+	"EVENT_DESCRIPTION_libactivator.lock.press.double" = "Quickly press sleep button twice";
+	
+	"EVENT_TITLE_libactivator.menu.hold.short" = "Short Hold";
+	"EVENT_DESCRIPTION_libactivator.menu.hold.short" = "Press and hold home button";
+	
+	"EVENT_TITLE_libactivator.menu.press.at-springboard" = "Single Press at SpringBoard";
+	"EVENT_DESCRIPTION_libactivator.menu.press.at-springboard" = "Press home button when at springboard";
+	
+	"EVENT_TITLE_libactivator.menu.press.double" = "Double Press";
+	"EVENT_DESCRIPTION_libactivator.menu.press.double" = "Quickly press home button twice";
+
+	"EVENT_TITLE_libactivator.menu.press.single" = "Single Press";
+	"EVENT_DESCRIPTION_libactivator.menu.press.single" = "Press home button once";
+	
+	"EVENT_TITLE_libactivator.motion.shake" = "Shake Device";
+	"EVENT_DESCRIPTION_libactivator.motion.shake" = "Shake and bake!";
+	
+	"EVENT_TITLE_libactivator.slide-in.bottom" = "From Screen Bottom";
+	"EVENT_DESCRIPTION_libactivator.slide-in.bottom" = "Drag onto screen from below";
+	
+	"EVENT_TITLE_libactivator.slide-in.bottom-left" = "From Screen Bottom-Left";
+	"EVENT_DESCRIPTION_libactivator.slide-in.bottom-left" = "Drag onto screen from bottom-left";
+	
+	"EVENT_TITLE_libactivator.slide-in.bottom-right" = "From Screen Bottom-Right";
+	"EVENT_DESCRIPTION_libactivator.slide-in.bottom-right" = "Drag onto screen from bottom-right";
+	
+	"EVENT_TITLE_libactivator.springboard.pinch" = "Icon Pinch";
+	"EVENT_DESCRIPTION_libactivator.springboard.pinch" = "Pinch springboard icons with 2 fingers";
+	
+	"EVENT_TITLE_libactivator.springboard.spread" = "Icon Pinch";
+	"EVENT_DESCRIPTION_libactivator.springboard.spread" = "Spread springboard icons with 2 fingers";
+	
+	"EVENT_TITLE_libactivator.statusbar.hold" = "Hold";
+	"EVENT_DESCRIPTION_libactivator.statusbar.hold" = "Tap and hold on the status bar";
+	
+	"EVENT_TITLE_libactivator.statusbar.swipe.down" = "Swipe Down";
+	"EVENT_DESCRIPTION_libactivator.statusbar.swipe.down" = "Tap and drag down from status bar";
+	
+	"EVENT_TITLE_libactivator.statusbar.swipe.left" = "Swipe Left";
+	"EVENT_DESCRIPTION_libactivator.statusbar.swipe.left" = "Tap and drag left on status bar";
+	
+	"EVENT_TITLE_libactivator.statusbar.swipe.right" = "Swipe Right";
+	"EVENT_DESCRIPTION_libactivator.statusbar.swipe.right" = "Tap and drag right on status bar";
+
+	"EVENT_TITLE_libactivator.statusbar.tap.double" = "Double Tap";
+	"EVENT_DESCRIPTION_libactivator.statusbar.tap.double" = "Double-tap on status bar";	
+	
+	"EVENT_TITLE_libactivator.volume.down-up" = "Down, Up";
+	"EVENT_DESCRIPTION_libactivator.volume.down-up" = "Press volume down, then up";	
+	
+	"EVENT_TITLE_libactivator.volume.up-down" = "Up, Down";
+	"EVENT_DESCRIPTION_libactivator.volume.up-down" = "Press volume up, then down";	
+	
+}

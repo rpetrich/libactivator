@@ -120,7 +120,10 @@ static LAActivator *activator;
 
 - (void)showLastEventMessageForListener:(NSString *)listenerName
 {
-	UIAlertView *av = [[UIAlertView alloc] initWithTitle:@"Can't deactivate\nremaining event" message:[@"At least one event must be\nassigned to " stringByAppendingString:[activator localizedTitleForListenerName:listenerName]] delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
+	NSString *title = [activator localizedStringForKey:@"CANT_DEACTIVATE_REMAINING" value:@"Can't deactivate\nremaining event"];
+	NSString *message = [NSString stringWithFormat:[activator localizedStringForKey:@"AT_LEAST_ONE_ASSIGNMENT_REQUIRED" value:@"At least one event must be\nassigned to %@"], [activator localizedTitleForListenerName:listenerName]];
+	NSString *cancelButtonTitle = [activator localizedStringForKey:@"ALERT_OK" value:@"OK"];
+	UIAlertView *av = [[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:cancelButtonTitle otherButtonTitles:nil];
 	[av show];
 	[av release];
 }
@@ -359,7 +362,7 @@ static LAActivator *activator;
 	if ([_title length])
 		return _title;
 	else
-		return @"Activator Settings";
+		return [activator localizedStringForKey:@"ACTIVATOR_SETTINGS" value:@"Activator Settings"];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView

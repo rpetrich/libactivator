@@ -130,7 +130,10 @@ static LAActivator *activator;
 
 - (void)showLastEventMessageForListener:(NSString *)listenerName
 {
-	UIAlertView *av = [[UIAlertView alloc] initWithTitle:@"Can't deactivate\nremaining event" message:[@"At least one event must be\nassigned to " stringByAppendingString:[activator localizedTitleForListenerName:listenerName]] delegate:nil cancelButtonTitle:@"OK" otherButtonTitles:nil];
+	NSString *title = [activator localizedStringForKey:@"CANT_DEACTIVATE_REMAINING" value:@"Can't deactivate\nremaining event"];
+	NSString *message = [NSString stringWithFormat:[activator localizedStringForKey:@"AT_LEAST_ONE_ASSIGNMENT_REQUIRED" value:@"At least one event must be\nassigned to %@"], [activator localizedTitleForListenerName:listenerName]];
+	NSString *cancelButtonTitle = [activator localizedStringForKey:@"ALERT_OK" value:@"OK"];
+	UIAlertView *av = [[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:cancelButtonTitle otherButtonTitles:nil];
 	[av show];
 	[av release];
 }
@@ -174,8 +177,11 @@ static LAActivator *activator;
 		}
 		// Show Reassign message if necessary
 		if ([otherTitles count]) {
-			NSString *alertTitle = [@"Already assigned to\n" stringByAppendingString:[otherTitles componentsJoinedByString:@" and "]];
-			UIAlertView *av = [[UIAlertView alloc] initWithTitle:alertTitle message:@"Only one action can be assigned\nto each event." delegate:self cancelButtonTitle:@"Cancel" otherButtonTitles:@"Reassign", nil];
+			NSString *separator = [activator localizedStringForKey:@"ALERT_VALUE_AND" value:@" and "];
+			NSString *alertTitle = [NSString stringWithFormat:[activator localizedStringForKey:@"ALREADY_ASSIGNED_TO" value:@"Already assigned to\n%@"], [otherTitles componentsJoinedByString:separator]];
+			NSString *cancelButtonTitle = [activator localizedStringForKey:@"ALERT_CANCEL" value:@"Cancel"];
+			NSString *reassignButtonTitle = [activator localizedStringForKey:@"ALERT_REASSIGN" value:@"Reassign"];
+			UIAlertView *av = [[UIAlertView alloc] initWithTitle:alertTitle message:nil delegate:self cancelButtonTitle:cancelButtonTitle otherButtonTitles:reassignButtonTitle, nil];
 			[av show];
 			[av release];
 			[self retain];

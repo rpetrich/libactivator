@@ -66,6 +66,13 @@ CHConstructor {
 
 #define ListenerKeyForEventNameAndMode(eventName, eventMode) \
 	[NSString stringWithFormat:@"LAEventListener(%@)-%@", (eventMode), (eventName)]
+	
+#define Localize(bundle, key, value_) ({ \
+	NSBundle *_bundle = (bundle); \
+	NSString *_key = (key); \
+	NSString *_value = (value_); \
+	(_bundle) ? [_bundle localizedStringForKey:key value:_value table:nil] : _value; \
+})
 
 static LAActivator *sharedActivator;
 
@@ -102,6 +109,7 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (id)init
 {
+	CHAutoreleasePoolForScope();
 	if ((self = [super init])) {
 		// Does not retain values!
 		_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
@@ -110,23 +118,22 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 		// Cache event data
 		_eventData = [[NSMutableDictionary alloc] init];
 		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Events" error:NULL])
-			if (![fileName hasPrefix:@"."]) {
-				NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Events/%@/Info.plist", fileName]];
-				[_eventData setObject:dict forKey:fileName];
-			}
+			if (![fileName hasPrefix:@"."])
+				[_eventData setObject:[NSBundle bundleWithPath:[@"/Library/Activator/Events" stringByAppendingPathComponent:fileName]] forKey:fileName];
 		// Cache listener data
 		_listenerData = [[NSMutableDictionary alloc] init];
 		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Listeners" error:NULL])
-			if (![fileName hasPrefix:@"."]) {
-				NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Listeners/%@/Info.plist", fileName]];
-				[_listenerData setObject:dict forKey:fileName];
-			}
+			if (![fileName hasPrefix:@"."])
+				[_listenerData setObject:[NSBundle bundleWithPath:[@"/Library/Activator/Listeners" stringByAppendingPathComponent:fileName]] forKey:fileName];
+		// Load Main Bundle
+		_mainBundle = [[NSBundle alloc] initWithPath:@"/Library/Activator"];
 	}
 	return self;
 }
 
 - (void)dealloc
 {
+	[_mainBundle release];
 	[_listenerData release];
 	CFNotificationCenterRemoveObserver(CFNotificationCenterGetDarwinNotifyCenter(), self, CFSTR("libactivator.preferencechanged"), NULL);
 	[_preferences release];
@@ -321,18 +328,18 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (BOOL)eventWithNameIsHidden:(NSString *)name
 {
-	return [[[_eventData objectForKey:name] objectForKey:@"hidden"] boolValue];
+	return [[[_eventData objectForKey:name] objectForInfoDictionaryKey:@"hidden"] boolValue];
 }
 
 - (NSArray *)compatibleModesForEventWithName:(NSString *)name
 {
-	return [[_eventData objectForKey:name] objectForKey:@"compatible-modes"] ?: [self availableEventModes];
+	return [[_eventData objectForKey:name] objectForInfoDictionaryKey:@"compatible-modes"] ?: [self availableEventModes];
 }
 
 - (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
 {
 	if (eventMode) {
-		NSArray *compatibleModes = [[_eventData objectForKey:eventName] objectForKey:@"compatible-modes"];
+		NSArray *compatibleModes = [[_eventData objectForKey:eventName] objectForInfoDictionaryKey:@"compatible-modes"];
 		if (compatibleModes)
 			return [compatibleModes containsObject:eventMode];
 	}
@@ -348,18 +355,18 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name
 {
-	return [[[_listenerData objectForKey:name] objectForKey:@"requires-event"] boolValue];
+	return [[[_listenerData objectForKey:name] objectForInfoDictionaryKey:@"requires-event"] boolValue];
 }
 
 - (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
 {
-	return [[_listenerData objectForKey:name] objectForKey:@"compatible-modes"] ?: [self availableEventModes];
+	return [[_listenerData objectForKey:name] objectForInfoDictionaryKey:@"compatible-modes"] ?: [self availableEventModes];
 }
 
 - (BOOL)listenerWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
 {
 	if (eventMode) {
-		NSArray *compatibleModes = [[_listenerData objectForKey:eventName] objectForKey:@"compatible-modes"];
+		NSArray *compatibleModes = [[_listenerData objectForKey:eventName] objectForInfoDictionaryKey:@"compatible-modes"];
 		if (compatibleModes)
 			return [compatibleModes containsObject:eventMode];
 	}
@@ -368,12 +375,14 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (UIImage *)iconForListenerName:(NSString *)listenerName
 {
-	return [UIImage imageWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Listeners/%@/Icon.png", listenerName]];
+	NSString *path = [[_listenerData objectForKey:listenerName] pathForResource:@"icon" ofType:@"png"];
+	return [UIImage imageWithContentsOfFile:path];
 }
 
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName
 {
-	return [UIImage imageWithContentsOfFile:[NSString stringWithFormat:@"/Library/Activator/Listeners/%@/Icon-small.png", listenerName]];
+	NSString *path = [[_listenerData objectForKey:listenerName] pathForResource:@"Icon-small" ofType:@"png"];
+	return [UIImage imageWithContentsOfFile:path];
 }
 
 
@@ -402,51 +411,68 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 @implementation LAActivator (Localization)
 
+- (NSString *)localizedStringForKey:(NSString *)key value:(NSString *)value;
+{
+	return Localize(_mainBundle, key, value);
+}
+
 - (NSString *)localizedTitleForEventMode:(NSString *)eventMode
 {
 	if ([eventMode isEqual:LAEventModeSpringBoard])
-		return @"At Home Screen";
+		return Localize(_mainBundle, @"MODE_TITLE_springboard", @"At Home Screen");
 	if ([eventMode isEqual:LAEventModeApplication])
-		return @"In Application";
+		return Localize(_mainBundle, @"MODE_TITLE_application", @"In Application");
 	if ([eventMode isEqual:LAEventModeLockScreen])
-		return @"At Lock Screen";
-	return @"Anytime";
+		return Localize(_mainBundle, @"MODE_TITLE_lockscreen", @"At Lock Screen");
+	return Localize(_mainBundle, @"MODE_TITLE_all", @"Anytime");
 }
 
 - (NSString *)localizedTitleForEventName:(NSString *)eventName
 {	
-	return [[_eventData objectForKey:eventName] objectForKey:@"title"] ?: eventName;
+	NSBundle *bundle = [_eventData objectForKey:eventName];
+	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"title"] ?: eventName;
+	return Localize(_mainBundle, [@"EVENT_TITLE_" stringByAppendingString:eventName], Localize(bundle, unlocalized, unlocalized) ?: eventName);
 }
 
 - (NSString *)localizedTitleForListenerName:(NSString *)listenerName
 {
-	return [[_listenerData objectForKey:listenerName] objectForKey:@"title"] ?: listenerName;
+	NSBundle *bundle = [_listenerData objectForKey:listenerName];
+	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"title"] ?: listenerName;
+	return Localize(_mainBundle, [@"LISTENER_TITLE_" stringByAppendingString:listenerName], Localize(bundle, unlocalized, unlocalized) ?: listenerName);
 }
 
 - (NSString *)localizedGroupForEventName:(NSString *)eventName
 {
-	return [[_eventData objectForKey:eventName] objectForKey:@"group"];
+	NSBundle *bundle = [_eventData objectForKey:eventName];
+	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"] ?: @"";
+	return Localize(_mainBundle, [@"EVENT_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(bundle, unlocalized, unlocalized) ?: @"");
 }
 
 - (NSString *)localizedDescriptionForEventMode:(NSString *)eventMode
 {
 	if ([eventMode isEqual:LAEventModeSpringBoard])
-		return @"When SpringBoard icons are visible";
+		return Localize(_mainBundle, @"MODE_DESCRIPTION_springboard", @"When SpringBoard icons are visible");
 	if ([eventMode isEqual:LAEventModeApplication])
-		return @"When an application is visible";
+		return Localize(_mainBundle, @"MODE_DESCRIPTION_application", @"When an application is visible");
 	if ([eventMode isEqual:LAEventModeLockScreen])
-		return @"When is locked and lock screen is visible";
-	return nil;
+		return Localize(_mainBundle, @"MODE_DESCRIPTION_lockscreen", @"When is locked and lock screen is visible");
+	return Localize(_mainBundle, @"MODE_DESCRIPTION_all", @"");
 }
 
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName
 {
-	return [[_eventData objectForKey:eventName] objectForKey:@"description"];
+	NSBundle *bundle = [_eventData objectForKey:eventName];
+	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"description"];
+	if (unlocalized)
+		return Localize(_mainBundle, [@"EVENT_DESCRIPTION_" stringByAppendingString:eventName], Localize(bundle, unlocalized, unlocalized));
+	return Localize(_mainBundle, [@"EVENT_DESCRIPTION_" stringByAppendingString:eventName], @"");
 }
 
 - (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName
 {
-	return [[_listenerData objectForKey:listenerName] objectForKey:@"description"];
+	NSBundle *bundle = [_listenerData objectForKey:listenerName];
+	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"description"];
+	return Localize(bundle, unlocalized, unlocalized);
 }
 
 @end

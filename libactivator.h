@@ -33,6 +33,7 @@
 	NSUInteger _suppressReload;
 	NSMutableDictionary *_eventData;
 	NSMutableDictionary *_listenerData;
+	NSBundle *_mainBundle;
 }
 + (LAActivator *)sharedInstance;
 
@@ -70,6 +71,8 @@
 @end
 
 @interface LAActivator (Localization)
+- (NSString *)localizedStringForKey:(NSString *)key value:(NSString *)value;
+
 - (NSString *)localizedTitleForEventMode:(NSString *)eventMode;
 - (NSString *)localizedTitleForEventName:(NSString *)eventName;
 - (NSString *)localizedTitleForListenerName:(NSString *)listenerName;
