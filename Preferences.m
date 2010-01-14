@@ -92,16 +92,20 @@ static LAActivator *activator;
 - (id)initForContentSize:(CGSize)contentSize withModes:(NSArray *)modes eventName:(NSString *)eventName
 {
 	if ((self = [super initForContentSize:contentSize])) {
-		_modes = [modes copy];
-		_eventName = [eventName copy];
+		NSMutableArray *availableModes = [NSMutableArray array];
+		for (NSString *mode in modes)
+			if ([activator eventWithName:eventName isCompatibleWithMode:mode])
+				[availableModes addObject:mode];
+		_modes = [availableModes copy];
 		NSMutableArray *listeners = [NSMutableArray array];
-		for (NSString *listener in [activator availableListenerNames])
-			for (NSString *mode in modes)
-				if ([activator eventWithName:eventName isCompatibleWithMode:mode]) {
-					[listeners addObject:listener];
+		for (NSString *listenerName in [activator availableListenerNames])
+			for (NSString *mode in _modes)
+				if ([activator listenerWithName:listenerName isCompatibleWithMode:mode]) {
+					[listeners addObject:listenerName];
 					break;
 				}
 		_listeners = [listeners copy];
+		_eventName = [eventName copy];
 	}
 	return self;
 }
@@ -167,7 +171,11 @@ static LAActivator *activator;
 	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
 	UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
 	NSString *listenerName = [_listeners objectAtIndex:[indexPath row]];
-	BOOL allAssigned = [self countOfModesAssignedToListener:listenerName] == [_modes count];
+	NSUInteger compatibleModeCount = 0;
+	for (NSString *mode in _modes)
+		if ([activator listenerWithName:listenerName isCompatibleWithMode:mode])
+			compatibleModeCount++;
+	BOOL allAssigned = [self countOfModesAssignedToListener:listenerName] >= compatibleModeCount;
 	if (allAssigned) {
 		if (![self allowedToUnassignEventsFromListener:listenerName]) {
 			[self showLastEventMessageForListener:listenerName];

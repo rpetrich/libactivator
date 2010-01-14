@@ -139,7 +139,11 @@ static LAActivator *activator;
 {
 	UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
 	NSString *eventName = [self eventNameForRowAtIndexPath:indexPath];
-	NSArray *compatibleModes = [activator compatibleEventModesForListenerWithName:_listenerName];
+	// Find compatible modes
+	NSMutableArray *compatibleModes = [NSMutableArray array];
+	for (NSString *mode in [activator compatibleEventModesForListenerWithName:_listenerName])
+		if ([activator eventWithName:eventName isCompatibleWithMode:mode])
+			[compatibleModes addObject:mode];
 	NSArray *assigned = [self compatibleModesAssignedToListener:_listenerName eventName:eventName];
 	if ([assigned count] == [compatibleModes count]) {
 		// Check if allowed to unassign. if not bail
