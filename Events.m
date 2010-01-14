@@ -38,7 +38,7 @@ NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake
 #define kStatusBarHorizontalSwipeThreshold 50.0f
 #define kStatusBarVerticalSwipeThreshold   10.0f
 #define kStatusBarHoldDelay                0.5f
-#define kSlideGestureWindowHeight          12.0f
+#define kSlideGestureWindowHeight          13.0f
 
 @interface LASlideGestureWindow : UIWindow {
 	BOOL hasSentSlideEvent;
@@ -93,6 +93,7 @@ static void LAAbortEvent(LAEvent *event)
 		frame.size.height = kSlideGestureWindowHeight;
 		slideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame];
 		[slideGestureWindow setWindowLevel:9999.0f];
+		[slideGestureWindow setBackgroundColor:[[UIColor blackColor] colorWithAlphaComponent:(1.0f / 255.0f)]]; // Content seems to be required for swipe gestures to work in-app
 	}
 	return slideGestureWindow;
 }
