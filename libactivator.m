@@ -404,7 +404,7 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSString *)description
 {
-	return [NSString stringWithFormat:@"<%s listeners=%@ %p>", class_getName([self class]), _listeners, self];
+	return [NSString stringWithFormat:@"<%s listeners=%@ events=%@ modes=%@ %p>", class_getName([self class]), _listeners, [self availableEventNames], [self availableEventModes], self];
 }
 
 @end
