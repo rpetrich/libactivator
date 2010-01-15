@@ -54,11 +54,12 @@ CHDeclareClass(SBIconScrollView);
 CHDeclareClass(SBIcon);
 CHDeclareClass(SBStatusBar);
 CHDeclareClass(SBNowPlayingAlertItem);
-CHDeclareClass(iHome);
 CHDeclareClass(SBAwayController);
+CHDeclareClass(iHome);
 CHDeclareClass(SBStatusBarController);
 
 static BOOL shouldInterceptMenuPresses;
+static BOOL shouldSuppressLockSound;
 
 static LASlideGestureWindow *slideGestureWindow;
 static UIButton *quickDoButton;
@@ -244,7 +245,9 @@ CHMethod(1, void, SpringBoard, lockButtonUp, GSEventRef, event)
 			}
 		} else {
 			suppressIsLocked = NO;
+			shouldSuppressLockSound = YES;
 			[CHSharedInstance(SBUIController) lock];
+			shouldSuppressLockSound = NO;
 			CHSuper(1, SpringBoard, lockButtonUp, event);
 		}
 	} else {
@@ -547,6 +550,12 @@ CHMethod(2, void, SBNowPlayingAlertItem, alertSheet, id, sheet, buttonClicked, N
 		LASendEventWithName(LAEventNameMenuPressDouble);
 }
 
+CHMethod(0, void, SBAwayController, playLockSound)
+{
+	if (!shouldSuppressLockSound)
+		CHSuper(0, SBAwayController, playLockSound);
+}
+
 CHMethod(0, void, iHome, inject)
 {
 	CHSuper(0, iHome, inject);
@@ -554,11 +563,11 @@ CHMethod(0, void, iHome, inject)
 	[quickDoButton release];
 	quickDoButton = [CHIvar(self, touchButton, UIButton *) retain];
 	if (quickDoButton) {
-		UIWindow *window = [button window];
+		UIWindow *window = [quickDoButton window];
 		if (window) {
 			CGRect windowFrame = [window frame];
 			CGRect screenBounds = [[UIScreen mainScreen] bounds];
-			if (frame.origin.x > screenBounds.origin.x + screenBounds.size.width / 2.0f) {
+			if (windowFrame.origin.x > screenBounds.origin.x + screenBounds.size.width / 2.0f) {
 				[sgw setHidden:YES];
 				[sgw acceptEventsFromControl:quickDoButton];
 				return;
@@ -616,10 +625,12 @@ CHConstructor
 	CHHook(2, SBNowPlayingAlertItem, configure, requirePasscodeForActions);
 	CHHook(2, SBNowPlayingAlertItem, alertSheet, buttonClicked);
 	
+	CHLoadLateClass(SBAwayController);
+	CHHook(0, SBAwayController, playLockSound);
+
 	dlopen("/Library/MobileSubstrate/DynamicLibraries/mQuickDo.dylib", RTLD_LAZY);
 	CHLoadLateClass(iHome);
 	CHHook(0, iHome, inject);
 	
-	CHLoadLateClass(SBAwayController);
 	CHLoadLateClass(SBStatusBarController);
 }
