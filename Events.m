@@ -550,12 +550,22 @@ CHMethod(2, void, SBNowPlayingAlertItem, alertSheet, id, sheet, buttonClicked, N
 CHMethod(0, void, iHome, inject)
 {
 	CHSuper(0, iHome, inject);
+	LASlideGestureWindow *sgw = [LASlideGestureWindow sharedInstance];
+	[quickDoButton release];
 	quickDoButton = [CHIvar(self, touchButton, UIButton *) retain];
 	if (quickDoButton) {
-		LASlideGestureWindow *sgw = [LASlideGestureWindow sharedInstance];
-		[sgw setHidden:YES];
-		[sgw acceptEventsFromControl:quickDoButton];
+		UIWindow *window = [button window];
+		if (window) {
+			CGRect windowFrame = [window frame];
+			CGRect screenBounds = [[UIScreen mainScreen] bounds];
+			if (frame.origin.x > screenBounds.origin.x + screenBounds.size.width / 2.0f) {
+				[sgw setHidden:YES];
+				[sgw acceptEventsFromControl:quickDoButton];
+				return;
+			}
+		}
 	}
+	[sgw setHidden:NO];
 }
 
 CHConstructor
