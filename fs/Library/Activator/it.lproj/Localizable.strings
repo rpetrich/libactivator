@@ -1,0 +1,96 @@
+{
+	/* Settings Controller */
+	
+	CANT_DEACTIVATE_REMAINING = "Impossibile disattivare\neventi rimanenti";
+	AT_LEAST_ONE_ASSIGNMENT_REQUIRED = "Almeno un evento deve essere\nassegnato a %@";
+	ALERT_OK = "OK";
+	ALERT_VALUE_AND = " e ";
+	ALREADY_ASSIGNED_TO = "Già assegnato a\n%@";
+	ALERT_CANCEL = "Annulla";
+	ALERT_REASSIGN = "Riassegna";
+	ACTIVATOR_SETTINGS = "Activator Settings";
+	
+	/* Modes */
+	
+	MODE_TITLE_all = "Sempre";
+	MODE_DESCRIPTION_all = "";
+	
+	MODE_TITLE_springboard = "Nella schermata home";
+	MODE_DESCRIPTION_springboard = "Icone della SpringBoard visibili";
+	
+	MODE_TITLE_application = "Nelle applicazioni";
+	MODE_DESCRIPTION_application = "Applicazione visibile";
+	
+	MODE_TITLE_lockscreen = "Nella lockscreen";
+	MODE_DESCRIPTION_lockscreen = "Bloccato con lockscreen visibile";
+	
+	/* Event Groups */
+	
+	"EVENT_GROUP_TITLE_Slide In Gesture" = "Slide in un gesto";
+	"EVENT_GROUP_TITLE_Motion" = "Movimento";
+	"EVENT_GROUP_TITLE_SpringBoard" = "SpringBoard";
+	"EVENT_GROUP_TITLE_Status Bar" = "Barra di stato";
+	"EVENT_GROUP_TITLE_Home Button" = "Bottone home";
+	"EVENT_GROUP_TITLE_Sleep Button" = "Bottone power";
+	"EVENT_GROUP_TITLE_Volume Buttons" = "Bottoni volume";
+	
+	/* Events */
+	
+	"EVENT_TITLE_libactivator.lock.hold.short" = "Pressione breve";
+	"EVENT_DESCRIPTION_libactivator.lock.hold.short" = "Matieni premuto il bottone power";
+	
+	"EVENT_TITLE_libactivator.lock.press.double" = "Doppia pressione";
+	"EVENT_DESCRIPTION_libactivator.lock.press.double" = "Premere due volte il bottone power";
+	
+	"EVENT_TITLE_libactivator.menu.hold.short" = "Pressione breve";
+	"EVENT_DESCRIPTION_libactivator.menu.hold.short" = "Mantieni premuto il bottone home";
+	
+	"EVENT_TITLE_libactivator.menu.press.at-springboard" = "Pressione nella SpringBoard";
+	"EVENT_DESCRIPTION_libactivator.menu.press.at-springboard" = "Pressione singola del bottone home";
+	
+	"EVENT_TITLE_libactivator.menu.press.double" = "Doppia pressione";
+	"EVENT_DESCRIPTION_libactivator.menu.press.double" = "Premere due volte il bottone home";
+
+	"EVENT_TITLE_libactivator.menu.press.single" = "Pressione singola";
+	"EVENT_DESCRIPTION_libactivator.menu.press.single" = "Premere una volta il bottone home";
+	
+	"EVENT_TITLE_libactivator.motion.shake" = "Scuoti dispositivo";
+	"EVENT_DESCRIPTION_libactivator.motion.shake" = "Scuoti!";
+	
+	"EVENT_TITLE_libactivator.slide-in.bottom" = "Dal basso";
+	"EVENT_DESCRIPTION_libactivator.slide-in.bottom" = "Scorri sullo schermo dal basso";
+	
+	"EVENT_TITLE_libactivator.slide-in.bottom-left" = "Dal basso (sinistra)";
+	"EVENT_DESCRIPTION_libactivator.slide-in.bottom-left" = "Scorri sullo schermo dal basso (sinistra)";
+	
+	"EVENT_TITLE_libactivator.slide-in.bottom-right" = "Dal basso (destra)";
+	"EVENT_DESCRIPTION_libactivator.slide-in.bottom-right" = "Scorri sullo schermo dal basso (destra)";
+	
+	"EVENT_TITLE_libactivator.springboard.pinch" = "Zoom icone";
+	"EVENT_DESCRIPTION_libactivator.springboard.pinch" = "Comprimi le icone con 2 dita";
+	
+	"EVENT_TITLE_libactivator.springboard.spread" = "Zoom icone";
+	"EVENT_DESCRIPTION_libactivator.springboard.spread" = "Allarga le icone con 2 dita";
+	
+	"EVENT_TITLE_libactivator.statusbar.hold" = "Pressione";
+	"EVENT_DESCRIPTION_libactivator.statusbar.hold" = "Mantieni premuto sulla barra di stato";
+	
+	"EVENT_TITLE_libactivator.statusbar.swipe.down" = "Scorri giù";
+	"EVENT_DESCRIPTION_libactivator.statusbar.swipe.down" = "Premi e scorri giù dalla barra di stato";
+	
+	"EVENT_TITLE_libactivator.statusbar.swipe.left" = "Scorri a sinistra";
+	"EVENT_DESCRIPTION_libactivator.statusbar.swipe.left" = "Premi e scorri a sinistra sulla barra di stato";
+	
+	"EVENT_TITLE_libactivator.statusbar.swipe.right" = "Scorri a destra";
+	"EVENT_DESCRIPTION_libactivator.statusbar.swipe.right" = "Premi e scorri a destra sulla barra di stato";
+
+	"EVENT_TITLE_libactivator.statusbar.tap.double" = "Doppia pressione";
+	"EVENT_DESCRIPTION_libactivator.statusbar.tap.double" = "Doppia pressione sulla barra di stato";	
+	
+	"EVENT_TITLE_libactivator.volume.down-up" = "Giù, Sù";
+	"EVENT_DESCRIPTION_libactivator.volume.down-up" = "Premi volume giù, poi sù";	
+	
+	"EVENT_TITLE_libactivator.volume.up-down" = "Sù, Giù";
+	"EVENT_DESCRIPTION_libactivator.volume.up-down" = "Premi volume sù, poi giù";	
+	
+}
