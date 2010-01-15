@@ -61,10 +61,36 @@ $(PREFS_TARGET): $(PREFS_OBJECTS) $(TARGET)
 package: $(TARGET) $(PREFS_TARGET) control
 		rm -rf package
 		mkdir -p package/DEBIAN
+		mkdir -p package/usr/include/libactivator
+		mkdir -p package/Library/Activator/Listeners
 		cp -a control postinst package/DEBIAN
 		cp -a fs/* package
 		cp -a libactivator.h package/usr/include/libactivator/
 		- plutil -convert binary1 package/Library/MobileSubstrate/DynamicLibraries/Activator.plist
+		- plutil -convert binary1 package/Library/Activator/Info.plist
+		- plutil -convert binary1 package/Library/Activator/en.lproj/Localizable.strings
+		- plutil -convert binary1 package/Library/Activator/it.lproj/Localizable.strings
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.lock.hold.short/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.lock.press.double/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.menu.hold.short/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.menu.press.at-springboard/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.menu.press.double/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.menu.press.single/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.motion.shake/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.slide-in.bottom/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.slide-in.bottom-left/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.slide-in.bottom-right/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.springboard.pinch/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.springboard.spread/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.statusbar.hold/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.statusbar.swipe.down/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.statusbar.swipe.left/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.statusbar.swipe.right/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.statusbar.tap.double/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.volume.down-up/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.volume.up-down/Info.plist
+		- plutil -convert binary1 package/Library/PreferenceLoader/Preferences/LibActivator.plist
+		- plutil -convert binary1 package/System/Library/PreferenceBundles/LibActivator.bundle/Info.plist
 		dpkg-deb -b package $(shell grep ^Package: control | cut -d ' ' -f 2)_$(shell grep ^Version: control | cut -d ' ' -f 2)_iphoneos-arm.deb
 		
 install: package
