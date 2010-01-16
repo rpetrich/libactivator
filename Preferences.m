@@ -362,7 +362,7 @@ static LAActivator *activator;
 	if ([_title length])
 		return _title;
 	else
-		return [activator localizedStringForKey:@"ACTIVATOR_SETTINGS" value:@"Activator Settings"];
+		return [activator localizedStringForKey:@"ACTIVATOR" value:@"Activator"];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView

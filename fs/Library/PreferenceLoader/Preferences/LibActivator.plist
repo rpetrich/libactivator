@@ -3,5 +3,5 @@ entry = {
   cell = PSLinkCell;
   icon = icon.png;
   isController = 1;
-  label = "Activator Settings";
+  label = Activator;
 };

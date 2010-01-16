@@ -8,7 +8,7 @@
 	ALREADY_ASSIGNED_TO = "Already assigned to\n%@";
 	ALERT_CANCEL = "Cancel";
 	ALERT_REASSIGN = "Reassign";
-	ACTIVATOR_SETTINGS = "Activator Settings";
+	ACTIVATOR = "Activator";
 	
 	/* Modes */
 	
