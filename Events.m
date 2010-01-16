@@ -25,6 +25,7 @@ NSString * const LAEventNameStatusBarHold          = @"libactivator.statusbar.ho
 
 NSString * const LAEventNameVolumeDownUp           = @"libactivator.volume.down-up";
 NSString * const LAEventNameVolumeUpDown           = @"libactivator.volume.up-down";
+NSString * const LAEventNameVolumeDisplayTap       = @"libactivator.volume.display-tap";
 
 NSString * const LAEventNameSlideInFromBottom      = @"libactivator.slide-in.bottom";
 NSString * const LAEventNameSlideInFromBottomLeft  = @"libactivator.slide-in.bottom-left";
@@ -39,12 +40,19 @@ NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake
 #define kStatusBarVerticalSwipeThreshold   10.0f
 #define kStatusBarHoldDelay                0.5f
 #define kSlideGestureWindowHeight          13.0f
+#define kWindowLevelTransparentTopMost     9999.0f
 
+__attribute__((visibility("hidden")))
 @interface LASlideGestureWindow : UIWindow {
 	BOOL hasSentSlideEvent;
 }
 + (id)sharedInstance;
 - (void)acceptEventsFromControl:(UIControl *)control;
+@end
+
+__attribute__((visibility("hidden")))
+@interface LAVolumeTapWindow : UIWindow {
+}
 @end
 
 CHDeclareClass(SpringBoard);
@@ -55,6 +63,7 @@ CHDeclareClass(SBIcon);
 CHDeclareClass(SBStatusBar);
 CHDeclareClass(SBNowPlayingAlertItem);
 CHDeclareClass(SBAwayController);
+CHDeclareClass(VolumeControl);
 CHDeclareClass(iHome);
 CHDeclareClass(SBStatusBarController);
 
@@ -84,6 +93,12 @@ static void LAAbortEvent(LAEvent *event)
 	[activator sendAbortToListener:event];
 }
 
+CHInline
+static id<LAListener> LAListenerForEventWithName(NSString *eventName)
+{
+	return [activator listenerForEvent:[LAEvent eventWithName:eventName mode:[activator currentEventMode]]];
+}
+
 @implementation LASlideGestureWindow
 
 + (id)sharedInstance
@@ -93,7 +108,7 @@ static void LAAbortEvent(LAEvent *event)
 		frame.origin.y += frame.size.height - kSlideGestureWindowHeight;
 		frame.size.height = kSlideGestureWindowHeight;
 		slideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame];
-		[slideGestureWindow setWindowLevel:9999.0f];
+		[slideGestureWindow setWindowLevel:kWindowLevelTransparentTopMost];
 		[slideGestureWindow setBackgroundColor:[[UIColor blackColor] colorWithAlphaComponent:(1.0f / 255.0f)]]; // Content seems to be required for swipe gestures to work in-app
 	}
 	return slideGestureWindow;
@@ -158,6 +173,15 @@ static void LAAbortEvent(LAEvent *event)
 
 @end
 
+@implementation LAVolumeTapWindow
+
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	LASendEventWithName(LAEventNameVolumeDisplayTap);
+}
+
+@end
+
 CHMethod(0, void, SpringBoard, _handleMenuButtonEvent)
 {
 	// Unfortunately there isn't a better way of doing this :(
@@ -168,8 +192,7 @@ CHMethod(0, void, SpringBoard, _handleMenuButtonEvent)
 
 CHMethod(0, BOOL, SpringBoard, allowMenuDoubleTap)
 {
-	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble mode:[activator currentEventMode]];
-	if ([activator listenerForEvent:event]) {
+	if (LAListenerForEventWithName(LAEventNameMenuPressDouble)) {
 		CHSuper(0, SpringBoard, allowMenuDoubleTap);
 		return YES;
 	} else {
@@ -531,9 +554,9 @@ NSInteger nowPlayingButtonIndex;
 CHMethod(2, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePasscodeForActions, BOOL, requirePasscode)
 {
 	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
-	NSString *listenerName = [activator assignedListenerNameForEvent:event];
 	if ([activator listenerForEvent:event]) {
 		CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
+		NSString *listenerName = [activator assignedListenerNameForEvent:event];
 		NSString *title = [activator localizedTitleForListenerName:listenerName];
 		id alertSheet = [self alertSheet];
 		//[alertSheet setNumberOfRows:2];
@@ -554,6 +577,33 @@ CHMethod(0, void, SBAwayController, playLockSound)
 {
 	if (!shouldSuppressLockSound)
 		CHSuper(0, SBAwayController, playLockSound);
+}
+
+static LAVolumeTapWindow *volumeTapWindow;
+
+CHMethod(0, void, VolumeControl, _createUI)
+{
+	if (LAListenerForEventWithName(LAEventNameVolumeDisplayTap)) {
+		CHSuper(0, VolumeControl, _createUI);
+		CHIvar(CHIvar(self, _volumeView, id), _label1, UILabel *)
+		UIWindow *window = CHIvar(self, _volumeWindow, UIWindow *);
+		if (volumeTapWindow)
+			[volumeTapWindow setFrame:[window frame]];
+		else
+			volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:[window frame]];
+		[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
+		[volumeTapWindow setHidden:NO];
+	} else {
+		CHSuper(0, VolumeControl, _createUI);
+	}
+}
+
+CHMethod(0, void, VolumeControl, _tearDown)
+{
+	[volumeTapWindow setHidden:YES];
+	[volumeTapWindow release];
+	volumeTapWindow = nil;
+	CHSuper(0, VolumeControl, _tearDown);
 }
 
 CHMethod(0, void, iHome, inject)
@@ -627,6 +677,10 @@ CHConstructor
 	
 	CHLoadLateClass(SBAwayController);
 	CHHook(0, SBAwayController, playLockSound);
+
+	CHLoadLateClass(VolumeControl);
+	CHHook(0, VolumeControl, _createUI);
+	CHHook(0, VolumeControl, _tearDown);
 
 	dlopen("/Library/MobileSubstrate/DynamicLibraries/mQuickDo.dylib", RTLD_LAZY);
 	CHLoadLateClass(iHome);

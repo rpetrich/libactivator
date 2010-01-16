@@ -85,7 +85,10 @@
 	"EVENT_DESCRIPTION_libactivator.statusbar.swipe.right" = "Tap and drag right on status bar";
 
 	"EVENT_TITLE_libactivator.statusbar.tap.double" = "Double Tap";
-	"EVENT_DESCRIPTION_libactivator.statusbar.tap.double" = "Double-tap on status bar";	
+	"EVENT_DESCRIPTION_libactivator.statusbar.tap.double" = "Double-tap on status bar";
+	
+	"EVENT_TITLE_libactivator.volume.display-tap" = "Display Tap";
+	"EVENT_DESCRIPTION_libactivator.volume.display-tap" = "Tap on volume heads up display";
 	
 	"EVENT_TITLE_libactivator.volume.down-up" = "Down, Up";
 	"EVENT_DESCRIPTION_libactivator.volume.down-up" = "Press volume down, then up";	

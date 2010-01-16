@@ -87,6 +87,7 @@ package: $(TARGET) $(PREFS_TARGET) control
 		- plutil -convert binary1 package/Library/Activator/Events/libactivator.statusbar.swipe.left/Info.plist
 		- plutil -convert binary1 package/Library/Activator/Events/libactivator.statusbar.swipe.right/Info.plist
 		- plutil -convert binary1 package/Library/Activator/Events/libactivator.statusbar.tap.double/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Events/libactivator.volume.display-tap/Info.plist
 		- plutil -convert binary1 package/Library/Activator/Events/libactivator.volume.down-up/Info.plist
 		- plutil -convert binary1 package/Library/Activator/Events/libactivator.volume.up-down/Info.plist
 		- plutil -convert binary1 package/Library/PreferenceLoader/Preferences/LibActivator.plist

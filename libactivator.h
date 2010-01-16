@@ -132,6 +132,7 @@ extern NSString * const LAEventNameStatusBarHold;
 
 extern NSString * const LAEventNameVolumeDownUp;
 extern NSString * const LAEventNameVolumeUpDown;
+extern NSString * const LAEventNameVolumeDisplayTap;
 
 extern NSString * const LAEventNameSlideInFromBottom;
 extern NSString * const LAEventNameSlideInFromBottomLeft;
