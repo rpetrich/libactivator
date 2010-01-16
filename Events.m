@@ -41,6 +41,7 @@ NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake
 #define kStatusBarHoldDelay                0.5f
 #define kSlideGestureWindowHeight          13.0f
 #define kWindowLevelTransparentTopMost     9999.0f
+#define kAlmostTransparentColor            [[UIColor blackColor] colorWithAlphaComponent:(1.0f / 255.0f)]
 
 __attribute__((visibility("hidden")))
 @interface LASlideGestureWindow : UIWindow {
@@ -109,7 +110,7 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 		frame.size.height = kSlideGestureWindowHeight;
 		slideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame];
 		[slideGestureWindow setWindowLevel:kWindowLevelTransparentTopMost];
-		[slideGestureWindow setBackgroundColor:[[UIColor blackColor] colorWithAlphaComponent:(1.0f / 255.0f)]]; // Content seems to be required for swipe gestures to work in-app
+		[slideGestureWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
 	}
 	return slideGestureWindow;
 }
@@ -585,14 +586,16 @@ CHMethod(0, void, VolumeControl, _createUI)
 {
 	if (LAListenerForEventWithName(LAEventNameVolumeDisplayTap)) {
 		CHSuper(0, VolumeControl, _createUI);
-		CHIvar(CHIvar(self, _volumeView, id), _label1, UILabel *)
 		UIWindow *window = CHIvar(self, _volumeWindow, UIWindow *);
-		if (volumeTapWindow)
-			[volumeTapWindow setFrame:[window frame]];
-		else
-			volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:[window frame]];
-		[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
-		[volumeTapWindow setHidden:NO];
+		if (window) {
+			if (volumeTapWindow)
+				[volumeTapWindow setFrame:[window frame]];
+			else
+				volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:[window frame]];
+			[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
+			[volumeTapWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
+			[volumeTapWindow setHidden:NO];
+		}
 	} else {
 		CHSuper(0, VolumeControl, _createUI);
 	}
