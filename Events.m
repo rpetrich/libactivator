@@ -614,18 +614,23 @@ CHMethod(0, void, iHome, inject)
 	CHSuper(0, iHome, inject);
 	LASlideGestureWindow *sgw = [LASlideGestureWindow sharedInstance];
 	[quickDoButton release];
-	quickDoButton = [CHIvar(self, touchButton, UIButton *) retain];
-	if (quickDoButton) {
-		UIWindow *window = [quickDoButton window];
-		if (window) {
-			CGRect windowFrame = [window frame];
-			CGRect screenBounds = [[UIScreen mainScreen] bounds];
-			if (windowFrame.origin.x > screenBounds.origin.x + screenBounds.size.width / 2.0f) {
-				[sgw setHidden:YES];
-				[sgw acceptEventsFromControl:quickDoButton];
-				return;
+	UIButton **buttonRef = CHIvarRef(self, touchButton, UIButton *);
+	if (buttonRef) {
+		quickDoButton = [*buttonRef retain];
+		if (quickDoButton) {
+			UIWindow *window = [quickDoButton window];
+			if (window) {
+				CGRect windowFrame = [window frame];
+				CGRect screenBounds = [[UIScreen mainScreen] bounds];
+				if (windowFrame.origin.y > screenBounds.origin.y + screenBounds.size.height / 2.0f) {
+					[sgw setHidden:YES];
+					[sgw acceptEventsFromControl:quickDoButton];
+					return;
+				}
 			}
 		}
+	} else {
+		quickDoButton = nil;
 	}
 	[sgw setHidden:NO];
 }
