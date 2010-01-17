@@ -300,7 +300,10 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 {
 	LoadPreferences();
 	NSString *prefName = ListenerKeyForEventNameAndMode([event name], [event mode] ?: [self currentEventMode]);
-	return [_preferences objectForKey:prefName];
+	NSString *prefValue = [_preferences objectForKey:prefName];
+	if ([_listenerData objectForKey:prefValue])
+		return prefValue;
+	return nil;
 }
 
 - (NSArray *)eventsAssignedToListenerWithName:(NSString *)listenerName
