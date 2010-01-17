@@ -1,4 +1,6 @@
 {
+	LOCALIZATION_ABOUT = "Localized by Sagitt";
+	
 	/* Settings Controller */
 	
 	CANT_DEACTIVATE_REMAINING = "Impossibile disattivare\neventi rimanenti";
@@ -8,7 +10,7 @@
 	ALREADY_ASSIGNED_TO = "Già assegnato a\n%@";
 	ALERT_CANCEL = "Annulla";
 	ALERT_REASSIGN = "Riassegna";
-	ACTIVATOR_SETTINGS = "Activator Settings";
+	ACTIVATOR = "Activator";
 	
 	/* Modes */
 	
@@ -86,6 +88,9 @@
 
 	"EVENT_TITLE_libactivator.statusbar.tap.double" = "Doppia pressione";
 	"EVENT_DESCRIPTION_libactivator.statusbar.tap.double" = "Doppia pressione sulla barra di stato";	
+	
+	"EVENT_TITLE_libactivator.volume.display-tap" = "Pressione visiva";
+	"EVENT_DESCRIPTION_libactivator.volume.display-tap" = "Premi sull'avviso visivo del volume";
 	
 	"EVENT_TITLE_libactivator.volume.down-up" = "Giù, Sù";
 	"EVENT_DESCRIPTION_libactivator.volume.down-up" = "Premi volume giù, poi sù";	

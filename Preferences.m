@@ -375,6 +375,11 @@ static LAActivator *activator;
 	return (section == 0) ? 1 : [[activator availableEventModes] count];
 }
 
+- (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
+{
+	return (section == 0) ? nil : [activator localizedStringForKey:@"LOCALIZATION_ABOUT" value:@""];
+}
+
 - (NSString *)eventModeForIndexPath:(NSIndexPath *)indexPath
 {
 	if ([indexPath section] == 0)

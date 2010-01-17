@@ -1,4 +1,6 @@
 {
+	LOCALIZATION_ABOUT = "";
+	
 	/* Settings Controller */
 	
 	CANT_DEACTIVATE_REMAINING = "Can't deactivate\nremaining event";
