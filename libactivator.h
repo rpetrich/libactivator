@@ -43,6 +43,7 @@
 - (void)sendEventToListener:(LAEvent *)event;
 - (void)sendAbortToListener:(LAEvent *)event;
 
+- (id<LAListener>)listenerForName:(NSString *)name;
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name;
 - (void)unregisterListenerWithName:(NSString *)name;
 

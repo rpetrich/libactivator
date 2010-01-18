@@ -50,6 +50,13 @@ CHConstructor {
 	return self;
 }
 
+- (id)copyWithZone:(NSZone *)zone
+{
+	id result = [[LAEvent allocWithZone:zone] initWithName:_name mode:_mode];
+	[result setHandled:_handled];
+	return result;
+}
+
 - (void)dealloc
 {
 	[_name release];
@@ -226,6 +233,11 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 }
 
 // Registration of listeners
+
+- (id<LAListener>)listenerForName:(NSString *)name
+{
+	return [_listeners objectForKey:name];
+}
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name
 {
