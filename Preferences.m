@@ -219,6 +219,11 @@ static LAActivator *activator;
 }
 @end
 
+NSInteger CompareEventNamesCallback(id a, id b, void *context)
+{
+	return [[activator localizedTitleForEventName:a] localizedCaseInsensitiveCompare:[activator localizedTitleForEventName:b]];
+}
+
 @implementation ActivatorModeViewController
 
 - (id)initForContentSize:(CGSize)contentSize withMode:(NSString *)mode
@@ -240,6 +245,8 @@ static LAActivator *activator;
 				}
 			}
 		}
+		for (NSString *key in [_events allKeys])
+			[[_events objectForKey:key] sortUsingFunction:CompareEventNamesCallback context:nil];
 	}
 	return self;
 }

@@ -5,6 +5,11 @@
 
 static LAActivator *activator;
 
+NSInteger CompareEventNamesCallback(id a, id b, void *context)
+{
+	return [[activator localizedTitleForEventName:a] localizedCaseInsensitiveCompare:[activator localizedTitleForEventName:b]];
+}
+
 @implementation LAListenerSettingsViewController 
 
 - (id)init
@@ -24,6 +29,8 @@ static LAActivator *activator;
 				[groupList addObject:eventName];
 			}
 		}
+		for (NSString *key in [_events allKeys])
+			[[_events objectForKey:key] sortUsingFunction:CompareEventNamesCallback context:nil];
 	}
 	return self;
 }
