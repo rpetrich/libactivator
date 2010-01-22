@@ -103,6 +103,7 @@
 	NSString *_listenerName;
 	NSString *_eventMode;
 	NSMutableDictionary *_events;
+	NSArray *_groups;
 }
 
 - (id)init;

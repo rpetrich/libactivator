@@ -252,6 +252,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 @private
 	NSString *_eventMode;
 	NSMutableDictionary *_events;
+	NSArray *_groups;
 }
 @end
 
@@ -281,14 +282,17 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 				}
 			}
 		}
-		for (NSString *key in [_events allKeys])
+		NSArray *groupNames = [_events allKeys];
+		for (NSString *key in groupNames)
 			[[_events objectForKey:key] sortUsingFunction:CompareEventNamesCallback context:nil];
+		_groups = [[groupNames sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] retain];
 	}
 	return self;
 }
 
 - (void)dealloc
 {
+	[_groups release];
 	[_events release];
 	[_eventMode release];
 	[super dealloc];
@@ -296,7 +300,7 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (NSMutableArray *)groupAtIndex:(NSInteger)index
 {
-	return [_events objectForKey:[[_events allKeys] objectAtIndex:index]];
+	return [_events objectForKey:[_groups objectAtIndex:index]];
 }
 
 - (NSString *)eventNameForIndexPath:(NSIndexPath *)indexPath
@@ -306,12 +310,12 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return [[_events allKeys] count];
+	return [_groups count];
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
-	return [[_events allKeys] objectAtIndex:section];
+	return [_groups objectAtIndex:section];
 }
 
 - (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section
