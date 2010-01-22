@@ -83,7 +83,8 @@ static LAActivator *activator;
 @private
 	NSArray *_modes;
 	NSString *_eventName;
-	NSArray *_listeners;
+	NSMutableDictionary *_listeners;
+	NSArray *_groups;
 }
 @end
 
@@ -102,15 +103,23 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			if ([activator eventWithName:eventName isCompatibleWithMode:mode])
 				[availableModes addObject:mode];
 		_modes = [availableModes copy];
-		NSMutableArray *listeners = [NSMutableArray array];
+		_listeners = [[NSMutableDictionary alloc] init];
 		for (NSString *listenerName in [activator availableListenerNames])
 			for (NSString *mode in _modes)
 				if ([activator listenerWithName:listenerName isCompatibleWithMode:mode]) {
-					[listeners addObject:listenerName];
+					NSString *key = [activator localizedGroupForListenerName:listenerName]?:@"";
+					NSMutableArray *groupList = [_listeners objectForKey:key];
+					if (!groupList) {
+						groupList = [NSMutableArray array];
+						[_listeners setObject:groupList forKey:key];
+					}					
+					[groupList addObject:listenerName];
 					break;
 				}
-		[listeners sortUsingFunction:CompareListenerNamesCallback context:nil];
-		_listeners = [listeners copy];
+		NSArray *groupNames = [_listeners allKeys];
+		for (NSString *key in groupNames)
+			[[_listeners objectForKey:key] sortUsingFunction:CompareListenerNamesCallback context:nil];
+		_groups = [[groupNames sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] retain];
 		_eventName = [eventName copy];
 	}
 	return self;
@@ -118,6 +127,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)dealloc
 {
+	[_groups release];
 	[_listeners release];
 	[_eventName release];
 	[_modes release];
@@ -145,9 +155,29 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	return assignedCount > 0;
 }
 
+- (NSMutableArray *)groupAtIndex:(NSInteger)index
+{
+	return [_listeners objectForKey:[_groups objectAtIndex:index]];
+}
+
+- (NSString *)listenerNameForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	return [[self groupAtIndex:[indexPath section]] objectAtIndex:[indexPath row]];
+}
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
+{
+	return [_groups count];
+}
+
+- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
+{
+	return [_groups objectAtIndex:section];
+}
+
 - (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section
 {
-	return [_listeners count];
+	return [[self groupAtIndex:section] count];
 }
 
 - (NSInteger)countOfModesAssignedToListener:(NSString *)name
@@ -163,7 +193,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
-	NSString *listenerName = [_listeners objectAtIndex:[indexPath row]];
+	NSString *listenerName = [self listenerNameForRowAtIndexPath:indexPath];
 	[[cell textLabel] setText:[activator localizedTitleForListenerName:listenerName]];
 	UITableViewCellAccessoryType accessory = 
 		[self countOfModesAssignedToListener:listenerName] ?
@@ -179,7 +209,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
 	UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-	NSString *listenerName = [_listeners objectAtIndex:[indexPath row]];
+	NSString *listenerName = [self listenerNameForRowAtIndexPath:indexPath];
 	NSUInteger compatibleModeCount = 0;
 	for (NSString *mode in _modes)
 		if ([activator listenerWithName:listenerName isCompatibleWithMode:mode])

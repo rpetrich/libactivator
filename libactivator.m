@@ -463,6 +463,15 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	return Localize(_mainBundle, [@"EVENT_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(bundle, unlocalized, unlocalized) ?: @"");
 }
 
+- (NSString *)localizedGroupForListenerName:(NSString *)listenerName
+{
+	NSBundle *bundle = [_listenerData objectForKey:listenerName];
+	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"];
+	if (unlocalized)
+		return Localize(bundle, unlocalized, unlocalized);
+	return @"";
+}
+
 - (NSString *)localizedDescriptionForEventMode:(NSString *)eventMode
 {
 	if ([eventMode isEqual:LAEventModeSpringBoard])

@@ -79,6 +79,7 @@
 - (NSString *)localizedTitleForListenerName:(NSString *)listenerName;
 
 - (NSString *)localizedGroupForEventName:(NSString *)eventName;
+- (NSString *)localizedGroupForListenerName:(NSString *)listenerName;
 
 - (NSString *)localizedDescriptionForEventMode:(NSString *)eventMode;
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName;
