@@ -71,7 +71,7 @@
 	"EVENT_TITLE_libactivator.springboard.pinch" = "Icon Pinch";
 	"EVENT_DESCRIPTION_libactivator.springboard.pinch" = "Pinch springboard icons with 2 fingers";
 	
-	"EVENT_TITLE_libactivator.springboard.spread" = "Icon Pinch";
+	"EVENT_TITLE_libactivator.springboard.spread" = "Icon Spread";
 	"EVENT_DESCRIPTION_libactivator.springboard.spread" = "Spread springboard icons with 2 fingers";
 	
 	"EVENT_TITLE_libactivator.statusbar.hold" = "Hold";
