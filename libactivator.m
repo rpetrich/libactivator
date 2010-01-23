@@ -2,6 +2,7 @@
 
 #import <SpringBoard/SpringBoard.h>
 #import <CaptainHook/CaptainHook.h>
+#import <AppSupport/AppSupport.h>
 
 #include <objc/runtime.h>
 #include <sys/stat.h>
@@ -50,6 +51,23 @@ CHConstructor {
 	return self;
 }
 
+- (id)initWithCoder:(NSCoder *)coder
+{
+	if ((self = [super init])) {
+		_name = [[coder decodeObjectForKey:@"name"] copy];
+		_mode = [[coder decodeObjectForKey:@"mode"] copy];
+		_handled = [coder decodeBoolForKey:@"handled"];
+	}
+	return self;
+}
+
+- (void)encodeWithCoder:(NSCoder *)coder
+{
+	[coder encodeObject:_name forKey:@"name"];
+	[coder encodeObject:_mode forKey:@"mode"];
+	[coder encodeBool:_handled forKey:@"handled"];
+}
+
 - (id)copyWithZone:(NSZone *)zone
 {
 	id result = [[LAEvent allocWithZone:zone] initWithName:_name mode:_mode];
@@ -81,12 +99,76 @@ CHConstructor {
 	(_bundle) ? [_bundle localizedStringForKey:key value:_value table:nil] : _value; \
 })
 
+@interface LARemoteListener : NSObject<LAListener> {
+@private
+	NSString *_listenerName;
+	CPDistributedMessagingCenter *_messagingCenter;
+}
+@end
+
+@implementation LARemoteListener
+
+- (id)initWithListenerName:(NSString *)listenerName
+{
+	if ((self = [super init])) {
+		_listenerName = [listenerName copy];
+		_messagingCenter = [[CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"] retain];
+	}
+	return self;
+}
+
+- (void)dealloc
+{
+	[_messagingCenter release];
+	[_listenerName release];
+	[super dealloc];
+}
+
+- (BOOL)respondsToSelector:(SEL)selector
+{
+	if (selector == @selector(activator:receiveEvent:) ||
+		selector == @selector(activator:abortEvent:) ||
+		selector == @selector(activator:otherListenerDidHandleEvent:)
+	) {
+		NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:NSStringFromSelector(selector), @"selector", _listenerName, @"listenerName", nil];
+		id reply = [_messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(_cmd) userInfo:userInfo];
+		return [reply boolValue];
+	}
+	return [super respondsToSelector:selector];
+}
+
+- (void)_performRemoteSelector:(SEL)selector withEvent:(LAEvent *)event
+{
+	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:[NSKeyedArchiver archivedDataWithRootObject:event], @"event", _listenerName, @"listenerName", nil];
+	NSData *reply = (NSData *)[_messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
+	LAEvent *newEvent = [NSKeyedUnarchiver unarchiveObjectWithData:reply];
+	[event setHandled:[newEvent isHandled]];
+}
+
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
+{
+	[self _performRemoteSelector:_cmd withEvent:event];
+}
+
+- (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event
+{
+	[self _performRemoteSelector:_cmd withEvent:event];
+}
+
+- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event
+{
+	[self _performRemoteSelector:_cmd withEvent:event];
+}
+
+@end
+
 static LAActivator *sharedActivator;
 
 @interface LAActivator ()
 - (void)_loadPreferences;
 - (void)_savePreferences;
 - (void)_reloadPreferences;
+- (CFPropertyListRef)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
 @end
 
 static void PreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
@@ -113,13 +195,21 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Caches/libactivator.plist"];
 }
 
-
 - (id)init
 {
 	CHAutoreleasePoolForScope();
 	if ((self = [super init])) {
-		// Does not retain values!
-		_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
+		// Detect if we're inside SpringBoard
+		if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"]) {
+			CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+			[messagingCenter runServerOnCurrentThread];
+			[messagingCenter registerForMessageName:@"respondsToSelector:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"activator:receiveEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"activator:abortEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"activator:otherListenerDidHandleEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+			// Does not retain values!
+			_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
+  		}
 		// Register for notification
 		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), self, PreferencesChangedCallback, CFSTR("libactivator.preferenceschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 		// Cache event data
@@ -206,11 +296,25 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	}
 }
 
+- (CFPropertyListRef)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
+{
+	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
+	id<LAListener> listener = [self listenerForName:listenerName];
+	if ([message isEqualToString:@"respondsToSelector:"]) {
+		SEL selector = NSSelectorFromString([userInfo objectForKey:@"selector"]);
+		return [listener respondsToSelector:selector] ? kCFBooleanTrue : kCFBooleanFalse;
+	} else {
+		LAEvent *event = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"event"]];
+		[listener performSelector:NSSelectorFromString(message) withObject:self withObject:event];
+		return [NSKeyedArchiver archivedDataWithRootObject:event];
+	}
+}
+
 // Sending Events
 
 - (id<LAListener>)listenerForEvent:(LAEvent *)event
 {
-	return [_listeners objectForKey:[self assignedListenerNameForEvent:event]];
+	return [self listenerForName:[self assignedListenerNameForEvent:event]];
 }
 
 - (void)sendEventToListener:(LAEvent *)event
@@ -236,7 +340,11 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (id<LAListener>)listenerForName:(NSString *)name
 {
-	return [_listeners objectForKey:name];
+	if (_listeners) {
+		// Inside SpringBoard
+		return [_listeners objectForKey:name];
+	}
+	return [[[LARemoteListener alloc] initWithListenerName:name] autorelease];
 }
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name

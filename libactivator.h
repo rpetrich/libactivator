@@ -5,7 +5,7 @@
 
 // Events
 
-@interface LAEvent : NSObject {
+@interface LAEvent : NSObject<NSCoding> {
 @private
 	NSString *_name;
 	NSString *_mode;
@@ -44,8 +44,8 @@
 - (void)sendAbortToListener:(LAEvent *)event;
 
 - (id<LAListener>)listenerForName:(NSString *)name;
-- (void)registerListener:(id<LAListener>)listener forName:(NSString *)name;
-- (void)unregisterListenerWithName:(NSString *)name;
+- (void)registerListener:(id<LAListener>)listener forName:(NSString *)name; // Only available in SpringBoard
+- (void)unregisterListenerWithName:(NSString *)name; // Only available in SpringBoard
 
 - (BOOL)hasSeenListenerWithName:(NSString *)name;
 
