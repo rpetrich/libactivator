@@ -35,7 +35,7 @@
 	NSMutableDictionary *_listenerData;
 	NSMutableDictionary *_applications;
 	NSBundle *_mainBundle;
-	NSArray *_cachedListenerNames;
+	NSDictionary *_cachedAndSortedListeners;
 }
 + (LAActivator *)sharedInstance;
 
@@ -65,10 +65,8 @@
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name;
 - (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
 - (BOOL)listenerWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
-- (UIImage *)iconForListenerName:(NSString *)listenerName; // If sandboxed, may not return an image
-- (UIImage *)smallIconForListenerName:(NSString *)listenerName; // If sandboxed, may not return an image
-- (NSString *)iconPathForListenerName:(NSString *)listenerName;
-- (NSString *)smallIconPathForListenerName:(NSString *)listenerName;
+- (UIImage *)iconForListenerName:(NSString *)listenerName;
+- (UIImage *)smallIconForListenerName:(NSString *)listenerName;
 
 @property (nonatomic, readonly) NSArray *availableEventModes;
 - (NSString *)currentEventMode;

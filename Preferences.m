@@ -1,6 +1,7 @@
 #import <Preferences/Preferences.h>
 
 #import "libactivator.h"
+#import "libactivator-private.h"
 
 static LAActivator *activator;
 
@@ -103,23 +104,24 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			if ([activator eventWithName:eventName isCompatibleWithMode:mode])
 				[availableModes addObject:mode];
 		_modes = [availableModes copy];
-		_listeners = [[NSMutableDictionary alloc] init];
-		for (NSString *listenerName in [activator availableListenerNames])
-			for (NSString *mode in _modes)
-				if ([activator listenerWithName:listenerName isCompatibleWithMode:mode]) {
-					NSString *key = [activator localizedGroupForListenerName:listenerName]?:@"";
-					NSMutableArray *groupList = [_listeners objectForKey:key];
-					if (!groupList) {
-						groupList = [NSMutableArray array];
-						[_listeners setObject:groupList forKey:key];
-					}					
-					[groupList addObject:listenerName];
-					break;
-				}
-		NSArray *groupNames = [_listeners allKeys];
-		for (NSString *key in groupNames)
-			[[_listeners objectForKey:key] sortUsingFunction:CompareListenerNamesCallback context:nil];
-		_groups = [[groupNames sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] retain];
+		_listeners = [[activator _cachedAndSortedListeners] mutableCopy];
+		for (NSString *key in [_listeners allKeys]) {
+			NSArray *group = [_listeners objectForKey:key];
+			NSMutableArray *mutableGroup = [NSMutableArray array];
+			BOOL hasItems = NO;
+			for (NSString *listenerName in group)
+				for (NSString *mode in _modes)
+					if ([activator listenerWithName:listenerName isCompatibleWithMode:mode]) {
+						[mutableGroup addObject:listenerName];
+						hasItems = YES;
+						break;
+					}
+			if (hasItems)
+				[_listeners setObject:mutableGroup forKey:key];
+			else
+				[_listeners removeObjectForKey:key];
+		}
+		_groups = [[[_listeners allKeys] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] retain];
 		_eventName = [eventName copy];
 	}
 	return self;
