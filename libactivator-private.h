@@ -9,7 +9,7 @@
 - (void)_reloadPreferences;
 - (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
 - (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
-- (id)_performRemoteMessage:(SEL)selector arg1:(id)arg1 arg2:(id)arg2;
+- (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject;
 - (void)_addApplication:(SBApplication *)application;
 - (void)_removeApplication:(SBApplication *)application;
 - (NSDictionary *)_cachedAndSortedListeners;

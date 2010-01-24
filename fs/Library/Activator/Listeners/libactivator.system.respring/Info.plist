@@ -1,0 +1,5 @@
+{
+	title = "Respring";
+	description = "Relaunch SpringBoard normally";
+	group = "System Actions";
+}

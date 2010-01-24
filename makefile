@@ -1,4 +1,4 @@
-OBJECTS=libactivator.o Events.o ListenerSettingsViewController.o
+OBJECTS=libactivator.o Events.o ListenerSettingsViewController.o Actions.o
 TARGET=fs/usr/lib/libactivator.dylib
 
 PREFS_OBJECTS=Preferences.o
@@ -90,6 +90,12 @@ package: $(TARGET) $(PREFS_TARGET) control
 		- plutil -convert binary1 package/Library/Activator/Events/libactivator.volume.display-tap/Info.plist
 		- plutil -convert binary1 package/Library/Activator/Events/libactivator.volume.down-up/Info.plist
 		- plutil -convert binary1 package/Library/Activator/Events/libactivator.volume.up-down/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Listeners/libactivator.system.homebutton/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Listeners/libactivator.system.powerdown/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Listeners/libactivator.system.reboot/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Listeners/libactivator.system.respring/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Listeners/libactivator.system.safemode/Info.plist
+		- plutil -convert binary1 package/Library/Activator/Listeners/libactivator.system.sleepbutton/Info.plist
 		- plutil -convert binary1 package/Library/PreferenceLoader/Preferences/LibActivator.plist
 		- plutil -convert binary1 package/System/Library/PreferenceBundles/LibActivator.bundle/Info.plist
 		dpkg-deb -b package $(shell grep ^Package: control | cut -d ' ' -f 2)_$(shell grep ^Version: control | cut -d ' ' -f 2)_iphoneos-arm.deb
