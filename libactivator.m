@@ -15,14 +15,17 @@ NSString * const LAEventModeLockScreen  = @"lockscreen";
 
 CHDeclareClass(SBIconController);
 CHDeclareClass(SBIconModel);
+CHDeclareClass(SBApplicationController);
 CHDeclareClass(SBApplication);
 CHDeclareClass(SBDisplayStack);
 
-NSMutableArray *displayStacks;
+static NSMutableArray *displayStacks;
 #define SBWPreActivateDisplayStack        (SBDisplayStack *)[displayStacks objectAtIndex:0]
 #define SBWActiveDisplayStack             (SBDisplayStack *)[displayStacks objectAtIndex:1]
 #define SBWSuspendingDisplayStack         (SBDisplayStack *)[displayStacks objectAtIndex:2]
 #define SBWSuspendedEventOnlyDisplayStack (SBDisplayStack *)[displayStacks objectAtIndex:3]
+
+static LAActivator *sharedActivator;
 
 @implementation LAEvent
 
@@ -179,27 +182,11 @@ NSMutableArray *displayStacks;
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
 {
-    SBApplication *oldApplication = [SBWActiveDisplayStack topApplication];
-    if (oldApplication == _application)
-    	return;
-    NSString *oldDisplayIdentifier = [oldApplication displayIdentifier];
-	[_application setDisplaySetting:0x4 flag:YES];
-	if ([oldDisplayIdentifier isEqualToString:@"com.apple.springboard"] || oldDisplayIdentifier == nil) {
-		[SBWPreActivateDisplayStack pushDisplay:_application];
-	} else {
-		[_application setActivationSetting:0x40 flag:YES];
-		[_application setActivationSetting:0x20000 flag:YES];
-		[SBWPreActivateDisplayStack pushDisplay:_application];
-		[oldApplication setDeactivationSetting:0x2 flag:YES];
-		[SBWActiveDisplayStack popDisplay:oldApplication];
-		[SBWSuspendingDisplayStack pushDisplay:oldApplication];
-    }
+	[sharedActivator _activateApplication:_application];
 }
 
 @end
 
-
-static LAActivator *sharedActivator;
 
 #define InSpringBoard (!!_listeners)
 
@@ -392,6 +379,31 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 - (void)_removeApplication:(SBApplication *)application
 {
 	[_applications removeObjectForKey:[application displayIdentifier]];
+}
+
+- (void)_activateApplication:(SBApplication *)application
+{
+	SBApplication *springBoard = [CHSharedInstance(SBApplicationController) springBoard];
+	application = application ?: springBoard;
+    SBApplication *oldApplication = [SBWActiveDisplayStack topApplication] ?: springBoard;
+    if (oldApplication == application)
+    	return;
+	if (oldApplication == springBoard) {
+		[application setDisplaySetting:0x4 flag:YES];
+		[SBWPreActivateDisplayStack pushDisplay:application];
+	} else if (application == springBoard) {
+		[oldApplication setDeactivationSetting:0x2 flag:YES];
+		[SBWActiveDisplayStack popDisplay:oldApplication];
+		[SBWSuspendingDisplayStack pushDisplay:oldApplication];
+	} else {
+		[application setDisplaySetting:0x4 flag:YES];
+		[application setActivationSetting:0x40 flag:YES];
+		[application setActivationSetting:0x20000 flag:YES];
+		[SBWPreActivateDisplayStack pushDisplay:application];
+		[oldApplication setDeactivationSetting:0x2 flag:YES];
+		[SBWActiveDisplayStack popDisplay:oldApplication];
+		[SBWSuspendingDisplayStack pushDisplay:oldApplication];
+    }
 }
 
 - (NSDictionary *)_cachedAndSortedListeners
@@ -731,13 +743,13 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		if (bundle) {
 			NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"];
 			if (unlocalized)
-				return Localize(bundle, unlocalized, unlocalized);
+				return Localize(bundle, [@"LISTENER_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(bundle, unlocalized, unlocalized));
 			return @"";
 		} else {
 			if ([[_applications objectForKey:listenerName] isSystemApplication])
-				return Localize(bundle, @"System Applications", @"System Applications");
+				return Localize(bundle, @"LISTENER_GROUP_TITLE_System Applications", @"System Applications");
 			else
-				return Localize(bundle, @"User Applications", @"User Applications");
+				return Localize(bundle, @"LISTENER_GROUP_TITLE_User Applications", @"User Applications");
 		}
 	} else {
 		return [self _performRemoteMessage:_cmd withObject:listenerName];
@@ -814,6 +826,7 @@ CHMethod(0, void, SBDisplayStack, dealloc)
 CHConstructor {
 	CHLoadLateClass(SBIconController);
 	CHLoadLateClass(SBIconModel);
+	CHLoadLateClass(SBApplicationController);
 	CHLoadLateClass(SBApplication);
 	CHHook(8, SBApplication, initWithBundleIdentifier, roleIdentifier, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
 	CHHook(0, SBApplication, dealloc);

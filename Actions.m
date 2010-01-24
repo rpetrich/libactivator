@@ -1,8 +1,12 @@
-#import <libactivator/libactivator.h>
+#import "libactivator.h"
+#import "libactivator-private.h"
 #import <UIKit/UIKit.h>
 #import <SpringBoard/SpringBoard.h>
-
 #import <GraphicsServices/GraphicsServices.h>
+#import <CaptainHook/CaptainHook.h>
+
+CHDeclareClass(SBIconController);
+CHDeclareClass(SBSearchController);
 
 @interface SystemActivator : NSObject<LAListener> {
 	SEL _action;
@@ -55,6 +59,13 @@
 	[(SpringBoard *)[UIApplication sharedApplication] powerDown];
 }
 
+- (void)spotlight
+{
+	[[LAActivator sharedInstance] _activateApplication:nil];
+	[CHSharedInstance(SBIconController) scrollToIconListAtIndex:-1 animate:NO];
+	[[CHSharedInstance(SBSearchController) searchView] setShowsKeyboard:YES animated:YES];	
+}
+
 - (id)initWithAction:(SEL)action
 {
 	if ((self = [super init])) {
@@ -81,6 +92,9 @@
 	RegisterAction(safemode);
 	RegisterAction(reboot);
 	RegisterAction(powerdown);
+	RegisterAction(spotlight);
+	CHLoadLateClass(SBIconController);
+	CHLoadLateClass(SBSearchController);
 	[pool release];
 }
 

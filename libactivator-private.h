@@ -12,9 +12,11 @@
 - (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject;
 - (void)_addApplication:(SBApplication *)application;
 - (void)_removeApplication:(SBApplication *)application;
+- (void)_activateApplication:(SBApplication *)application;
 - (NSDictionary *)_cachedAndSortedListeners;
 @end
 
+__attribute__((visibility("hidden")))
 @interface LAApplicationListener : NSObject<LAListener> {
 @private
 	SBApplication *_application;
@@ -22,6 +24,7 @@
 - (id)initWithApplication:(SBApplication *)application;
 @end
 
+__attribute__((visibility("hidden")))
 @interface LARemoteListener : NSObject<LAListener> {
 @private
 	NSString *_listenerName;
