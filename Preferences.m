@@ -89,11 +89,6 @@ static LAActivator *activator;
 }
 @end
 
-NSInteger CompareListenerNamesCallback(id a, id b, void *context)
-{
-	return [[activator localizedTitleForListenerName:a] localizedCaseInsensitiveCompare:[activator localizedTitleForListenerName:b]];
-}
-
 @implementation ActivatorEventViewController
 
 - (id)initForContentSize:(CGSize)contentSize withModes:(NSArray *)modes eventName:(NSString *)eventName
