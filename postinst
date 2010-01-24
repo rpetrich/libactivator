@@ -1,5 +1,9 @@
 #!/bin/sh
 ln -s /var/mobile /User 2> /dev/null
+mkdir -p /User/Library/Caches
+chmod 777 /User/Library/Caches
+chown mobile /User/Library/Caches
 touch /User/Library/Caches/libactivator.plist
 chmod 666 /User/Library/Caches/libactivator.plist
+chown mobile /User/Library/Caches/libactivator.plist
 exit 0;
