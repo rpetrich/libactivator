@@ -363,43 +363,22 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	return result;
 }
 
-// Faster, but only allows property list types
 - (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
 {
-	id arg1 = [userInfo objectForKey:@"arg1"];
-	id arg2 = [userInfo objectForKey:@"arg2"];
-	id result = [self performSelector:NSSelectorFromString(message) withObject:arg1 withObject:arg2];
+	id withObject = [userInfo objectForKey:@"withObject"];
+	id result = [self performSelector:NSSelectorFromString(message) withObject:withObject withObject:nil];
 	if (!result)
 		return nil;
 	return [NSDictionary dictionaryWithObject:result forKey:@"result"];
 }
 
-- (id)_performRemoteMessage:(SEL)selector arg1:(id<NSCoding>)arg1 arg2:(id<NSCoding>)arg2
+- (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject
 {
 	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
-	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:arg1, @"arg1", arg2, @"arg2", nil];
+	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:withObject, @"withObject", nil];
 	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
 	return [response objectForKey:@"result"];
 }
-/*
-// Slower, but allows any types that implement NSCoding to be serialized
-- (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	id arg1 = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"arg1"]];
-	id arg2 = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"arg2"]];
-	id result = [self performSelector:NSSelectorFromString(message) withObject:arg1 withObject:arg2];
-	if (!result)
-		return nil;
-	return [NSDictionary dictionaryWithObject:[NSKeyedArchiver archivedDataWithRootObject:result] forKey:@"result"];
-}
-
-- (id)_performRemoteMessage:(SEL)selector arg1:(id<NSCoding>)arg1 arg2:(id<NSCoding>)arg2
-{
-	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
-	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:[NSKeyedArchiver archivedDataWithRootObject:arg1], @"arg1", [NSKeyedArchiver archivedDataWithRootObject:arg2], @"arg2", nil];
-	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
-	return [NSKeyedUnarchiver unarchiveObjectWithData:[response objectForKey:@"result"]];
-}*/
 
 // SpringBoard Applications
 
@@ -420,7 +399,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	if (_cachedAndSortedListeners)
 		return _cachedAndSortedListeners;
 	if (!InSpringBoard)
-		return [self _performRemoteMessage:_cmd arg1:nil arg2:nil];
+		return [self _performRemoteMessage:_cmd withObject:nil];
 	NSMutableDictionary *listeners = [[NSMutableDictionary alloc] init];
 	for (NSString *listenerName in [self availableListenerNames]) {
 		NSString *key = [self localizedGroupForListenerName:listenerName] ?: @"";
@@ -608,7 +587,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	if (InSpringBoard)
 		return [[_listenerData allKeys] arrayByAddingObjectsFromArray:[_applications allKeys]];
-	return [self _performRemoteMessage:_cmd arg1:nil arg2:nil];
+	return [self _performRemoteMessage:_cmd withObject:nil];
 }
 
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name
@@ -652,7 +631,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		return [icon icon] ?: [UIImage imageWithContentsOfFile:[application pathForIcon]];
 	}
 	// Marshal through SpringBoard by converting to PNG
-	return [UIImage imageWithData:[self _performRemoteMessage:@selector(_iconDataForListenerName:) arg1:listenerName arg2:nil]];
+	return [UIImage imageWithData:[self _performRemoteMessage:@selector(_iconDataForListenerName:) withObject:listenerName]];
 }
 
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName
@@ -666,7 +645,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		return [icon smallIcon] ?: [UIImage imageWithContentsOfFile:[application pathForSmallIcon]];
 	}
 	// Marshal through SpringBoard by converting to PNG
-	return [UIImage imageWithData:[self _performRemoteMessage:@selector(_smallIconDataForListenerName:) arg1:listenerName arg2:nil]];
+	return [UIImage imageWithData:[self _performRemoteMessage:@selector(_smallIconDataForListenerName:) withObject:listenerName]];
 }
 
 // Event Modes
@@ -687,7 +666,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		return LAEventModeApplication;
 	} else {
 		// Outside SpringBoard
-		return [self _performRemoteMessage:_cmd arg1:nil arg2:nil];
+		return [self _performRemoteMessage:_cmd withObject:nil];
 	}
 }
 
@@ -734,7 +713,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			return [[_applications objectForKey:listenerName] displayName];
 		}
 	} else {
-		return [self _performRemoteMessage:_cmd arg1:listenerName arg2:nil];
+		return [self _performRemoteMessage:_cmd withObject:listenerName];
 	}
 }
 
@@ -761,7 +740,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 				return Localize(bundle, @"User Applications", @"User Applications");
 		}
 	} else {
-		return [self _performRemoteMessage:_cmd arg1:listenerName arg2:nil];
+		return [self _performRemoteMessage:_cmd withObject:listenerName];
 	}
 }
 
@@ -796,7 +775,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			return nil;
 		}
 	} else {
-		return [self _performRemoteMessage:_cmd arg1:listenerName arg2:nil];
+		return [self _performRemoteMessage:_cmd withObject:listenerName];
 	}
 }
 
