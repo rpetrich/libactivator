@@ -13,10 +13,14 @@ NSString * const LAEventModeApplication = @"application";
 NSString * const LAEventModeLockScreen  = @"lockscreen";
 
 CHDeclareClass(SBIconController);
+CHDeclareClass(SBApplication);
+CHDeclareClass(SBDisplayStack);
 
-CHConstructor {
-	CHLoadLateClass(SBIconController);
-}
+NSMutableArray *displayStacks;
+#define SBWPreActivateDisplayStack        (SBDisplayStack *)[displayStacks objectAtIndex:0]
+#define SBWActiveDisplayStack             (SBDisplayStack *)[displayStacks objectAtIndex:1]
+#define SBWSuspendingDisplayStack         (SBDisplayStack *)[displayStacks objectAtIndex:2]
+#define SBWSuspendedEventOnlyDisplayStack (SBDisplayStack *)[displayStacks objectAtIndex:3]
 
 @implementation LAEvent
 
@@ -162,6 +166,52 @@ CHConstructor {
 
 @end
 
+@interface LAApplicationListener : NSObject<LAListener> {
+@private
+	SBApplication *_application;
+}
+@end
+
+@implementation LAApplicationListener
+
+- (id)initWithApplication:(SBApplication *)application
+{
+	if ((self = [super init])) {
+		_application = [application retain];
+	}
+	return self;
+}
+
+- (void)dealloc
+{
+	[_application release];
+	[super dealloc];
+}
+
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
+{
+    SBApplication *oldApplication = [SBWActiveDisplayStack topApplication];
+    if (oldApplication == _application)
+    	return;
+    NSString *oldDisplayIdentifier = [oldApplication displayIdentifier];
+	[_application setDisplaySetting:0x4 flag:YES];
+	if ([oldDisplayIdentifier isEqualToString:@"com.apple.springboard"] || oldDisplayIdentifier == nil) {
+		[SBWPreActivateDisplayStack pushDisplay:_application];
+	} else {
+		[_application setActivationSetting:0x40 flag:YES];
+		[_application setActivationSetting:0x20000 flag:YES];
+		[SBWPreActivateDisplayStack pushDisplay:_application];
+		if ([[UIApplication sharedApplication] respondsToSelector:@selector(setBackgroundingEnabled:forDisplayIdentifier:)])
+			[[UIApplication sharedApplication] setBackgroundingEnabled:YES forDisplayIdentifier:oldDisplayIdentifier];
+		[oldApplication setDeactivationSetting:0x2 flag:YES];
+		[SBWActiveDisplayStack popDisplay:oldApplication];
+		[SBWSuspendingDisplayStack pushDisplay:oldApplication];
+    }
+}
+
+@end
+
+
 static LAActivator *sharedActivator;
 
 @interface LAActivator ()
@@ -169,8 +219,13 @@ static LAActivator *sharedActivator;
 - (void)_savePreferences;
 - (void)_reloadPreferences;
 - (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
-- (NSDictionary *)_currentEventModeMessage;
+- (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
+- (id)_performRemoteMessage:(SEL)selector arg1:(id)arg1 arg2:(id)arg2;
+- (void)_addApplication:(SBApplication *)application;
+- (void)_removeApplication:(SBApplication *)application;
 @end
+
+#define InSpringBoard (!!_listeners)
 
 static void PreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
 {
@@ -204,11 +259,19 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 		if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"]) {
 			CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
 			[messagingCenter runServerOnCurrentThread];
+			// Remote messages to id<LAListener>
 			[messagingCenter registerForMessageName:@"respondsToSelector:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:receiveEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:abortEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:otherListenerDidHandleEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_currentEventModeMessage)];
+			// Remote messages to LAActivator
+			[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"iconPathForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"smallIconPathForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"localizedTitleForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"localizedGroupForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"localizedDescriptionForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			// Does not retain values!
 			_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
   		}
@@ -224,6 +287,7 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Listeners" error:NULL])
 			if (![fileName hasPrefix:@"."])
 				[_listenerData setObject:[NSBundle bundleWithPath:[@"/Library/Activator/Listeners" stringByAppendingPathComponent:fileName]] forKey:fileName];
+		_applications = [[NSMutableDictionary alloc] init];
 		// Load Main Bundle
 		_mainBundle = [[NSBundle alloc] initWithPath:@"/Library/Activator"];
 	}
@@ -232,7 +296,9 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (void)dealloc
 {
+	[_cachedListenerNames release];
 	[_mainBundle release];
+	[_applications release];
 	[_listenerData release];
 	CFNotificationCenterRemoveObserver(CFNotificationCenterGetDarwinNotifyCenter(), self, CFSTR("libactivator.preferencechanged"), NULL);
 	[_preferences release];
@@ -315,9 +381,56 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	return result;
 }
 
-- (NSDictionary *)_currentEventModeMessage
+// Faster, but only allows property list types
+- (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
 {
-	return [NSDictionary dictionaryWithObject:[self currentEventMode] forKey:@"result"];
+	id arg1 = [userInfo objectForKey:@"arg1"];
+	id arg2 = [userInfo objectForKey:@"arg2"];
+	id result = [self performSelector:NSSelectorFromString(message) withObject:arg1 withObject:arg2];
+	if (!result)
+		return nil;
+	return [NSDictionary dictionaryWithObject:result forKey:@"result"];
+}
+
+- (id)_performRemoteMessage:(SEL)selector arg1:(id<NSCoding>)arg1 arg2:(id<NSCoding>)arg2
+{
+	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:arg1, @"arg1", arg2, @"arg2", nil];
+	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
+	return [response objectForKey:@"result"];
+}
+/*
+// Slower, but allows any types that implement NSCoding to be serialized
+- (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
+{
+	id arg1 = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"arg1"]];
+	id arg2 = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"arg2"]];
+	id result = [self performSelector:NSSelectorFromString(message) withObject:arg1 withObject:arg2];
+	if (!result)
+		return nil;
+	return [NSDictionary dictionaryWithObject:[NSKeyedArchiver archivedDataWithRootObject:result] forKey:@"result"];
+}
+
+- (id)_performRemoteMessage:(SEL)selector arg1:(id<NSCoding>)arg1 arg2:(id<NSCoding>)arg2
+{
+	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:[NSKeyedArchiver archivedDataWithRootObject:arg1], @"arg1", [NSKeyedArchiver archivedDataWithRootObject:arg2], @"arg2", nil];
+	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
+	return [NSKeyedUnarchiver unarchiveObjectWithData:[response objectForKey:@"result"]];
+}*/
+
+// SpringBoard Applications
+
+- (void)_addApplication:(SBApplication *)application
+{
+	NSString *displayIdentifier = [application displayIdentifier];
+	if (![_listenerData objectForKey:displayIdentifier])
+		[_applications setObject:application forKey:displayIdentifier];
+}
+
+- (void)_removeApplication:(SBApplication *)application
+{
+	[_applications removeObjectForKey:[application displayIdentifier]];
 }
 
 // Sending Events
@@ -351,11 +464,12 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 - (id<LAListener>)listenerForName:(NSString *)name
 {
 	LoadPreferences();
-	if (![_listenerData objectForKey:name])
-		return nil;
-	if (_listeners)
-		return [_listeners objectForKey:name];
-	return [[[LARemoteListener alloc] initWithListenerName:name] autorelease];
+	if (!InSpringBoard)
+		return [[[LARemoteListener alloc] initWithListenerName:name] autorelease];
+	SBApplication *app = [_applications objectForKey:name];
+	if (app)
+		return [[[LAApplicationListener alloc] initWithApplication:app] autorelease];
+	return [_listeners objectForKey:name];
 }
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name
@@ -432,9 +546,7 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	LoadPreferences();
 	NSString *prefName = ListenerKeyForEventNameAndMode([event name], [event mode] ?: [self currentEventMode]);
 	NSString *prefValue = [_preferences objectForKey:prefName];
-	if ([_listenerData objectForKey:prefValue])
-		return prefValue;
-	return nil;
+	return prefValue;
 }
 
 - (NSArray *)eventsAssignedToListenerWithName:(NSString *)listenerName
@@ -484,7 +596,11 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSArray *)availableListenerNames
 {
-	return [_listenerData allKeys];
+	if (InSpringBoard)
+		return [[_listenerData allKeys] arrayByAddingObjectsFromArray:[_applications allKeys]];
+	if (_cachedListenerNames)
+		return _cachedListenerNames;
+	return _cachedListenerNames = [[self _performRemoteMessage:_cmd arg1:nil arg2:nil] retain];
 }
 
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name
@@ -509,16 +625,33 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (UIImage *)iconForListenerName:(NSString *)listenerName
 {
-	NSString *path = [[_listenerData objectForKey:listenerName] pathForResource:@"icon" ofType:@"png"];
-	return [UIImage imageWithContentsOfFile:path];
+	return [UIImage imageWithContentsOfFile:[self iconPathForListenerName:listenerName]];
 }
 
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName
 {
-	NSString *path = [[_listenerData objectForKey:listenerName] pathForResource:@"Icon-small" ofType:@"png"];
-	return [UIImage imageWithContentsOfFile:path];
+	return [UIImage imageWithContentsOfFile:[self smallIconPathForListenerName:listenerName]];
 }
 
+- (NSString *)iconPathForListenerName:(NSString *)listenerName
+{
+	NSString *path = [[_listenerData objectForKey:listenerName] pathForResource:@"icon" ofType:@"png"];
+	if (path)
+		return path;
+	if (InSpringBoard)
+		return [[_applications objectForKey:listenerName] pathForIcon];
+	return [self _performRemoteMessage:_cmd arg1:listenerName arg2:nil];
+}
+
+- (NSString *)smallIconPathForListenerName:(NSString *)listenerName
+{
+	NSString *path = [[_listenerData objectForKey:listenerName] pathForResource:@"Icon-small" ofType:@"png"];
+	if (path)
+		return path;
+	if (InSpringBoard)
+		return [[_applications objectForKey:listenerName] pathForSmallIcon];
+	return [self _performRemoteMessage:_cmd arg1:listenerName arg2:nil];
+}
 
 // Event Modes
 
@@ -529,7 +662,7 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSString *)currentEventMode
 {
-	if (_listeners) {
+	if (InSpringBoard) {
 		// In SpringBoard
 		if ([(SpringBoard *)[UIApplication sharedApplication] isLocked])
 			return LAEventModeLockScreen;
@@ -538,8 +671,7 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 		return LAEventModeApplication;
 	} else {
 		// Outside SpringBoard
-		NSDictionary *response = [[CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"] sendMessageAndReceiveReplyName:@"currentEventMode" userInfo:nil];
-		return [response objectForKey:@"result"];
+		return [self _performRemoteMessage:_cmd arg1:nil arg2:nil];
 	}
 }
 
@@ -577,9 +709,17 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSString *)localizedTitleForListenerName:(NSString *)listenerName
 {
-	NSBundle *bundle = [_listenerData objectForKey:listenerName];
-	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"title"] ?: listenerName;
-	return Localize(_mainBundle, [@"LISTENER_TITLE_" stringByAppendingString:listenerName], Localize(bundle, unlocalized, unlocalized) ?: listenerName);
+	if (InSpringBoard) {
+		NSBundle *bundle = [_listenerData objectForKey:listenerName];
+		if (bundle) {
+			NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"title"] ?: listenerName;
+			return Localize(_mainBundle, [@"LISTENER_TITLE_" stringByAppendingString:listenerName], Localize(bundle, unlocalized, unlocalized) ?: listenerName);
+		} else {
+			return [[_applications objectForKey:listenerName] displayName];
+		}
+	} else {
+		return [self _performRemoteMessage:_cmd arg1:listenerName arg2:nil];
+	}
 }
 
 - (NSString *)localizedGroupForEventName:(NSString *)eventName
@@ -591,11 +731,19 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSString *)localizedGroupForListenerName:(NSString *)listenerName
 {
-	NSBundle *bundle = [_listenerData objectForKey:listenerName];
-	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"];
-	if (unlocalized)
-		return Localize(bundle, unlocalized, unlocalized);
-	return @"";
+	if (InSpringBoard) {
+		NSBundle *bundle = [_listenerData objectForKey:listenerName];
+		if (bundle) {
+			NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"];
+			if (unlocalized)
+				return Localize(bundle, unlocalized, unlocalized);
+			return @"";
+		} else {
+			return Localize(bundle, @"Applications", @"Applications");
+		}
+	} else {
+		return [self _performRemoteMessage:_cmd arg1:listenerName arg2:nil];
+	}
 }
 
 - (NSString *)localizedDescriptionForEventMode:(NSString *)eventMode
@@ -620,9 +768,58 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName
 {
-	NSBundle *bundle = [_listenerData objectForKey:listenerName];
-	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"description"];
-	return Localize(bundle, unlocalized, unlocalized);
+	if (InSpringBoard) {
+		NSBundle *bundle = [_listenerData objectForKey:listenerName];
+		if (bundle) {
+			NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"description"];
+			return Localize(bundle, unlocalized, unlocalized);
+		} else {
+			return nil;
+		}
+	} else {
+		return [self _performRemoteMessage:_cmd arg1:listenerName arg2:nil];
+	}
 }
 
 @end
+
+CHMethod(8, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdentifier, roleIdentifier, NSString *, roleIdentifier, path, NSString *, path, bundle, id, bundle, infoDictionary, NSDictionary *, infoDictionary, isSystemApplication, BOOL, isSystemApplication, signerIdentity, id, signerIdentity, provisioningProfileValidated, BOOL, validated)
+{
+	if ((self = CHSuper(8, SBApplication, initWithBundleIdentifier, bundleIdentifier, roleIdentifier, roleIdentifier, path, path, bundle, bundle, infoDictionary, infoDictionary, isSystemApplication, isSystemApplication, signerIdentity, signerIdentity, provisioningProfileValidated, validated))) {
+		if (isSystemApplication)
+			[sharedActivator _addApplication:self];
+	}
+	return self;
+}
+
+CHMethod(0, void, SBApplication, dealloc)
+{
+	[sharedActivator _removeApplication:self];
+	CHSuper(0, SBApplication, dealloc);
+}
+
+CHMethod(0, id, SBDisplayStack, init)
+{
+	if ((self = CHSuper(0, SBDisplayStack, init))) {
+		if (!displayStacks)
+			displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
+		[displayStacks addObject:self];
+	}
+	return self;
+}
+
+CHMethod(0, void, SBDisplayStack, dealloc)
+{
+	[displayStacks removeObject:self];
+	CHSuper(0, SBDisplayStack, dealloc);
+}
+
+CHConstructor {
+	CHLoadLateClass(SBIconController);
+	CHLoadLateClass(SBApplication);
+	CHHook(8, SBApplication, initWithBundleIdentifier, roleIdentifier, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
+	CHHook(0, SBApplication, dealloc);
+	CHLoadLateClass(SBDisplayStack);
+	CHHook(0, SBDisplayStack, init);
+	CHHook(0, SBDisplayStack, dealloc);
+}

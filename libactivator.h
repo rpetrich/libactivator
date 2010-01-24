@@ -33,7 +33,9 @@
 	NSUInteger _suppressReload;
 	NSMutableDictionary *_eventData;
 	NSMutableDictionary *_listenerData;
+	NSMutableDictionary *_applications;
 	NSBundle *_mainBundle;
+	NSArray *_cachedListenerNames;
 }
 + (LAActivator *)sharedInstance;
 
@@ -63,8 +65,10 @@
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name;
 - (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
 - (BOOL)listenerWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
-- (UIImage *)iconForListenerName:(NSString *)listenerName;
-- (UIImage *)smallIconForListenerName:(NSString *)listenerName;
+- (UIImage *)iconForListenerName:(NSString *)listenerName; // If sandboxed, may not return an image
+- (UIImage *)smallIconForListenerName:(NSString *)listenerName; // If sandboxed, may not return an image
+- (NSString *)iconPathForListenerName:(NSString *)listenerName;
+- (NSString *)smallIconPathForListenerName:(NSString *)listenerName;
 
 @property (nonatomic, readonly) NSArray *availableEventModes;
 - (NSString *)currentEventMode;
