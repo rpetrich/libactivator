@@ -654,7 +654,17 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	if (InSpringBoard) {
 		SBApplication *application = [_applications objectForKey:listenerName];
 		SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:[application displayIdentifier]];
-		return [icon smallIcon] ?: [UIImage imageWithContentsOfFile:[application pathForSmallIcon]];
+		UIImage *result = [icon smallIcon];
+		if (result) {
+			CGSize size = [result size];
+			if (size.width > 29.0f || size.height > 29.0f) {
+				size.width = 29.0f;
+				size.height = 29.0f;
+				result = [result _imageScaledToSize:size interpolationQuality:kCGInterpolationDefault];
+			}
+			return result;
+		}
+		return [UIImage imageWithContentsOfFile:[application pathForSmallIcon]];
 	}
 	// Marshal through SpringBoard by converting to PNG
 	return [UIImage imageWithData:[self _performRemoteMessage:@selector(_smallIconDataForListenerName:) withObject:listenerName]];
