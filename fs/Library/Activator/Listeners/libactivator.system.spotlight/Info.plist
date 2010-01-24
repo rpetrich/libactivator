@@ -1,0 +1,5 @@
+{
+	title = "Spotlight";
+	description = "Show SpringBoard and activate search";
+	group = "System Actions";
+}
