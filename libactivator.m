@@ -131,8 +131,8 @@ CHConstructor {
 		selector == @selector(activator:otherListenerDidHandleEvent:)
 	) {
 		NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:NSStringFromSelector(selector), @"selector", _listenerName, @"listenerName", nil];
-		id reply = [_messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(_cmd) userInfo:userInfo];
-		return [reply boolValue];
+		NSNumber *result = [[_messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(_cmd) userInfo:userInfo] objectForKey:@"result"];
+		return [result boolValue];
 	}
 	return [super respondsToSelector:selector];
 }
@@ -140,8 +140,8 @@ CHConstructor {
 - (void)_performRemoteSelector:(SEL)selector withEvent:(LAEvent *)event
 {
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:[NSKeyedArchiver archivedDataWithRootObject:event], @"event", _listenerName, @"listenerName", nil];
-	NSData *reply = (NSData *)[_messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
-	LAEvent *newEvent = [NSKeyedUnarchiver unarchiveObjectWithData:reply];
+	NSData *result = [[_messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo] objectForKey:@"result"];
+	LAEvent *newEvent = [NSKeyedUnarchiver unarchiveObjectWithData:result];
 	[event setHandled:[newEvent isHandled]];
 }
 
@@ -168,7 +168,8 @@ static LAActivator *sharedActivator;
 - (void)_loadPreferences;
 - (void)_savePreferences;
 - (void)_reloadPreferences;
-- (CFPropertyListRef)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
+- (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
+- (NSDictionary *)_currentEventModeMessage;
 @end
 
 static void PreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
@@ -207,6 +208,7 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 			[messagingCenter registerForMessageName:@"activator:receiveEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:abortEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:otherListenerDidHandleEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_currentEventModeMessage)];
 			// Does not retain values!
 			_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
   		}
@@ -296,18 +298,26 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 	}
 }
 
-- (CFPropertyListRef)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
+- (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
 {
 	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
 	id<LAListener> listener = [self listenerForName:listenerName];
+	id result;
 	if ([message isEqualToString:@"respondsToSelector:"]) {
 		SEL selector = NSSelectorFromString([userInfo objectForKey:@"selector"]);
-		return [listener respondsToSelector:selector] ? kCFBooleanTrue : kCFBooleanFalse;
+		result = [listener respondsToSelector:selector] ? (id)kCFBooleanTrue : (id)kCFBooleanFalse;
 	} else {
 		LAEvent *event = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"event"]];
 		[listener performSelector:NSSelectorFromString(message) withObject:self withObject:event];
-		return [NSKeyedArchiver archivedDataWithRootObject:event];
+		result = [NSKeyedArchiver archivedDataWithRootObject:event];
 	}
+	result = [NSDictionary dictionaryWithObject:result forKey:@"result"];
+	return result;
+}
+
+- (NSDictionary *)_currentEventModeMessage
+{
+	return [NSDictionary dictionaryWithObject:[self currentEventMode] forKey:@"result"];
 }
 
 // Sending Events
@@ -340,10 +350,11 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (id<LAListener>)listenerForName:(NSString *)name
 {
-	if (_listeners) {
-		// Inside SpringBoard
+	LoadPreferences();
+	if (![_listenerData objectForKey:name])
+		return nil;
+	if (_listeners)
 		return [_listeners objectForKey:name];
-	}
 	return [[[LARemoteListener alloc] initWithListenerName:name] autorelease];
 }
 
@@ -518,11 +529,18 @@ static void PreferencesChangedCallback(CFNotificationCenterRef center, void *obs
 
 - (NSString *)currentEventMode
 {
-	if ([(SpringBoard *)[UIApplication sharedApplication] isLocked])
-		return LAEventModeLockScreen;
-	if ([[CHSharedInstance(SBIconController) contentView] window])
-		return LAEventModeSpringBoard;
-	return LAEventModeApplication;
+	if (_listeners) {
+		// In SpringBoard
+		if ([(SpringBoard *)[UIApplication sharedApplication] isLocked])
+			return LAEventModeLockScreen;
+		if ([[CHSharedInstance(SBIconController) contentView] window])
+			return LAEventModeSpringBoard;
+		return LAEventModeApplication;
+	} else {
+		// Outside SpringBoard
+		NSDictionary *response = [[CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"] sendMessageAndReceiveReplyName:@"currentEventMode" userInfo:nil];
+		return [response objectForKey:@"result"];
+	}
 }
 
 - (NSString *)description
