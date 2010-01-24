@@ -98,4 +98,33 @@
 	"EVENT_TITLE_libactivator.volume.up-down" = "Up, Down";
 	"EVENT_DESCRIPTION_libactivator.volume.up-down" = "Press volume up, then down";	
 	
+	/* Listener Groups */
+	
+	"LISTENER_GROUP_TITLE_System Actions" = "System Actions";
+	"LISTENER_GROUP_TITLE_System Applications" = "System Applications";
+	"LISTENER_GROUP_TITLE_User Applications" = "User Applications";
+	
+	/* Listener Names */
+	
+	"LISTENER_TITLE_libactivator.system.homebutton" = "Home Button";
+	"LISTENER_DESCRIPTION_libactivator.system.homebutton" = "Simulate a press of the home button";
+
+	"LISTENER_TITLE_libactivator.system.powerdown" = "Power Down";
+	"LISTENER_DESCRIPTION_libactivator.system.powerdown" = "Immediately powers down the device";
+	
+	"LISTENER_TITLE_libactivator.system.reboot" = "Reboot";
+	"LISTENER_DESCRIPTION_libactivator.system.reboot" = "Immediately reboots the device";
+	
+	"LISTENER_TITLE_libactivator.system.respring" = "Respring";
+	"LISTENER_DESCRIPTION_libactivator.system.respring" = "Relaunch SpringBoard normally";
+	
+	"LISTENER_TITLE_libactivator.system.safemode" = "Safe Mode";
+	"LISTENER_DESCRIPTION_libactivator.system.safemode" = "Relaunch SpringBoard in safe mode";
+	
+	"LISTENER_TITLE_libactivator.system.sleepbutton" = "Sleep Button";
+	"LISTENER_DESCRIPTION_libactivator.system.sleepbutton" = "Simulate a press of the home button";
+	
+	"LISTENER_TITLE_libactivator.system.spotlight" = "Spotlight";
+	"LISTENER_DESCRIPTION_libactivator.system.spotlight" = "Show SpringBoard and activate search";
+	
 }
