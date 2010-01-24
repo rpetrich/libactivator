@@ -240,7 +240,6 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			[messagingCenter registerForMessageName:@"_smallIconDataForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"localizedTitleForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"localizedGroupForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"localizedDescriptionForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			// Does not retain values!
 			_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
   		}
@@ -783,22 +782,20 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"description"];
 	if (unlocalized)
 		return Localize(_mainBundle, [@"EVENT_DESCRIPTION_" stringByAppendingString:eventName], Localize(bundle, unlocalized, unlocalized));
-	return Localize(_mainBundle, [@"EVENT_DESCRIPTION_" stringByAppendingString:eventName], @"");
+	NSString *key = [@"EVENT_DESCRIPTION_" stringByAppendingString:eventName];
+	NSString *result = Localize(_mainBundle, key, nil);
+	return [result isEqualToString:key] ? nil : result;
 }
 
 - (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName
 {
-	if (InSpringBoard) {
-		NSBundle *bundle = [_listenerData objectForKey:listenerName];
-		if (bundle) {
-			NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"description"];
-			return Localize(bundle, unlocalized, unlocalized);
-		} else {
-			return nil;
-		}
-	} else {
-		return [self _performRemoteMessage:_cmd withObject:listenerName];
-	}
+	NSBundle *bundle = [_listenerData objectForKey:listenerName];
+	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"description"];
+	if (unlocalized)
+		return Localize(_mainBundle, [@"LISTENER_DESCRIPTION_" stringByAppendingString:listenerName], Localize(bundle, unlocalized, unlocalized));
+	NSString *key = [@"LISTENER_DESCRIPTION_" stringByAppendingString:listenerName];
+	NSString *result = Localize(_mainBundle, key, nil);
+	return [result isEqualToString:key] ? nil : result;
 }
 
 @end

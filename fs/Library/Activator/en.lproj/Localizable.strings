@@ -122,9 +122,9 @@
 	"LISTENER_DESCRIPTION_libactivator.system.safemode" = "Relaunch SpringBoard in safe mode";
 	
 	"LISTENER_TITLE_libactivator.system.sleepbutton" = "Sleep Button";
-	"LISTENER_DESCRIPTION_libactivator.system.sleepbutton" = "Simulate a press of the home button";
+	"LISTENER_DESCRIPTION_libactivator.system.sleepbutton" = "Simulate a press of the sleep button";
 	
 	"LISTENER_TITLE_libactivator.system.spotlight" = "Spotlight";
-	"LISTENER_DESCRIPTION_libactivator.system.spotlight" = "Show SpringBoard and activate search";
+	"LISTENER_DESCRIPTION_libactivator.system.spotlight" = "Activate SpringBoard's search page";
 	
 }
