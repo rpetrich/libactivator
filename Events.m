@@ -362,23 +362,23 @@ CHMethod(1, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
 {
 	CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 	switch (GSEventGetType(gsEvent)) {
-		case kGSEventVolumeUpKeyReleased:
+		case kGSEventVolumeUpButtonUp:
 			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorCancelVolumeChord) object:nil];
-			if (lastVolumeEvent == kGSEventVolumeDownKeyReleased) {
+			if (lastVolumeEvent == kGSEventVolumeDownButtonUp) {
 				lastVolumeEvent = 0;
 				LASendEventWithName(LAEventNameVolumeDownUp);
 			} else {
-				lastVolumeEvent = kGSEventVolumeUpKeyReleased;
+				lastVolumeEvent = kGSEventVolumeUpButtonUp;
 				[self performSelector:@selector(activatorCancelVolumeChord) withObject:nil afterDelay:kButtonHoldDelay];
 			}
 			break;
-		case kGSEventVolumeDownKeyReleased:
+		case kGSEventVolumeDownButtonUp:
 			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorCancelVolumeChord) object:nil];
-			if (lastVolumeEvent == kGSEventVolumeUpKeyReleased) {
+			if (lastVolumeEvent == kGSEventVolumeUpButtonUp) {
 				lastVolumeEvent = 0;
 				LASendEventWithName(LAEventNameVolumeUpDown);
 			} else {
-				lastVolumeEvent = kGSEventVolumeDownKeyReleased;
+				lastVolumeEvent = kGSEventVolumeDownButtonUp;
 				[self performSelector:@selector(activatorCancelVolumeChord) withObject:nil afterDelay:kButtonHoldDelay];
 			}
 			break;
@@ -408,6 +408,7 @@ CHMethod(0, void, SBUIController, finishLaunching)
 CHMethod(2, void, SBIconController, scrollToIconListAtIndex, NSInteger, index, animate, BOOL, animate)
 {
 	if (shouldInterceptMenuPresses) {
+		shouldInterceptMenuPresses = NO;
 		if ([LASendEventWithName(LAEventNameMenuPressAtSpringBoard) isHandled])
 			return;
 	}
