@@ -30,7 +30,7 @@ include framework/makefiles/bundle.mk
 before-all:: Common.h
 
 clean::
-	- rm Common.h
+	rm -f Common.h
 
 Common.h:
 	echo "#define kPackageName \"$(shell grep ^Package: layout/DEBIAN/control | cut -d ' ' -f 2)\"" > Common.h
