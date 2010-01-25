@@ -15,6 +15,14 @@ LibActivator_LDFLAGS = -L$(FW_OBJ_DIR) -lactivator
 GO_EASY_ON_ME = 1
 ADDITIONAL_CFLAGS = -Wno-unused -Wno-switch -include Common.h
 
+ifeq ($(PROFILING),1)
+	ADDITIONAL_CFLAGS += -DCHEnableProfiling
+endif
+
+ifeq ($(DEBUG),1)
+	ADDITIONAL_CFLAGS += -DCHDebug
+endif
+
 include framework/makefiles/common.mk
 include framework/makefiles/library.mk
 include framework/makefiles/bundle.mk
