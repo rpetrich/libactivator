@@ -392,6 +392,8 @@ CHMethod(1, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
 				[self performSelector:@selector(activatorCancelVolumeChord) withObject:nil afterDelay:kButtonHoldDelay];
 			}
 			break;
+		default:
+			break;
 	}
 }
 
