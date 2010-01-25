@@ -21,6 +21,9 @@ include framework/makefiles/bundle.mk
 
 before-all:: Common.h
 
+clean::
+	- rm Common.h
+
 Common.h:
 	echo "#define kPackageName \"$(shell grep ^Package: layout/DEBIAN/control | cut -d ' ' -f 2)\"" > Common.h
 	echo "#define kPackageVersion \"$(shell grep ^Version: layout/DEBIAN/control | cut -d ' ' -f 2)\"" >> Common.h
