@@ -21,7 +21,7 @@ LDFLAGS= \
 
 CFLAGS= -I/var/root/Headers -I/var/sdk/include -I/var/include \
 		-fno-common \
-		-g0 -O2 \
+		-O2 \
 		-std=c99 \
 		-include Common.h \
 		-mcpu=arm1176jzf-s
@@ -31,7 +31,9 @@ ifeq ($(PROFILING),1)
 endif
 
 ifeq ($(DEBUG),1)
-		CFLAGS += -DCHDebug
+		CFLAGS += -DCHDebug -g2
+else
+		CFLAGS += -g0
 endif
 
 all:	install
