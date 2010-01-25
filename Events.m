@@ -69,7 +69,9 @@ CHDeclareClass(iHome);
 CHDeclareClass(SBStatusBarController);
 
 static BOOL shouldInterceptMenuPresses;
+static BOOL shouldSuppressMenuReleases;
 static BOOL shouldSuppressLockSound;
+static BOOL shouldAddNowPlayingButton;
 
 static LASlideGestureWindow *slideGestureWindow;
 static UIButton *quickDoButton;
@@ -185,10 +187,12 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 
 CHMethod(0, void, SpringBoard, _handleMenuButtonEvent)
 {
-	// Unfortunately there isn't a better way of doing this :(
-	shouldInterceptMenuPresses = YES;
-	CHSuper(0, SpringBoard, _handleMenuButtonEvent);
-	shouldInterceptMenuPresses = NO;
+	if (!shouldSuppressMenuReleases) {
+		// Unfortunately there isn't a better way of doing this :(
+		shouldInterceptMenuPresses = YES;
+		CHSuper(0, SpringBoard, _handleMenuButtonEvent);
+		shouldInterceptMenuPresses = NO;
+	}
 }
 
 CHMethod(0, BOOL, SpringBoard, allowMenuDoubleTap)
@@ -203,10 +207,15 @@ CHMethod(0, BOOL, SpringBoard, allowMenuDoubleTap)
 
 CHMethod(0, void, SpringBoard, handleMenuDoubleTap)
 {
-	if (![self canShowNowPlayingHUD])
-		if ([LASendEventWithName(LAEventNameMenuPressDouble) isHandled])
-			return;
-	CHSuper(0, SpringBoard, handleMenuDoubleTap);
+	if ([self canShowNowPlayingHUD]) {
+		shouldAddNowPlayingButton = YES;
+		CHSuper(0, SpringBoard, handleMenuDoubleTap);
+		shouldAddNowPlayingButton = NO;
+	} else if ([LASendEventWithName(LAEventNameMenuPressDouble) isHandled]) {
+		shouldSuppressMenuReleases = YES;
+	} else {
+		CHSuper(0, SpringBoard, handleMenuDoubleTap);
+	}
 }
 
 static LAEvent *lockHoldEventToAbort;
@@ -317,13 +326,14 @@ static LAEvent *menuEventToAbort;
 CHMethod(1, void, SpringBoard, menuButtonDown, GSEventRef, event)
 {
 	[self performSelector:@selector(activatorMenuButtonTimerCompleted) withObject:nil afterDelay:kButtonHoldDelay];
+	shouldSuppressMenuReleases = NO;
 	CHSuper(1, SpringBoard, menuButtonDown, event);
 }
 
 CHMethod(1, void, SpringBoard, menuButtonUp, GSEventRef, event)
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorMenuButtonTimerCompleted) object:nil];
-	if (menuEventToAbort) {
+	if (menuEventToAbort || shouldSuppressMenuReleases) {
 		[menuEventToAbort release];
 		menuEventToAbort = nil;
 		NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _menuButtonTimer, NSTimer *);
@@ -556,7 +566,7 @@ NSInteger nowPlayingButtonIndex;
 CHMethod(2, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePasscodeForActions, BOOL, requirePasscode)
 {
 	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
-	if ([activator listenerForEvent:event]) {
+	if (shouldAddNowPlayingButton && [activator assignedListenerNameForEvent:event]) {
 		CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
 		NSString *listenerName = [activator assignedListenerNameForEvent:event];
 		NSString *title = [activator localizedTitleForListenerName:listenerName];
@@ -564,6 +574,7 @@ CHMethod(2, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePass
 		//[alertSheet setNumberOfRows:2];
 		nowPlayingButtonIndex = [alertSheet addButtonWithTitle:title];
 	} else {
+		nowPlayingButtonIndex = -1000;
 		CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
 	}
 }
