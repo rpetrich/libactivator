@@ -182,7 +182,10 @@ static LAActivator *sharedActivator;
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
 {
-	[sharedActivator _activateApplication:_application];
+	if ([activator currentEventMode] == LAEventModeSpringBoard) 
+		[activator performSelector:@selector(_activateApplication:) withObject:_application afterDelay:0.0f];
+	else
+		[activator _activateApplication:_application];
 }
 
 @end
@@ -236,6 +239,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			[messagingCenter registerForMessageName:@"_cachedAndSortedListeners" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"compatibleEventModesForListenerWithName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"_iconDataForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"_smallIconDataForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"localizedTitleForListenerName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
@@ -608,16 +612,20 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
 {
-	return [[_listenerData objectForKey:name] objectForInfoDictionaryKey:@"compatible-modes"] ?: [self availableEventModes];
+	NSBundle *listenerBundle = [_listenerData objectForKey:name];
+	if (listenerBundle)
+		return [listenerBundle objectForInfoDictionaryKey:@"compatible-modes"] ?: [self availableEventModes];
+	else if (InSpringBoard)
+		return [_applications objectForKey:name] ? [NSArray arrayWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil] : [NSArray array];
+	else
+		return [self _performRemoteMessage:_cmd withObject:name];
 }
 
 - (BOOL)listenerWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
 {
-	if (eventMode) {
-		NSArray *compatibleModes = [[_listenerData objectForKey:eventName] objectForInfoDictionaryKey:@"compatible-modes"];
-		if (compatibleModes)
-			return [compatibleModes containsObject:eventMode];
-	}
+	if (eventMode)
+		// TODO: optimize this
+		return [[self compatibleEventModesForListenerWithName:eventName] containsObject:eventMode];
 	return YES;
 }
 
