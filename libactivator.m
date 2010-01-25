@@ -259,7 +259,8 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Listeners" error:NULL])
 			if (![fileName hasPrefix:@"."])
 				[_listenerData setObject:[NSBundle bundleWithPath:[@"/Library/Activator/Listeners" stringByAppendingPathComponent:fileName]] forKey:fileName];
-		_applications = [[NSMutableDictionary alloc] init];
+		// Applications aren't retained
+		_applications = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
 		// Load Main Bundle
 		_mainBundle = [[NSBundle alloc] initWithPath:@"/Library/Activator"];
 	}
@@ -811,6 +812,16 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 CHMethod(8, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdentifier, roleIdentifier, NSString *, roleIdentifier, path, NSString *, path, bundle, id, bundle, infoDictionary, NSDictionary *, infoDictionary, isSystemApplication, BOOL, isSystemApplication, signerIdentity, id, signerIdentity, provisioningProfileValidated, BOOL, validated)
 {
 	if ((self = CHSuper(8, SBApplication, initWithBundleIdentifier, bundleIdentifier, roleIdentifier, roleIdentifier, path, path, bundle, bundle, infoDictionary, infoDictionary, isSystemApplication, isSystemApplication, signerIdentity, signerIdentity, provisioningProfileValidated, validated))) {
+		if (isSystemApplication) {
+			NSString *displayIdentifier = [self displayIdentifier];
+			if ([displayIdentifier isEqualToString:@"com.apple.DemoApp"] ||
+				[displayIdentifier isEqualToString:@"com.apple.fieldtest"] ||
+				[displayIdentifier isEqualToString:@"com.apple.springboard"] ||
+				[displayIdentifier isEqualToString:@"com.apple.WebSheet"]
+			) {
+				return self;
+			}
+		}
 		[sharedActivator _addApplication:self];
 	}
 	return self;
