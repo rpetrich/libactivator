@@ -1,3 +1,10 @@
+ifeq ($(shell [ -f ./framework/makefiles/common.mk ] && echo 1 || echo 0),0)
+first::
+	git submodule init
+	git submodule update
+	$(MAKE)
+endif
+
 # libactivator.dylib (/usr/lib)
 LIBRARY_NAME = libactivator
 libactivator_OBJC_FILES = Actions.m Events.m ListenerSettingsViewController.m libactivator.m
