@@ -3,8 +3,7 @@ first::
 	git submodule init
 	git submodule update
 	$(MAKE)
-endif
-
+else
 # libactivator.dylib (/usr/lib)
 LIBRARY_NAME = libactivator
 libactivator_OBJC_FILES = Actions.m Events.m ListenerSettingsViewController.m libactivator.m
@@ -48,3 +47,4 @@ internal-package::
 	mkdir -p $(FW_PACKAGE_STAGING_DIR)/Library/Activator/Listeners
 	cp -a libactivator.h $(FW_PACKAGE_STAGING_DIR)/usr/include/libactivator/
 	- find $(FW_PACKAGE_STAGING_DIR) -iname '*.plist' -or -iname '*.strings' -exec plutil -convert binary1 {} \;
+endif
