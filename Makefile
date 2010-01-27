@@ -1,8 +1,8 @@
 ifeq ($(shell [ -f ./framework/makefiles/common.mk ] && echo 1 || echo 0),0)
-first::
+all clean package install::
 	git submodule init
 	git submodule update
-	$(MAKE)
+	$(MAKE) $(MAKEFLAGS) MAKELEVEL=0 $@
 else
 # libactivator.dylib (/usr/lib)
 LIBRARY_NAME = libactivator
