@@ -1,7 +1,7 @@
 Package: libactivator
 Depends: mobilesubstrate, preferenceloader (>= 1.2)
-Name: LibActivator
-Version: 1.1.0
+Name: Activator
+Version: 1.2~rc1
 Priority: optional
 Architecture: iphoneos-arm
 Description: A common library for activating apps via gestures, buttons and shortcuts
@@ -10,8 +10,8 @@ Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=libactivat
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Author: Ryan Petrich <rpetrich@gmail.com>
 Sponsor: thebigboss.org <http://thebigboss.org>
-Conflicts: com.booleanmagic.overboard (<= 1.0), com.sinfuliphone.overboard (<= 1.0)
-Replaces: com.booleanmagic.overboard (<= 1.0), com.sinfuliphone.overboard (<= 1.0)
+Conflicts: com.booleanmagic.overboard (<= 1.1), com.sinfuliphone.overboard (<= 1.1)
+Replaces: com.booleanmagic.overboard (<= 1.1), com.sinfuliphone.overboard (<= 1.1)
 Section: System
 Installed-Size: 100
 dev: rpetrich

@@ -57,6 +57,7 @@ __attribute__((visibility("hidden")))
 @end
 
 CHDeclareClass(SpringBoard);
+CHDeclareClass(iHome);
 CHDeclareClass(SBUIController);
 CHDeclareClass(SBIconController);
 CHDeclareClass(SBIconScrollView);
@@ -65,7 +66,6 @@ CHDeclareClass(SBStatusBar);
 CHDeclareClass(SBNowPlayingAlertItem);
 CHDeclareClass(SBAwayController);
 CHDeclareClass(VolumeControl);
-CHDeclareClass(iHome);
 CHDeclareClass(SBStatusBarController);
 
 static BOOL shouldInterceptMenuPresses;
@@ -402,6 +402,32 @@ CHMethod(0, void, SpringBoard, activatorCancelVolumeChord)
 	lastVolumeEvent = 0;
 }
 
+CHMethod(0, void, iHome, inject)
+{
+	CHSuper(0, iHome, inject);
+	LASlideGestureWindow *sgw = [LASlideGestureWindow sharedInstance];
+	[quickDoButton release];
+	UIButton **buttonRef = CHIvarRef(self, touchButton, UIButton *);
+	if (buttonRef) {
+		quickDoButton = [*buttonRef retain];
+		if (quickDoButton) {
+			UIWindow *window = [quickDoButton window];
+			if (window) {
+				CGRect windowFrame = [window frame];
+				CGRect screenBounds = [[UIScreen mainScreen] bounds];
+				if (windowFrame.origin.y > screenBounds.origin.y + screenBounds.size.height / 2.0f) {
+					[sgw setHidden:YES];
+					[sgw acceptEventsFromControl:quickDoButton];
+					return;
+				}
+			}
+		}
+	} else {
+		quickDoButton = nil;
+	}
+	[sgw setHidden:NO];
+}
+
 CHMethod(0, BOOL, SBUIController, clickedMenuButton)
 {
 	if (![CHSharedInstance(SBIconController) isEditing])
@@ -412,6 +438,10 @@ CHMethod(0, BOOL, SBUIController, clickedMenuButton)
 
 CHMethod(0, void, SBUIController, finishLaunching)
 {
+	if (!CHClass(iHome)) {
+		CHLoadLateClass(iHome);
+		CHHook(0, iHome, inject);
+	}
 	if (!quickDoButton)
 		[[LASlideGestureWindow sharedInstance] setHidden:NO];
 	CHSuper(0, SBUIController, finishLaunching);
@@ -623,32 +653,6 @@ CHMethod(0, void, VolumeControl, _tearDown)
 	CHSuper(0, VolumeControl, _tearDown);
 }
 
-CHMethod(0, void, iHome, inject)
-{
-	CHSuper(0, iHome, inject);
-	LASlideGestureWindow *sgw = [LASlideGestureWindow sharedInstance];
-	[quickDoButton release];
-	UIButton **buttonRef = CHIvarRef(self, touchButton, UIButton *);
-	if (buttonRef) {
-		quickDoButton = [*buttonRef retain];
-		if (quickDoButton) {
-			UIWindow *window = [quickDoButton window];
-			if (window) {
-				CGRect windowFrame = [window frame];
-				CGRect screenBounds = [[UIScreen mainScreen] bounds];
-				if (windowFrame.origin.y > screenBounds.origin.y + screenBounds.size.height / 2.0f) {
-					[sgw setHidden:YES];
-					[sgw acceptEventsFromControl:quickDoButton];
-					return;
-				}
-			}
-		}
-	} else {
-		quickDoButton = nil;
-	}
-	[sgw setHidden:NO];
-}
-
 CHConstructor
 {  
 	CHLoadLateClass(SpringBoard);
@@ -704,9 +708,9 @@ CHConstructor
 	CHHook(0, VolumeControl, _createUI);
 	CHHook(0, VolumeControl, _tearDown);
 
-	dlopen("/Library/MobileSubstrate/DynamicLibraries/mQuickDo.dylib", RTLD_LAZY);
 	CHLoadLateClass(iHome);
-	CHHook(0, iHome, inject);
+	if (CHClass(iHome))
+		CHHook(0, iHome, inject);
 	
 	CHLoadLateClass(SBStatusBarController);
 }
