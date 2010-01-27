@@ -182,6 +182,7 @@ static LAActivator *sharedActivator;
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
 {
+	[event setHandled:YES];
 	if ([activator currentEventMode] == LAEventModeSpringBoard) 
 		[activator performSelector:@selector(_activateApplication:) withObject:_application afterDelay:0.0f];
 	else
