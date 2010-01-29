@@ -1,4 +1,5 @@
 #import "libactivator.h"
+#import "libactivator-private.h"
 
 #import <CaptainHook/CaptainHook.h>
 #import <SpringBoard/SpringBoard.h>
@@ -43,19 +44,6 @@ NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake
 #define kWindowLevelTransparentTopMost     9999.0f
 #define kAlmostTransparentColor            [[UIColor blackColor] colorWithAlphaComponent:(1.0f / 255.0f)]
 
-__attribute__((visibility("hidden")))
-@interface LASlideGestureWindow : UIWindow {
-	BOOL hasSentSlideEvent;
-}
-+ (id)sharedInstance;
-- (void)acceptEventsFromControl:(UIControl *)control;
-@end
-
-__attribute__((visibility("hidden")))
-@interface LAVolumeTapWindow : UIWindow {
-}
-@end
-
 CHDeclareClass(SpringBoard);
 CHDeclareClass(iHome);
 CHDeclareClass(SBUIController);
@@ -73,7 +61,11 @@ static BOOL shouldSuppressMenuReleases;
 static BOOL shouldSuppressLockSound;
 static BOOL shouldAddNowPlayingButton;
 
-static LASlideGestureWindow *slideGestureWindow;
+static LASlideGestureWindow *leftSlideGestureWindow;
+static LASlideGestureWindow *middleSlideGestureWindow;
+static LASlideGestureWindow *rightSlideGestureWindow;
+
+static LAQuickDoDelegate *sharedQuickDoDelegate;
 static UIButton *quickDoButton;
 
 static LAActivator *activator;
@@ -104,25 +96,61 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 
 @implementation LASlideGestureWindow
 
-+ (id)sharedInstance
++ (LASlideGestureWindow *)leftWindow
 {
-	if (!slideGestureWindow) {
+	if (!leftSlideGestureWindow) {
 		CGRect frame = [[UIScreen mainScreen] bounds];
 		frame.origin.y += frame.size.height - kSlideGestureWindowHeight;
 		frame.size.height = kSlideGestureWindowHeight;
-		slideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame];
-		[slideGestureWindow setWindowLevel:kWindowLevelTransparentTopMost];
-		[slideGestureWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
+		frame.size.width *= 0.25f;
+		leftSlideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame eventName:LAEventNameSlideInFromBottomLeft];
 	}
-	return slideGestureWindow;
+	return leftSlideGestureWindow;
+}
+
++ (LASlideGestureWindow *)middleWindow
+{
+	if (!middleSlideGestureWindow) {
+		CGRect frame = [[UIScreen mainScreen] bounds];
+		frame.origin.y += frame.size.height - kSlideGestureWindowHeight;
+		frame.size.height = kSlideGestureWindowHeight;
+		frame.origin.x += frame.size.width * 0.25f;
+		frame.size.width *= 0.5f;
+		middleSlideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame eventName:LAEventNameSlideInFromBottom];
+	}
+	return middleSlideGestureWindow;
+}
+
++ (LASlideGestureWindow *)rightWindow
+{
+	if (!rightSlideGestureWindow) {
+		CGRect frame = [[UIScreen mainScreen] bounds];
+		frame.origin.y += frame.size.height - kSlideGestureWindowHeight;
+		frame.size.height = kSlideGestureWindowHeight;
+		frame.origin.x += frame.size.width * 0.75f;
+		frame.size.width *= 0.25f;
+		rightSlideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame eventName:LAEventNameSlideInFromBottomRight];
+	}
+	return rightSlideGestureWindow;
+}
+
+- (id)initWithFrame:(CGRect)frame eventName:(NSString *)eventName
+{
+	if ((self = [super initWithFrame:frame])) {
+		_eventName = [eventName copy];
+		[self setWindowLevel:kWindowLevelTransparentTopMost];
+		[self setBackgroundColor:kAlmostTransparentColor];
+	}
+	return self;
+}
+
+- (void)dealloc
+{
+	[_eventName release];
+	[super dealloc];
 }
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
-{
-	hasSentSlideEvent = NO;
-}
-
-- (void)controlTouchesBegan:(UIControl *)control withEvent:(UIEvent *)event
 {
 	hasSentSlideEvent = NO;
 }
@@ -133,13 +161,29 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 		hasSentSlideEvent = YES;
 		UITouch *touch = [touches anyObject];
 		CGFloat xFactor = [touch locationInView:self].x / [self bounds].size.width;
-		if (xFactor < 0.25f)
-			LASendEventWithName(LAEventNameSlideInFromBottomLeft);
-		else if (xFactor < 0.75f)
-			LASendEventWithName(LAEventNameSlideInFromBottom);
-		else
-			LASendEventWithName(LAEventNameSlideInFromBottomRight);
+		LASendEventWithName(_eventName);
 	}
+}
+
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	hasSentSlideEvent = NO;
+}
+
+@end
+
+@implementation LAQuickDoDelegate
+
++ (id)sharedInstance
+{
+	if (!sharedQuickDoDelegate)
+		sharedQuickDoDelegate = [[self alloc] init];
+	return sharedQuickDoDelegate;
+}
+
+- (void)controlTouchesBegan:(UIControl *)control withEvent:(UIEvent *)event
+{
+	hasSentSlideEvent = NO;
 }
 
 - (void)controlTouchesMoved:(UIControl *)control withEvent:(UIEvent *)event
@@ -155,11 +199,6 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 		else
 			LASendEventWithName(LAEventNameSlideInFromBottomRight);
 	}
-}
-
-- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
-{
-	hasSentSlideEvent = NO;
 }
 
 - (void)controlTouchesEnded:(UIControl *)control withEvent:(UIEvent *)event
@@ -405,7 +444,6 @@ CHMethod(0, void, SpringBoard, activatorCancelVolumeChord)
 CHMethod(0, void, iHome, inject)
 {
 	CHSuper(0, iHome, inject);
-	LASlideGestureWindow *sgw = [LASlideGestureWindow sharedInstance];
 	[quickDoButton release];
 	UIButton **buttonRef = CHIvarRef(self, touchButton, UIButton *);
 	if (buttonRef) {
@@ -416,8 +454,10 @@ CHMethod(0, void, iHome, inject)
 				CGRect windowFrame = [window frame];
 				CGRect screenBounds = [[UIScreen mainScreen] bounds];
 				if (windowFrame.origin.y > screenBounds.origin.y + screenBounds.size.height / 2.0f) {
-					[sgw setHidden:YES];
-					[sgw acceptEventsFromControl:quickDoButton];
+					[leftSlideGestureWindow setHidden:YES];
+					[middleSlideGestureWindow setHidden:YES];
+					[rightSlideGestureWindow setHidden:YES];
+					[[LAQuickDoDelegate sharedInstance] acceptEventsFromControl:quickDoButton];
 					return;
 				}
 			}
@@ -425,7 +465,6 @@ CHMethod(0, void, iHome, inject)
 	} else {
 		quickDoButton = nil;
 	}
-	[sgw setHidden:NO];
 }
 
 CHMethod(0, BOOL, SBUIController, clickedMenuButton)
@@ -442,8 +481,11 @@ CHMethod(0, void, SBUIController, finishLaunching)
 		CHLoadLateClass(iHome);
 		CHHook(0, iHome, inject);
 	}
-	if (!quickDoButton)
-		[[LASlideGestureWindow sharedInstance] setHidden:NO];
+	if (!quickDoButton) {
+		[[LASlideGestureWindow leftWindow] setHidden:NO];
+		[[LASlideGestureWindow middleWindow] setHidden:NO];
+		[[LASlideGestureWindow rightWindow] setHidden:NO];
+	}
 	CHSuper(0, SBUIController, finishLaunching);
 }
 

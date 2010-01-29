@@ -3,7 +3,10 @@
 #import <SpringBoard/SpringBoard.h>
 #import <AppSupport/AppSupport.h>
 
+// libactivator.m
+
 @interface LAActivator ()
+
 - (void)_loadPreferences;
 - (void)_savePreferences;
 - (void)_reloadPreferences;
@@ -14,6 +17,7 @@
 - (void)_removeApplication:(SBApplication *)application;
 - (void)_activateApplication:(SBApplication *)application;
 - (NSDictionary *)_cachedAndSortedListeners;
+
 @end
 
 __attribute__((visibility("hidden")))
@@ -21,7 +25,9 @@ __attribute__((visibility("hidden")))
 @private
 	SBApplication *_application;
 }
+
 - (id)initWithApplication:(SBApplication *)application;
+
 @end
 
 __attribute__((visibility("hidden")))
@@ -30,6 +36,43 @@ __attribute__((visibility("hidden")))
 	NSString *_listenerName;
 	CPDistributedMessagingCenter *_messagingCenter;
 }
+
 - (id)initWithListenerName:(NSString *)listenerName;
+
+@end
+
+// Events.m
+
+__attribute__((visibility("hidden")))
+@interface LASlideGestureWindow : UIWindow {
+@private
+	BOOL hasSentSlideEvent;
+	NSString *_eventName;
+}
+
++ (LASlideGestureWindow *)leftWindow;
++ (LASlideGestureWindow *)middleWindow;
++ (LASlideGestureWindow *)rightWindow;
+
+- (id)initWithFrame:(CGRect)frame eventName:(NSString *)eventName;
+
+@end
+
+__attribute__((visibility("hidden")))
+@interface LAVolumeTapWindow : UIWindow {
+}
+
+@end
+
+__attribute__((visibility("hidden")))
+@interface LAQuickDoDelegate : NSObject {
+@private
+	BOOL hasSentSlideEvent;
+}
+
++ (id)sharedInstance;
+
+- (void)acceptEventsFromControl:(UIControl *)control;
+
 @end
 
