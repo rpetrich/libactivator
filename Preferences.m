@@ -411,24 +411,41 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 2;
+	return 3;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-	return (section == 0) ? 1 : [[activator availableEventModes] count];
+	switch (section) {
+		case 0:
+			return 1;
+		case 1:
+			return [[activator availableEventModes] count];
+		default:
+			return 0;
+	}
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
 {
-	return (section == 0) ? nil : [activator localizedStringForKey:@"LOCALIZATION_ABOUT" value:@""];
+	switch (section) {
+		case 1:
+			return [activator localizedStringForKey:@"LOCALIZATION_ABOUT" value:@""];
+		case 2:
+			return @"\u00A9 2009-2010 Ryan Petrich";
+		default:
+			return nil;
+	}
 }
 
 - (NSString *)eventModeForIndexPath:(NSIndexPath *)indexPath
 {
-	if ([indexPath section] == 0)
-		return nil;
-	return [[activator availableEventModes] objectAtIndex:[indexPath row]];
+	switch ([indexPath section]) {
+		case 1:
+			return [[activator availableEventModes] objectAtIndex:[indexPath row]];
+		default:
+			return nil;
+	}
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
