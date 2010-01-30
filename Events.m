@@ -42,8 +42,7 @@ NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake
 #define kStatusBarHoldDelay                0.5f
 #define kSlideGestureWindowHeight          13.0f
 #define kWindowLevelTransparentTopMost     9999.0f
-//#define kAlmostTransparentColor            [[UIColor blackColor] colorWithAlphaComponent:(1.0f / 255.0f)]
-#define kAlmostTransparentColor            [[UIColor redColor] colorWithAlphaComponent:0.5f]
+#define kAlmostTransparentColor            [[UIColor blackColor] colorWithAlphaComponent:(1.0f / 255.0f)]
 
 CHDeclareClass(SpringBoard);
 CHDeclareClass(iHome);
@@ -499,24 +498,28 @@ CHMethod(0, void, SBUIController, finishLaunching)
 		CHHook(0, iHome, inject);
 	}
 	CHSuper(0, SBUIController, finishLaunching);
+	[LASlideGestureWindow updateVisibility];
 }
 
 CHMethod(0, void, SBUIController, tearDownIconListAndBar)
 {
 	CHSuper(0, SBUIController, tearDownIconListAndBar);
 	[LASlideGestureWindow updateVisibility];
+	[activator _eventModeChanged];
 }
 
 CHMethod(1, void, SBUIController, restoreIconList, BOOL, animate)
 {
 	CHSuper(1, SBUIController, restoreIconList, animate);
 	[LASlideGestureWindow updateVisibility];
+	[activator _eventModeChanged];
 }
 
 CHMethod(0, void, SBUIController, lock)
 {
 	CHSuper(0, SBUIController, lock);
 	[LASlideGestureWindow updateVisibility];
+	[activator _eventModeChanged];
 }
 
 CHMethod(2, void, SBIconController, scrollToIconListAtIndex, NSInteger, index, animate, BOOL, animate)

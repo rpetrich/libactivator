@@ -96,6 +96,7 @@
 @optional
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event;
 - (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event;
+- (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;
 @end
 
 // Settings Controller

@@ -17,6 +17,7 @@
 - (void)_removeApplication:(SBApplication *)application;
 - (void)_activateApplication:(SBApplication *)application;
 - (NSDictionary *)_cachedAndSortedListeners;
+- (void)_eventModeChanged;
 
 @end
 

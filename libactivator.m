@@ -438,6 +438,14 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	return _cachedAndSortedListeners;
 }
 
+- (void)_eventModeChanged
+{
+	NSString *eventMode = [self currentEventMode];
+	for (id<LAListener> listener in [_listeners allValues])
+		if ([listener respondsToSelector:@selector(activator:didChangeToEventMode:)])
+			[listener activator:self didChangeToEventMode:eventMode];
+}
+
 
 // Sending Events
 
