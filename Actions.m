@@ -77,6 +77,7 @@ CHDeclareClass(SBSearchController);
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
 {
 	objc_msgSend(self, _action);
+	[event setHandled:YES];
 }
 
 #define RegisterAction(name) \
