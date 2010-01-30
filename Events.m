@@ -42,7 +42,8 @@ NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake
 #define kStatusBarHoldDelay                0.5f
 #define kSlideGestureWindowHeight          13.0f
 #define kWindowLevelTransparentTopMost     9999.0f
-#define kAlmostTransparentColor            [[UIColor blackColor] colorWithAlphaComponent:(1.0f / 255.0f)]
+//#define kAlmostTransparentColor            [[UIColor blackColor] colorWithAlphaComponent:(1.0f / 255.0f)]
+#define kAlmostTransparentColor            [[UIColor redColor] colorWithAlphaComponent:0.5f]
 
 CHDeclareClass(SpringBoard);
 CHDeclareClass(iHome);
@@ -134,6 +135,19 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 	return rightSlideGestureWindow;
 }
 
++ (void)updateVisibility
+{
+	if (!quickDoButton) {
+		[[LASlideGestureWindow leftWindow] updateVisibility];
+		[[LASlideGestureWindow middleWindow] updateVisibility];
+		[[LASlideGestureWindow rightWindow] updateVisibility];
+	} else {
+		[leftSlideGestureWindow setHidden:YES];
+		[middleSlideGestureWindow setHidden:YES];
+		[rightSlideGestureWindow setHidden:YES];
+	}
+}
+
 - (id)initWithFrame:(CGRect)frame eventName:(NSString *)eventName
 {
 	if ((self = [super initWithFrame:frame])) {
@@ -142,6 +156,11 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 		[self setBackgroundColor:kAlmostTransparentColor];
 	}
 	return self;
+}
+
+- (void)updateVisibility
+{
+	[self setHidden:[activator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName]] == nil];
 }
 
 - (void)dealloc
@@ -454,9 +473,7 @@ CHMethod(0, void, iHome, inject)
 				CGRect windowFrame = [window frame];
 				CGRect screenBounds = [[UIScreen mainScreen] bounds];
 				if (windowFrame.origin.y > screenBounds.origin.y + screenBounds.size.height / 2.0f) {
-					[leftSlideGestureWindow setHidden:YES];
-					[middleSlideGestureWindow setHidden:YES];
-					[rightSlideGestureWindow setHidden:YES];
+					[LASlideGestureWindow updateVisibility];
 					[[LAQuickDoDelegate sharedInstance] acceptEventsFromControl:quickDoButton];
 					return;
 				}
@@ -481,12 +498,25 @@ CHMethod(0, void, SBUIController, finishLaunching)
 		CHLoadLateClass(iHome);
 		CHHook(0, iHome, inject);
 	}
-	if (!quickDoButton) {
-		[[LASlideGestureWindow leftWindow] setHidden:NO];
-		[[LASlideGestureWindow middleWindow] setHidden:NO];
-		[[LASlideGestureWindow rightWindow] setHidden:NO];
-	}
 	CHSuper(0, SBUIController, finishLaunching);
+}
+
+CHMethod(0, void, SBUIController, tearDownIconListAndBar)
+{
+	CHSuper(0, SBUIController, tearDownIconListAndBar);
+	[LASlideGestureWindow updateVisibility];
+}
+
+CHMethod(1, void, SBUIController, restoreIconList, BOOL, animate)
+{
+	CHSuper(1, SBUIController, restoreIconList, animate);
+	[LASlideGestureWindow updateVisibility];
+}
+
+CHMethod(0, void, SBUIController, lock)
+{
+	CHSuper(0, SBUIController, lock);
+	[LASlideGestureWindow updateVisibility];
 }
 
 CHMethod(2, void, SBIconController, scrollToIconListAtIndex, NSInteger, index, animate, BOOL, animate)
@@ -719,6 +749,9 @@ CHConstructor
 	CHLoadLateClass(SBUIController);
 	CHHook(0, SBUIController, clickedMenuButton);
 	CHHook(0, SBUIController, finishLaunching);
+	CHHook(0, SBUIController, tearDownIconListAndBar);
+	CHHook(1, SBUIController, restoreIconList);
+	CHHook(0, SBUIController, lock);
 
 	CHLoadLateClass(SBIconController);
 	CHHook(2, SBIconController, scrollToIconListAtIndex, animate);

@@ -53,8 +53,11 @@ __attribute__((visibility("hidden")))
 + (LASlideGestureWindow *)leftWindow;
 + (LASlideGestureWindow *)middleWindow;
 + (LASlideGestureWindow *)rightWindow;
++ (void)updateVisibility;
 
 - (id)initWithFrame:(CGRect)frame eventName:(NSString *)eventName;
+
+- (void)updateVisibility;
 
 @end
 
