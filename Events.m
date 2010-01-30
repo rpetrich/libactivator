@@ -177,8 +177,6 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 {
 	if (!hasSentSlideEvent) {
 		hasSentSlideEvent = YES;
-		UITouch *touch = [touches anyObject];
-		CGFloat xFactor = [touch locationInView:self].x / [self bounds].size.width;
 		LASendEventWithName(_eventName);
 	}
 }
