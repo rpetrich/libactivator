@@ -393,22 +393,27 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
     SBApplication *oldApplication = [SBWActiveDisplayStack topApplication] ?: springBoard;
     if (oldApplication == application)
     	return;
-	if (oldApplication == springBoard) {
-		[application setDisplaySetting:0x4 flag:YES];
-		[SBWPreActivateDisplayStack pushDisplay:application];
-	} else if (application == springBoard) {
-		[oldApplication setDeactivationSetting:0x2 flag:YES];
-		[SBWActiveDisplayStack popDisplay:oldApplication];
-		[SBWSuspendingDisplayStack pushDisplay:oldApplication];
+	SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:[application displayIdentifier]];
+	if (icon && [self currentEventMode] == LAEventModeSpringBoard) {
+		[icon launch];
 	} else {
-		[application setDisplaySetting:0x4 flag:YES];
-		[application setActivationSetting:0x40 flag:YES];
-		[application setActivationSetting:0x20000 flag:YES];
-		[SBWPreActivateDisplayStack pushDisplay:application];
-		[oldApplication setDeactivationSetting:0x2 flag:YES];
-		[SBWActiveDisplayStack popDisplay:oldApplication];
-		[SBWSuspendingDisplayStack pushDisplay:oldApplication];
-    }
+		if (oldApplication == springBoard) {
+			[application setDisplaySetting:0x4 flag:YES];
+			[SBWPreActivateDisplayStack pushDisplay:application];
+		} else if (application == springBoard) {
+			[oldApplication setDeactivationSetting:0x2 flag:YES];
+			[SBWActiveDisplayStack popDisplay:oldApplication];
+			[SBWSuspendingDisplayStack pushDisplay:oldApplication];
+		} else {
+			[application setDisplaySetting:0x4 flag:YES];
+			[application setActivationSetting:0x40 flag:YES];
+			[application setActivationSetting:0x20000 flag:YES];
+			[SBWPreActivateDisplayStack pushDisplay:application];
+			[oldApplication setDeactivationSetting:0x2 flag:YES];
+			[SBWActiveDisplayStack popDisplay:oldApplication];
+			[SBWSuspendingDisplayStack pushDisplay:oldApplication];
+		}
+	}
 }
 
 - (NSDictionary *)_cachedAndSortedListeners
