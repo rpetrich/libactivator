@@ -830,6 +830,9 @@ CHMethod(8, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdent
 			) {
 				return self;
 			}
+			if (![[NSFileManager defaultManager] fileExistsAtPath:[[self bundle] executablePath]]) {
+				return self;
+			}
 		}
 		[sharedActivator _addApplication:self];
 	}
