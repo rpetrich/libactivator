@@ -823,7 +823,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 @end
 
-CHMethod(8, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdentifier, roleIdentifier, NSString *, roleIdentifier, path, NSString *, path, bundle, id, bundle, infoDictionary, NSDictionary *, infoDictionary, isSystemApplication, BOOL, isSystemApplication, signerIdentity, id, signerIdentity, provisioningProfileValidated, BOOL, validated)
+CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdentifier, roleIdentifier, NSString *, roleIdentifier, path, NSString *, path, bundle, id, bundle, infoDictionary, NSDictionary *, infoDictionary, isSystemApplication, BOOL, isSystemApplication, signerIdentity, id, signerIdentity, provisioningProfileValidated, BOOL, validated)
 {
 	if ((self = CHSuper(8, SBApplication, initWithBundleIdentifier, bundleIdentifier, roleIdentifier, roleIdentifier, path, path, bundle, bundle, infoDictionary, infoDictionary, isSystemApplication, isSystemApplication, signerIdentity, signerIdentity, provisioningProfileValidated, validated))) {
 		if (isSystemApplication) {
@@ -844,13 +844,13 @@ CHMethod(8, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdent
 	return self;
 }
 
-CHMethod(0, void, SBApplication, dealloc)
+CHOptimizedMethod(0, self, void, SBApplication, dealloc)
 {
 	[sharedActivator _removeApplication:self];
 	CHSuper(0, SBApplication, dealloc);
 }
 
-CHMethod(0, id, SBDisplayStack, init)
+CHOptimizedMethod(0, self, id, SBDisplayStack, init)
 {
 	if ((self = CHSuper(0, SBDisplayStack, init))) {
 		if (!displayStacks)
@@ -860,7 +860,7 @@ CHMethod(0, id, SBDisplayStack, init)
 	return self;
 }
 
-CHMethod(0, void, SBDisplayStack, dealloc)
+CHOptimizedMethod(0, self, void, SBDisplayStack, dealloc)
 {
 	[displayStacks removeObject:self];
 	CHSuper(0, SBDisplayStack, dealloc);
