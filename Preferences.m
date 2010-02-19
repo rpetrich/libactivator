@@ -132,7 +132,7 @@ static LAActivator *activator;
 	UIRectFill(line);
 	[[UIColor colorWithRed:0.3f green:0.34f blue:0.42f alpha:1.0f] setFill];
 	CGContextSetShadowWithColor(c, CGSizeMake(0.0f, -1.0f), 0.0f, [[UIColor whiteColor] CGColor]);
-	[@"Currently assigned to:" drawAtPoint:CGPointMake(20.0f, 9.0f) withFont:[UIFont boldSystemFontOfSize:17.0f]];
+	[[activator localizedStringForKey:@"CURRENTLY_ASSIGNED_TO" value:@"Currently assigned to:"] drawAtPoint:CGPointMake(20.0f, 9.0f) withFont:[UIFont boldSystemFontOfSize:17.0f]];
 	if ([_listenerName length]) {
 		UIImage *image = [activator smallIconForListenerName:_listenerName];
 		CGFloat x;
@@ -145,7 +145,7 @@ static LAActivator *activator;
 		[[UIColor blackColor] setFill];
 		[[activator localizedTitleForListenerName:_listenerName] drawAtPoint:CGPointMake(x, 39.0f) withFont:[UIFont boldSystemFontOfSize:19.0f]];
 	} else {
-		[@"(unassigned)" drawAtPoint:CGPointMake(30.0f, 40.0f) withFont:[UIFont boldSystemFontOfSize:17.0f]];
+		[[activator localizedStringForKey:@"UNASSIGNED" value:@"(unassigned)"] drawAtPoint:CGPointMake(30.0f, 40.0f) withFont:[UIFont boldSystemFontOfSize:17.0f]];
 	}
 }
 
