@@ -27,6 +27,32 @@ static NSMutableArray *displayStacks;
 
 static LAActivator *sharedActivator;
 
+@interface NSObject(LAListener)
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event;
+- (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event;
+- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event;
+- (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;
+- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event;
+@end
+
+@implementation NSObject(LAListener)
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
+{
+}
+- (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event
+{
+}
+- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event
+{
+}
+- (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode
+{
+}
+- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event
+{
+}
+@end
+
 @implementation LAEvent
 
 @synthesize name = _name;
@@ -126,20 +152,6 @@ static LAActivator *sharedActivator;
 	[super dealloc];
 }
 
-- (BOOL)respondsToSelector:(SEL)selector
-{
-	if (selector == @selector(activator:receiveEvent:) ||
-		selector == @selector(activator:abortEvent:) ||
-		selector == @selector(activator:receiveDeactivateEvent:) ||
-		selector == @selector(activator:otherListenerDidHandleEvent:)
-	) {
-		NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:NSStringFromSelector(selector), @"selector", _listenerName, @"listenerName", nil];
-		NSNumber *result = [[_messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(_cmd) userInfo:userInfo] objectForKey:@"result"];
-		return [result boolValue];
-	}
-	return [super respondsToSelector:selector];
-}
-
 - (void)_performRemoteSelector:(SEL)selector withEvent:(LAEvent *)event
 {
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:[NSKeyedArchiver archivedDataWithRootObject:event], @"event", _listenerName, @"listenerName", nil];
@@ -196,12 +208,6 @@ static LAActivator *sharedActivator;
 	}
 }
 
-/*- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event
-{
-	if ([SBWActiveDisplayStack topApplication] == _application)
-		[event setHandled:YES];
-}*/
-
 @end
 
 
@@ -245,7 +251,6 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
 			[messagingCenter runServerOnCurrentThread];
 			// Remote messages to id<LAListener>
-			[messagingCenter registerForMessageName:@"respondsToSelector:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:receiveEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:abortEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:otherListenerDidHandleEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
@@ -334,17 +339,10 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
 	id<LAListener> listener = [self listenerForName:listenerName];
-	id result;
-	if ([message isEqualToString:@"respondsToSelector:"]) {
-		SEL selector = NSSelectorFromString([userInfo objectForKey:@"selector"]);
-		result = [listener respondsToSelector:selector] ? (id)kCFBooleanTrue : (id)kCFBooleanFalse;
-	} else {
-		LAEvent *event = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"event"]];
-		[listener performSelector:NSSelectorFromString(message) withObject:self withObject:event];
-		result = [NSKeyedArchiver archivedDataWithRootObject:event];
-	}
-	result = [NSDictionary dictionaryWithObject:result forKey:@"result"];
-	return result;
+	LAEvent *event = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"event"]];
+	[listener performSelector:NSSelectorFromString(message) withObject:self withObject:event];
+	id result = [NSKeyedArchiver archivedDataWithRootObject:event];
+	return [NSDictionary dictionaryWithObject:result forKey:@"result"];
 }
 
 - (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
@@ -440,8 +438,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	NSString *eventMode = [self currentEventMode];
 	for (id<LAListener> listener in [_listeners allValues])
-		if ([listener respondsToSelector:@selector(activator:didChangeToEventMode:)])
-			[listener activator:self didChangeToEventMode:eventMode];
+		[listener activator:self didChangeToEventMode:eventMode];
 }
 
 
@@ -455,27 +452,22 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 - (void)sendEventToListener:(LAEvent *)event
 {
 	id<LAListener> listener = [self listenerForEvent:event];
-	if ([listener respondsToSelector:@selector(activator:receiveEvent:)])
-		[listener activator:self receiveEvent:event];
+	[listener activator:self receiveEvent:event];
 	if ([event isHandled])
 		for (id<LAListener> other in [_listeners allValues])
 			if (other != listener)
-				if ([other respondsToSelector:@selector(activator:otherListenerDidHandleEvent:)])
-					[other activator:self otherListenerDidHandleEvent:event];
+				[other activator:self otherListenerDidHandleEvent:event];
 }
 
 - (void)sendAbortToListener:(LAEvent *)event
 {
-	id<LAListener> listener = [self listenerForEvent:event];
-	if ([listener respondsToSelector:@selector(activator:abortEvent:)])
-		[listener activator:self abortEvent:event];
+	[[self listenerForEvent:event] activator:self abortEvent:event];
 }
 
 - (void)sendDeactivateEventToListeners:(LAEvent *)event
 {
 	for (id<LAListener> listener in [_listeners allValues])
-		if ([listener respondsToSelector:@selector(activator:receiveDeactivateEvent:)])
-			[listener activator:self receiveDeactivateEvent:event];
+		[listener activator:self receiveDeactivateEvent:event];
 }
 
 // Registration of listeners
