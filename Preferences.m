@@ -319,8 +319,13 @@ static LAActivator *activator;
 		for (UITableViewCell *otherCell in [tableView visibleCells])
 			[otherCell setAccessoryType:UITableViewCellAccessoryNone];
 		[cell setAccessoryType:UITableViewCellAccessoryCheckmark];
-		for (NSString *mode in _modes)
-			[activator assignEvent:[LAEvent eventWithName:_eventName mode:mode] toListenerWithName:listenerName];
+		for (NSString *mode in _modes) {
+			LAEvent *event = [LAEvent eventWithName:_eventName mode:mode];
+			if ([activator listenerWithName:listenerName isCompatibleWithMode:mode])
+				[activator assignEvent:event toListenerWithName:listenerName];
+			else
+				[activator unassignEvent:event];
+		}
 	}
 	[self updateHeader];
 }
