@@ -121,7 +121,6 @@ extern NSString * const LAEventModeApplication;
 extern NSString * const LAEventModeLockScreen;
 
 
-extern NSString * const LAEventNameMenuPressAtSpringBoard;
 extern NSString * const LAEventNameMenuPressSingle;
 extern NSString * const LAEventNameMenuPressDouble;
 extern NSString * const LAEventNameMenuHoldShort;
