@@ -130,6 +130,7 @@ static LAActivator *sharedActivator;
 {
 	if (selector == @selector(activator:receiveEvent:) ||
 		selector == @selector(activator:abortEvent:) ||
+		selector == @selector(activator:receiveDeactivateEvent:) ||
 		selector == @selector(activator:otherListenerDidHandleEvent:)
 	) {
 		NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:NSStringFromSelector(selector), @"selector", _listenerName, @"listenerName", nil];
@@ -153,6 +154,11 @@ static LAActivator *sharedActivator;
 }
 
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event
+{
+	[self _performRemoteSelector:_cmd withEvent:event];
+}
+
+- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event
 {
 	[self _performRemoteSelector:_cmd withEvent:event];
 }
@@ -182,12 +188,19 @@ static LAActivator *sharedActivator;
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
 {
-	[event setHandled:YES];
-	if ([activator currentEventMode] == LAEventModeSpringBoard) 
+	if ([activator currentEventMode] == LAEventModeSpringBoard) {
 		[activator performSelector:@selector(_activateApplication:) withObject:_application afterDelay:0.0f];
-	else
-		[activator _activateApplication:_application];
+		[event setHandled:YES];
+	} else if ([activator _activateApplication:_application]) {
+		[event setHandled:YES];
+	}
 }
+
+/*- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event
+{
+	if ([SBWActiveDisplayStack topApplication] == _application)
+		[event setHandled:YES];
+}*/
 
 @end
 
@@ -386,13 +399,13 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	[_applications removeObjectForKey:[application displayIdentifier]];
 }
 
-- (void)_activateApplication:(SBApplication *)application
+- (BOOL)_activateApplication:(SBApplication *)application
 {
 	SBApplication *springBoard = [CHSharedInstance(SBApplicationController) springBoard];
 	application = application ?: springBoard;
     SBApplication *oldApplication = [SBWActiveDisplayStack topApplication] ?: springBoard;
     if (oldApplication == application)
-    	return;
+    	return NO;
 	SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:[application displayIdentifier]];
 	if (icon && [self currentEventMode] == LAEventModeSpringBoard) {
 		[icon launch];
@@ -414,6 +427,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			[SBWSuspendingDisplayStack pushDisplay:oldApplication];
 		}
 	}
+	return YES;
 }
 
 - (NSDictionary *)_cachedAndSortedListeners
@@ -476,6 +490,13 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	id<LAListener> listener = [self listenerForEvent:event];
 	if ([listener respondsToSelector:@selector(activator:abortEvent:)])
 		[listener activator:self abortEvent:event];
+}
+
+- (void)sendDeactivateEventToListeners:(LAEvent *)event
+{
+	for (id<LAListener> listener in [_listeners allValues])
+		if ([listener respondsToSelector:@selector(activator:receiveDeactivateEvent:)])
+			[listener activator:self receiveDeactivateEvent:event];
 }
 
 // Registration of listeners

@@ -1,6 +1,5 @@
 {
 	title = "Single Press";
 	group = "Home Button";
-	hidden = 1;
 	description = "Press home button once";
 }

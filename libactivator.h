@@ -44,6 +44,7 @@
 - (id<LAListener>)listenerForEvent:(LAEvent *)event;
 - (void)sendEventToListener:(LAEvent *)event;
 - (void)sendAbortToListener:(LAEvent *)event;
+- (void)sendDeactivateEventToListeners:(LAEvent *)event;
 
 - (id<LAListener>)listenerForName:(NSString *)name;
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name; // Only available in SpringBoard
@@ -97,6 +98,7 @@
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event;
 - (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event;
 - (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;
+- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event;
 @end
 
 // Settings Controller

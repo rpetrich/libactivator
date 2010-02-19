@@ -15,7 +15,7 @@
 - (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject;
 - (void)_addApplication:(SBApplication *)application;
 - (void)_removeApplication:(SBApplication *)application;
-- (void)_activateApplication:(SBApplication *)application;
+- (BOOL)_activateApplication:(SBApplication *)application;
 - (NSDictionary *)_cachedAndSortedListeners;
 - (void)_eventModeChanged;
 
