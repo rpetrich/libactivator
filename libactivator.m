@@ -835,7 +835,7 @@ CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString
 			) {
 				return self;
 			}
-			if (![[NSFileManager defaultManager] fileExistsAtPath:[[self bundle] executablePath]]) {
+			if (![[NSFileManager defaultManager] fileExistsAtPath:[bundle executablePath]]) {
 				return self;
 			}
 		}
