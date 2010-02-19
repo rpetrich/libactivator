@@ -308,30 +308,9 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	BOOL shouldResave = NO;
 	if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]])) {
-		/*if ((_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/User/Library/Preferences/libactivator.plist"])) {
-			// Load old path
-			[[NSFileManager defaultManager] removeItemAtPath:@"/User/Library/Preferences/libactivator.plist" error:NULL];
-			shouldResave = YES;
-		} else {*/
-			// Create a new preference file
-			_preferences = [[NSMutableDictionary alloc] init];
-			/*return;
-		}*/
+		// Create a new preference file
+		_preferences = [[NSMutableDictionary alloc] init];
 	}
-	// Convert old-style preferences
-	/*for (NSString *eventName in [self availableEventNames]) {
-		NSString *oldPref = [@"LAEventListener-" stringByAppendingString:eventName];
-		NSString *oldValue = [_preferences objectForKey:oldPref];
-		if (oldValue) {
-			for (NSString *mode in [self compatibleEventModesForListenerWithName:oldValue])
-				[_preferences setObject:oldValue forKey:ListenerKeyForEventNameAndMode(eventName, mode)];
-			[_preferences removeObjectForKey:oldPref];
-			shouldResave = YES;
-		}
-	}
-	// Save if necessary
-	if (shouldResave)
-		[self _savePreferences];*/
 }
 
 - (void)_savePreferences
