@@ -466,8 +466,12 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)sendDeactivateEventToListeners:(LAEvent *)event
 {
-	for (id<LAListener> listener in [_listeners allValues])
+	BOOL handled = [event isHandled];
+	for (id<LAListener> listener in [_listeners allValues]) {
 		[listener activator:self receiveDeactivateEvent:event];
+		handled |= [event isHandled];
+	}
+	[event setHandled:handled];
 }
 
 // Registration of listeners
