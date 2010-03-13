@@ -3,7 +3,6 @@
 
 #import <CaptainHook/CaptainHook.h>
 #import <SpringBoard/SpringBoard.h>
-#import <UIKit/UIKit-Private.h>
 
 #include <dlfcn.h>
 

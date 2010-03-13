@@ -131,7 +131,7 @@ static LAActivator *sharedActivator;
 	NSBundle *_bundle = (bundle); \
 	NSString *_key = (key); \
 	NSString *_value = (value_); \
-	(_bundle) ? [_bundle localizedStringForKey:key value:_value table:nil] : _value; \
+	(_bundle) ? [_bundle localizedStringForKey:_key value:_value table:nil] : _value; \
 })
 
 @implementation LARemoteListener
@@ -311,7 +311,6 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)_loadPreferences
 {
-	BOOL shouldResave = NO;
 	if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]])) {
 		// Create a new preference file
 		_preferences = [[NSMutableDictionary alloc] init];

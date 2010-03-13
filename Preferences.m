@@ -415,7 +415,6 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
-	NSInteger row = [indexPath row];
 	NSString *eventName = [self eventNameForIndexPath:indexPath];
 	CGFloat alpha = [activator eventWithNameIsHidden:eventName] ? 0.66f : 1.0f;
 	UILabel *label = [cell textLabel];
