@@ -1,9 +1,9 @@
 ifeq ($(shell [ -f ./framework/makefiles/common.mk ] && echo 1 || echo 0),0)
-all clean package install::
-	git submodule init
-	git submodule update
+all clean package install framework::
+	git submodule update --init
 	$(MAKE) $(MAKEFLAGS) MAKELEVEL=0 $@
 else
+
 # libactivator.dylib (/usr/lib)
 LIBRARY_NAME = libactivator
 libactivator_OBJC_FILES = Actions.m Events.m ListenerSettingsViewController.m libactivator.m
@@ -46,4 +46,9 @@ internal-package::
 	mkdir -p $(FW_PACKAGE_STAGING_DIR)/Library/Activator/Listeners
 	cp -a libactivator.h $(FW_PACKAGE_STAGING_DIR)/usr/include/libactivator/
 	- find $(FW_PACKAGE_STAGING_DIR) -iname '*.plist' -or -iname '*.strings' -exec plutil -convert binary1 {} \;
+
+.PHONY: framework
+framework::
+	cd framework && git pull origin master
+
 endif
