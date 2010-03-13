@@ -1,8 +1,8 @@
 #import "libactivator.h"
+#import "libactivator-private.h"
 
 #import <CaptainHook/CaptainHook.h>
 #import <SpringBoard/SpringBoard.h>
-#import <UIKit/UIKit-Private.h>
 
 #include <dlfcn.h>
 
@@ -43,19 +43,6 @@ NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake
 #define kWindowLevelTransparentTopMost     9999.0f
 #define kAlmostTransparentColor            [[UIColor blackColor] colorWithAlphaComponent:(1.0f / 255.0f)]
 
-__attribute__((visibility("hidden")))
-@interface LASlideGestureWindow : UIWindow {
-	BOOL hasSentSlideEvent;
-}
-+ (id)sharedInstance;
-- (void)acceptEventsFromControl:(UIControl *)control;
-@end
-
-__attribute__((visibility("hidden")))
-@interface LAVolumeTapWindow : UIWindow {
-}
-@end
-
 CHDeclareClass(SpringBoard);
 CHDeclareClass(iHome);
 CHDeclareClass(SBUIController);
@@ -73,7 +60,11 @@ static BOOL shouldSuppressMenuReleases;
 static BOOL shouldSuppressLockSound;
 static BOOL shouldAddNowPlayingButton;
 
-static LASlideGestureWindow *slideGestureWindow;
+static LASlideGestureWindow *leftSlideGestureWindow;
+static LASlideGestureWindow *middleSlideGestureWindow;
+static LASlideGestureWindow *rightSlideGestureWindow;
+
+static LAQuickDoDelegate *sharedQuickDoDelegate;
 static UIButton *quickDoButton;
 
 static LAActivator *activator;
@@ -104,17 +95,76 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 
 @implementation LASlideGestureWindow
 
-+ (id)sharedInstance
++ (LASlideGestureWindow *)leftWindow
 {
-	if (!slideGestureWindow) {
+	if (!leftSlideGestureWindow) {
 		CGRect frame = [[UIScreen mainScreen] bounds];
 		frame.origin.y += frame.size.height - kSlideGestureWindowHeight;
 		frame.size.height = kSlideGestureWindowHeight;
-		slideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame];
-		[slideGestureWindow setWindowLevel:kWindowLevelTransparentTopMost];
-		[slideGestureWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
+		frame.size.width *= 0.25f;
+		leftSlideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame eventName:LAEventNameSlideInFromBottomLeft];
 	}
-	return slideGestureWindow;
+	return leftSlideGestureWindow;
+}
+
++ (LASlideGestureWindow *)middleWindow
+{
+	if (!middleSlideGestureWindow) {
+		CGRect frame = [[UIScreen mainScreen] bounds];
+		frame.origin.y += frame.size.height - kSlideGestureWindowHeight;
+		frame.size.height = kSlideGestureWindowHeight;
+		frame.origin.x += frame.size.width * 0.25f;
+		frame.size.width *= 0.5f;
+		middleSlideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame eventName:LAEventNameSlideInFromBottom];
+	}
+	return middleSlideGestureWindow;
+}
+
++ (LASlideGestureWindow *)rightWindow
+{
+	if (!rightSlideGestureWindow) {
+		CGRect frame = [[UIScreen mainScreen] bounds];
+		frame.origin.y += frame.size.height - kSlideGestureWindowHeight;
+		frame.size.height = kSlideGestureWindowHeight;
+		frame.origin.x += frame.size.width * 0.75f;
+		frame.size.width *= 0.25f;
+		rightSlideGestureWindow = [[LASlideGestureWindow alloc] initWithFrame:frame eventName:LAEventNameSlideInFromBottomRight];
+	}
+	return rightSlideGestureWindow;
+}
+
++ (void)updateVisibility
+{
+	if (!quickDoButton) {
+		[[LASlideGestureWindow leftWindow] updateVisibility];
+		[[LASlideGestureWindow middleWindow] updateVisibility];
+		[[LASlideGestureWindow rightWindow] updateVisibility];
+	} else {
+		[leftSlideGestureWindow setHidden:YES];
+		[middleSlideGestureWindow setHidden:YES];
+		[rightSlideGestureWindow setHidden:YES];
+	}
+}
+
+- (id)initWithFrame:(CGRect)frame eventName:(NSString *)eventName
+{
+	if ((self = [super initWithFrame:frame])) {
+		_eventName = [eventName copy];
+		[self setWindowLevel:kWindowLevelTransparentTopMost];
+		[self setBackgroundColor:kAlmostTransparentColor];
+	}
+	return self;
+}
+
+- (void)updateVisibility
+{
+	[self setHidden:[activator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName]] == nil];
+}
+
+- (void)dealloc
+{
+	[_eventName release];
+	[super dealloc];
 }
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
@@ -122,24 +172,37 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 	hasSentSlideEvent = NO;
 }
 
-- (void)controlTouchesBegan:(UIControl *)control withEvent:(UIEvent *)event
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	if (!hasSentSlideEvent) {
+		UITouch *touch = [touches anyObject];
+		CGPoint location = [touch locationInView:self];
+		if (location.y < -50.0f) {
+			hasSentSlideEvent = YES;
+			LASendEventWithName(_eventName);
+		}
+	}
+}
+
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	hasSentSlideEvent = NO;
 }
 
-- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
+@end
+
+@implementation LAQuickDoDelegate
+
++ (id)sharedInstance
 {
-	if (!hasSentSlideEvent) {
-		hasSentSlideEvent = YES;
-		UITouch *touch = [touches anyObject];
-		CGFloat xFactor = [touch locationInView:self].x / [self bounds].size.width;
-		if (xFactor < 0.25f)
-			LASendEventWithName(LAEventNameSlideInFromBottomLeft);
-		else if (xFactor < 0.75f)
-			LASendEventWithName(LAEventNameSlideInFromBottom);
-		else
-			LASendEventWithName(LAEventNameSlideInFromBottomRight);
-	}
+	if (!sharedQuickDoDelegate)
+		sharedQuickDoDelegate = [[self alloc] init];
+	return sharedQuickDoDelegate;
+}
+
+- (void)controlTouchesBegan:(UIControl *)control withEvent:(UIEvent *)event
+{
+	hasSentSlideEvent = NO;
 }
 
 - (void)controlTouchesMoved:(UIControl *)control withEvent:(UIEvent *)event
@@ -155,11 +218,6 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 		else
 			LASendEventWithName(LAEventNameSlideInFromBottomRight);
 	}
-}
-
-- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
-{
-	hasSentSlideEvent = NO;
 }
 
 - (void)controlTouchesEnded:(UIControl *)control withEvent:(UIEvent *)event
@@ -185,7 +243,7 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 
 @end
 
-CHMethod(0, void, SpringBoard, _handleMenuButtonEvent)
+CHOptimizedMethod(0, self, void, SpringBoard, _handleMenuButtonEvent)
 {
 	if (!shouldSuppressMenuReleases) {
 		// Unfortunately there isn't a better way of doing this :(
@@ -195,7 +253,7 @@ CHMethod(0, void, SpringBoard, _handleMenuButtonEvent)
 	}
 }
 
-CHMethod(0, BOOL, SpringBoard, allowMenuDoubleTap)
+CHOptimizedMethod(0, self, BOOL, SpringBoard, allowMenuDoubleTap)
 {
 	if (LAListenerForEventWithName(LAEventNameMenuPressDouble)) {
 		CHSuper(0, SpringBoard, allowMenuDoubleTap);
@@ -205,7 +263,7 @@ CHMethod(0, BOOL, SpringBoard, allowMenuDoubleTap)
 	}
 }
 
-CHMethod(0, void, SpringBoard, handleMenuDoubleTap)
+CHOptimizedMethod(0, self, void, SpringBoard, handleMenuDoubleTap)
 {
 	if ([self canShowNowPlayingHUD]) {
 		shouldAddNowPlayingButton = YES;
@@ -223,7 +281,7 @@ static BOOL isWaitingForLockDoubleTap;
 static BOOL wasLockedBefore;
 static BOOL suppressIsLocked;
 
-CHMethod(0, BOOL, SpringBoard, isLocked)
+CHOptimizedMethod(0, self, BOOL, SpringBoard, isLocked)
 {
 	if (suppressIsLocked) {
 		CHSuper(0, SpringBoard, isLocked);
@@ -233,7 +291,7 @@ CHMethod(0, BOOL, SpringBoard, isLocked)
 	}
 }
 
-CHMethod(1, void, SpringBoard, lockButtonDown, GSEventRef, event)
+CHOptimizedMethod(1, self, void, SpringBoard, lockButtonDown, GSEventRef, event)
 {
 	[self performSelector:@selector(activatorLockButtonHoldCompleted) withObject:nil afterDelay:kButtonHoldDelay];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonDoubleTapAborted) object:nil];
@@ -242,12 +300,12 @@ CHMethod(1, void, SpringBoard, lockButtonDown, GSEventRef, event)
 	CHSuper(1, SpringBoard, lockButtonDown, event);
 }
 
-CHMethod(0, void, SpringBoard, activatorFixStatusBar)
+CHOptimizedMethod(0, new, void, SpringBoard, activatorFixStatusBar)
 {
 	[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
 }
 
-CHMethod(1, void, SpringBoard, lockButtonUp, GSEventRef, event)
+CHOptimizedMethod(1, self, void, SpringBoard, lockButtonUp, GSEventRef, event)
 {
 	if (lockHoldEventToAbort) {
 		[lockHoldEventToAbort release];
@@ -291,7 +349,7 @@ CHMethod(1, void, SpringBoard, lockButtonUp, GSEventRef, event)
 	}
 }
 
-CHMethod(0, void, SpringBoard, lockButtonWasHeld)
+CHOptimizedMethod(0, self, void, SpringBoard, lockButtonWasHeld)
 {
 	if (lockHoldEventToAbort) {
 		LAAbortEvent(lockHoldEventToAbort);
@@ -301,7 +359,7 @@ CHMethod(0, void, SpringBoard, lockButtonWasHeld)
 	CHSuper(0, SpringBoard, lockButtonWasHeld);
 }
 
-CHMethod(0, void, SpringBoard, activatorLockButtonHoldCompleted)
+CHOptimizedMethod(0, new, void, SpringBoard, activatorLockButtonHoldCompleted)
 {
 	[lockHoldEventToAbort release];
 	lockHoldEventToAbort = nil;
@@ -310,12 +368,12 @@ CHMethod(0, void, SpringBoard, activatorLockButtonHoldCompleted)
 		lockHoldEventToAbort = [event retain];
 }
 
-CHMethod(0, void, SpringBoard, activatorLockButtonDoubleTapAborted)
+CHOptimizedMethod(0, new, void, SpringBoard, activatorLockButtonDoubleTapAborted)
 {
 	isWaitingForLockDoubleTap = NO;
 }
 
-CHMethod(0, void, SpringBoard, _showEditAlertView)
+CHOptimizedMethod(0, self, void, SpringBoard, _showEditAlertView)
 {
 	if (![LASendEventWithName(LAEventNameMotionShake) isHandled])
 		CHSuper(0, SpringBoard, _showEditAlertView);
@@ -323,14 +381,14 @@ CHMethod(0, void, SpringBoard, _showEditAlertView)
 
 static LAEvent *menuEventToAbort;
 
-CHMethod(1, void, SpringBoard, menuButtonDown, GSEventRef, event)
+CHOptimizedMethod(1, self, void, SpringBoard, menuButtonDown, GSEventRef, event)
 {
 	[self performSelector:@selector(activatorMenuButtonTimerCompleted) withObject:nil afterDelay:kButtonHoldDelay];
 	shouldSuppressMenuReleases = NO;
 	CHSuper(1, SpringBoard, menuButtonDown, event);
 }
 
-CHMethod(1, void, SpringBoard, menuButtonUp, GSEventRef, event)
+CHOptimizedMethod(1, self, void, SpringBoard, menuButtonUp, GSEventRef, event)
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorMenuButtonTimerCompleted) object:nil];
 	if (menuEventToAbort || shouldSuppressMenuReleases) {
@@ -347,7 +405,7 @@ CHMethod(1, void, SpringBoard, menuButtonUp, GSEventRef, event)
 	}
 }
 
-CHMethod(0, void, SpringBoard, menuButtonWasHeld)
+CHOptimizedMethod(0, self, void, SpringBoard, menuButtonWasHeld)
 {
 	if (menuEventToAbort) {
 		LAAbortEvent(menuEventToAbort);
@@ -357,7 +415,7 @@ CHMethod(0, void, SpringBoard, menuButtonWasHeld)
 	CHSuper(0, SpringBoard, menuButtonWasHeld);
 }
 
-CHMethod(0, void, SpringBoard, activatorMenuButtonTimerCompleted)
+CHOptimizedMethod(0, new, void, SpringBoard, activatorMenuButtonTimerCompleted)
 {
 	[menuEventToAbort release];
 	menuEventToAbort = nil;
@@ -368,7 +426,7 @@ CHMethod(0, void, SpringBoard, activatorMenuButtonTimerCompleted)
 
 static NSUInteger lastVolumeEvent;
 
-CHMethod(1, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
+CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
 {
 	CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 	switch (GSEventGetType(gsEvent)) {
@@ -397,15 +455,14 @@ CHMethod(1, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
 	}
 }
 
-CHMethod(0, void, SpringBoard, activatorCancelVolumeChord)
+CHOptimizedMethod(0, new, void, SpringBoard, activatorCancelVolumeChord)
 {
 	lastVolumeEvent = 0;
 }
 
-CHMethod(0, void, iHome, inject)
+CHOptimizedMethod(0, self, void, iHome, inject)
 {
 	CHSuper(0, iHome, inject);
-	LASlideGestureWindow *sgw = [LASlideGestureWindow sharedInstance];
 	[quickDoButton release];
 	UIButton **buttonRef = CHIvarRef(self, touchButton, UIButton *);
 	if (buttonRef) {
@@ -416,8 +473,8 @@ CHMethod(0, void, iHome, inject)
 				CGRect windowFrame = [window frame];
 				CGRect screenBounds = [[UIScreen mainScreen] bounds];
 				if (windowFrame.origin.y > screenBounds.origin.y + screenBounds.size.height / 2.0f) {
-					[sgw setHidden:YES];
-					[sgw acceptEventsFromControl:quickDoButton];
+					[LASlideGestureWindow updateVisibility];
+					[[LAQuickDoDelegate sharedInstance] acceptEventsFromControl:quickDoButton];
 					return;
 				}
 			}
@@ -425,29 +482,54 @@ CHMethod(0, void, iHome, inject)
 	} else {
 		quickDoButton = nil;
 	}
-	[sgw setHidden:NO];
 }
 
-CHMethod(0, BOOL, SBUIController, clickedMenuButton)
+CHOptimizedMethod(0, self, BOOL, SBUIController, clickedMenuButton)
 {
-	if (![CHSharedInstance(SBIconController) isEditing])
-		if ([LASendEventWithName(LAEventNameMenuPressSingle) isHandled])
+	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressSingle mode:[activator currentEventMode]];
+	[activator sendDeactivateEventToListeners:event];
+	if ([event isHandled])
+		return YES;
+	if (![CHSharedInstance(SBIconController) isEditing]) {
+		[activator sendEventToListener:event];
+		if ([event isHandled])
 			return YES;
+	}
 	return CHSuper(0, SBUIController, clickedMenuButton);
 }
 
-CHMethod(0, void, SBUIController, finishLaunching)
+CHOptimizedMethod(0, self, void, SBUIController, finishLaunching)
 {
 	if (!CHClass(iHome)) {
 		CHLoadLateClass(iHome);
 		CHHook(0, iHome, inject);
 	}
-	if (!quickDoButton)
-		[[LASlideGestureWindow sharedInstance] setHidden:NO];
 	CHSuper(0, SBUIController, finishLaunching);
+	[LASlideGestureWindow updateVisibility];
 }
 
-CHMethod(2, void, SBIconController, scrollToIconListAtIndex, NSInteger, index, animate, BOOL, animate)
+CHOptimizedMethod(0, self, void, SBUIController, tearDownIconListAndBar)
+{
+	CHSuper(0, SBUIController, tearDownIconListAndBar);
+	[LASlideGestureWindow updateVisibility];
+	[activator _eventModeChanged];
+}
+
+CHOptimizedMethod(1, self, void, SBUIController, restoreIconList, BOOL, animate)
+{
+	CHSuper(1, SBUIController, restoreIconList, animate);
+	[LASlideGestureWindow updateVisibility];
+	[activator _eventModeChanged];
+}
+
+CHOptimizedMethod(0, self, void, SBUIController, lock)
+{
+	CHSuper(0, SBUIController, lock);
+	[LASlideGestureWindow updateVisibility];
+	[activator _eventModeChanged];
+}
+
+CHOptimizedMethod(2, self, void, SBIconController, scrollToIconListAtIndex, NSInteger, index, animate, BOOL, animate)
 {
 	if (shouldInterceptMenuPresses) {
 		shouldInterceptMenuPresses = NO;
@@ -460,7 +542,7 @@ CHMethod(2, void, SBIconController, scrollToIconListAtIndex, NSInteger, index, a
 static BOOL hasSentPinchSpread;
 
 
-CHMethod(1, id, SBIconScrollView, initWithFrame, CGRect, frame)
+CHOptimizedMethod(1, super, id, SBIconScrollView, initWithFrame, CGRect, frame)
 {
 	if ((self = CHSuper(1, SBIconScrollView, initWithFrame, frame))) {
 		// Add Pinch Gesture by allowing a nonstandard zoom (reuse the existing gesture)
@@ -469,13 +551,13 @@ CHMethod(1, id, SBIconScrollView, initWithFrame, CGRect, frame)
 	return self;
 }
 
-CHMethod(2, void, SBIconScrollView, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
+CHOptimizedMethod(2, super, void, SBIconScrollView, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	hasSentPinchSpread = NO;
 	CHSuper(2, SBIconScrollView, touchesBegan, touches, withEvent, event);
 }
 
-CHMethod(1, void, SBIconScrollView, handlePinch, UIPinchGestureRecognizer *, pinchGesture)
+CHOptimizedMethod(1, super, void, SBIconScrollView, handlePinch, UIPinchGestureRecognizer *, pinchGesture)
 {
 	if (!hasSentPinchSpread) {
 		CGFloat scale = [pinchGesture scale];
@@ -490,7 +572,7 @@ CHMethod(1, void, SBIconScrollView, handlePinch, UIPinchGestureRecognizer *, pin
 }
 
 
-CHMethod(0, id, SBIcon, initWithDefaultSize)
+CHOptimizedMethod(0, self, id, SBIcon, initWithDefaultSize)
 {
 	// Enable multitouch
 	if ((self = CHSuper(0, SBIcon, initWithDefaultSize))) {
@@ -503,14 +585,14 @@ CHMethod(0, id, SBIcon, initWithDefaultSize)
 static NSInteger lastTouchesCount;
 static CGFloat startingDistanceSquared;
 
-CHMethod(2, void, SBIcon, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
+CHOptimizedMethod(2, self, void, SBIcon, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	lastTouchesCount = 1;
 	hasSentPinchSpread = NO;
 	CHSuper(2, SBIcon, touchesBegan, touches, withEvent, event);
 }
 
-CHMethod(2, void, SBIcon, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
+CHOptimizedMethod(2, self, void, SBIcon, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	if (!hasSentPinchSpread) {
 		NSArray *allTouches = [[event allTouches] allObjects];
@@ -543,7 +625,7 @@ static CGPoint statusBarTouchDown;
 static BOOL hasSentStatusBarEvent;
 
 
-CHMethod(0, void, SBStatusBar, activatorHoldEventCompleted)
+CHOptimizedMethod(0, new, void, SBStatusBar, activatorHoldEventCompleted)
 {
 	if (!hasSentStatusBarEvent) {
 		hasSentStatusBarEvent = YES;
@@ -551,7 +633,7 @@ CHMethod(0, void, SBStatusBar, activatorHoldEventCompleted)
 	}
 }
 
-CHMethod(2, void, SBStatusBar, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
+CHOptimizedMethod(2, self, void, SBStatusBar, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	[self performSelector:@selector(activatorHoldEventCompleted) withObject:nil afterDelay:kStatusBarHoldDelay];
 	statusBarTouchDown = [[touches anyObject] locationInView:self];
@@ -559,7 +641,7 @@ CHMethod(2, void, SBStatusBar, touchesBegan, NSSet *, touches, withEvent, UIEven
 	CHSuper(2, SBStatusBar, touchesBegan, touches, withEvent, event);
 }
 
-CHMethod(2, void, SBStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
+CHOptimizedMethod(2, self, void, SBStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	if (!hasSentStatusBarEvent) {
 		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorHoldEventCompleted) object:nil];
@@ -584,7 +666,7 @@ CHMethod(2, void, SBStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEven
 	CHSuper(2, SBStatusBar, touchesMoved, touches, withEvent, event);
 }
 
-CHMethod(2, void, SBStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
+CHOptimizedMethod(2, self, void, SBStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorHoldEventCompleted) object:nil];
 	if (!hasSentStatusBarEvent)
@@ -595,7 +677,7 @@ CHMethod(2, void, SBStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEven
 
 NSInteger nowPlayingButtonIndex;
 
-CHMethod(2, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePasscodeForActions, BOOL, requirePasscode)
+CHOptimizedMethod(2, self, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePasscodeForActions, BOOL, requirePasscode)
 {
 	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
 	if (shouldAddNowPlayingButton && [activator assignedListenerNameForEvent:event]) {
@@ -611,14 +693,14 @@ CHMethod(2, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePass
 	}
 }
 
-CHMethod(2, void, SBNowPlayingAlertItem, alertSheet, id, sheet, buttonClicked, NSInteger, buttonIndex)
+CHOptimizedMethod(2, self, void, SBNowPlayingAlertItem, alertSheet, id, sheet, buttonClicked, NSInteger, buttonIndex)
 {
 	CHSuper(2, SBNowPlayingAlertItem, alertSheet, sheet, buttonClicked, buttonIndex);
 	if (buttonIndex == nowPlayingButtonIndex + 1)
 		LASendEventWithName(LAEventNameMenuPressDouble);
 }
 
-CHMethod(0, void, SBAwayController, playLockSound)
+CHOptimizedMethod(0, self, void, SBAwayController, playLockSound)
 {
 	if (!shouldSuppressLockSound)
 		CHSuper(0, SBAwayController, playLockSound);
@@ -626,7 +708,7 @@ CHMethod(0, void, SBAwayController, playLockSound)
 
 static LAVolumeTapWindow *volumeTapWindow;
 
-CHMethod(0, void, VolumeControl, _createUI)
+CHOptimizedMethod(0, self, void, VolumeControl, _createUI)
 {
 	if (LAListenerForEventWithName(LAEventNameVolumeDisplayTap)) {
 		CHSuper(0, VolumeControl, _createUI);
@@ -645,7 +727,7 @@ CHMethod(0, void, VolumeControl, _createUI)
 	}
 }
 
-CHMethod(0, void, VolumeControl, _tearDown)
+CHOptimizedMethod(0, self, void, VolumeControl, _tearDown)
 {
 	[volumeTapWindow setHidden:YES];
 	[volumeTapWindow release];
@@ -677,6 +759,9 @@ CHConstructor
 	CHLoadLateClass(SBUIController);
 	CHHook(0, SBUIController, clickedMenuButton);
 	CHHook(0, SBUIController, finishLaunching);
+	CHHook(0, SBUIController, tearDownIconListAndBar);
+	CHHook(1, SBUIController, restoreIconList);
+	CHHook(0, SBUIController, lock);
 
 	CHLoadLateClass(SBIconController);
 	CHHook(2, SBIconController, scrollToIconListAtIndex, animate);

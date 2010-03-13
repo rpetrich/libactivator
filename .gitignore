@@ -3,5 +3,7 @@
 .DS_Store
 *.deb
 Common.h
-package
 *.dylib
+_
+obj
+.debmake

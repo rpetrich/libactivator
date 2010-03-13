@@ -1,4 +1,5 @@
 #import <Preferences/Preferences.h>
+#import <QuartzCore/QuartzCore.h>
 
 #import "libactivator.h"
 #import "libactivator-private.h"
@@ -80,16 +81,93 @@ static LAActivator *activator;
 
 @end
 
+@interface ActivatorEventViewHeader : UIView {
+@private
+	NSString *_listenerName;
+}
+
+@property (nonatomic, copy) NSString *listenerName;
+
+@end
+
+@implementation ActivatorEventViewHeader
+
+- (id)initWithFrame:(CGRect)frame
+{
+	if ((self = [super initWithFrame:frame])) {
+		[self setOpaque:YES];
+		[self setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
+	}
+	return self;
+}
+
+- (NSString *)listenerName
+{
+	return _listenerName;
+}
+
+- (void)setListenerName:(NSString *)listenerName
+{
+	if (![_listenerName isEqualToString:listenerName]) {
+		[_listenerName release];
+		_listenerName = [listenerName copy];
+		[self setNeedsDisplay];
+		CATransition *animation = [CATransition animation];
+		[animation setType:kCATransitionFade];
+		//[animation setDuration:0.3];
+		[[self layer] addAnimation:animation forKey:kCATransition];
+	}
+}
+
+- (void)drawRect:(CGRect)rect
+{
+	[[UIColor tableSeparatorDarkColor] setFill];
+	CGContextRef c = UIGraphicsGetCurrentContext();
+	CGContextSetShadowWithColor(c, CGSizeMake(0.0f, -1.0f), 0.0f, [[UIColor tableSeparatorLightColor] CGColor]);
+	CGRect line = [self bounds];
+	line.origin.x = 15.0f;
+	line.size.width -= 30.0f;
+	line.origin.y = line.size.height - 2.0f;
+	line.size.height = 1.0f;
+	UIRectFill(line);
+	[[UIColor colorWithRed:0.3f green:0.34f blue:0.42f alpha:1.0f] setFill];
+	CGContextSetShadowWithColor(c, CGSizeMake(0.0f, -1.0f), 0.0f, [[UIColor whiteColor] CGColor]);
+	[[activator localizedStringForKey:@"CURRENTLY_ASSIGNED_TO" value:@"Currently assigned to:"] drawAtPoint:CGPointMake(20.0f, 9.0f) withFont:[UIFont boldSystemFontOfSize:17.0f]];
+	if ([_listenerName length]) {
+		UIImage *image = [activator smallIconForListenerName:_listenerName];
+		CGFloat x;
+		if (image) {
+			[image drawAtPoint:CGPointMake(20.0f, 35.0f)];
+			x = 30.0f + [image size].width;
+		} else {
+			x = 30.0f;
+		}
+		[[UIColor blackColor] setFill];
+		[[activator localizedTitleForListenerName:_listenerName] drawAtPoint:CGPointMake(x, 39.0f) withFont:[UIFont boldSystemFontOfSize:19.0f]];
+	} else {
+		[[activator localizedStringForKey:@"UNASSIGNED" value:@"(unassigned)"] drawAtPoint:CGPointMake(30.0f, 40.0f) withFont:[UIFont boldSystemFontOfSize:17.0f]];
+	}
+}
+
+@end
+
 @interface ActivatorEventViewController : ActivatorTableViewController {
 @private
 	NSArray *_modes;
 	NSString *_eventName;
 	NSMutableDictionary *_listeners;
 	NSArray *_groups;
+	ActivatorEventViewHeader *_headerView;
 }
 @end
 
 @implementation ActivatorEventViewController
+
+- (void)updateHeader
+{
+	[_headerView setListenerName:[activator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:[_modes objectAtIndex:0]]]];
+	[[self tableView] setTableHeaderView:_headerView];
+}
 
 - (id)initForContentSize:(CGSize)contentSize withModes:(NSArray *)modes eventName:(NSString *)eventName
 {
@@ -118,12 +196,20 @@ static LAActivator *activator;
 		}
 		_groups = [[[_listeners allKeys] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] retain];
 		_eventName = [eventName copy];
+		CGRect headerFrame;
+		headerFrame.origin.x = 0.0f;
+		headerFrame.origin.y = 0.0f;
+		headerFrame.size.width = contentSize.width;
+		headerFrame.size.height = 76.0f;
+		_headerView = [[ActivatorEventViewHeader alloc] initWithFrame:headerFrame];
+		[self updateHeader];
 	}
 	return self;
 }
 
 - (void)dealloc
 {
+	[_headerView release];
 	[_groups release];
 	[_listeners release];
 	[_eventName release];
@@ -233,9 +319,15 @@ static LAActivator *activator;
 		for (UITableViewCell *otherCell in [tableView visibleCells])
 			[otherCell setAccessoryType:UITableViewCellAccessoryNone];
 		[cell setAccessoryType:UITableViewCellAccessoryCheckmark];
-		for (NSString *mode in _modes)
-			[activator assignEvent:[LAEvent eventWithName:_eventName mode:mode] toListenerWithName:listenerName];
+		for (NSString *mode in _modes) {
+			LAEvent *event = [LAEvent eventWithName:_eventName mode:mode];
+			if ([activator listenerWithName:listenerName isCompatibleWithMode:mode])
+				[activator assignEvent:event toListenerWithName:listenerName];
+			else
+				[activator unassignEvent:event];
+		}
 	}
+	[self updateHeader];
 }
 
 - (NSString *)navigationTitle
@@ -323,7 +415,6 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
-	NSInteger row = [indexPath row];
 	NSString *eventName = [self eventNameForIndexPath:indexPath];
 	CGFloat alpha = [activator eventWithNameIsHidden:eventName] ? 0.66f : 1.0f;
 	UILabel *label = [cell textLabel];
@@ -411,24 +502,41 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 2;
+	return 3;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
-	return (section == 0) ? 1 : [[activator availableEventModes] count];
+	switch (section) {
+		case 0:
+			return 1;
+		case 1:
+			return [[activator availableEventModes] count];
+		default:
+			return 0;
+	}
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
 {
-	return (section == 0) ? nil : [activator localizedStringForKey:@"LOCALIZATION_ABOUT" value:@""];
+	switch (section) {
+		case 1:
+			return [activator localizedStringForKey:@"LOCALIZATION_ABOUT" value:@""];
+		case 2:
+			return @"\u00A9 2009-2010 Ryan Petrich";
+		default:
+			return nil;
+	}
 }
 
 - (NSString *)eventModeForIndexPath:(NSIndexPath *)indexPath
 {
-	if ([indexPath section] == 0)
-		return nil;
-	return [[activator availableEventModes] objectAtIndex:[indexPath row]];
+	switch ([indexPath section]) {
+		case 1:
+			return [[activator availableEventModes] objectAtIndex:[indexPath row]];
+		default:
+			return nil;
+	}
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath

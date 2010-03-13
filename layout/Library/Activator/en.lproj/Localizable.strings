@@ -11,6 +11,8 @@
 	ALERT_CANCEL = "Cancel";
 	ALERT_REASSIGN = "Reassign";
 	ACTIVATOR = "Activator";
+	CURRENTLY_ASSIGNED_TO = "Currently assigned to:";
+	UNASSIGNED = "(unassigned)";
 	
 	/* Modes */
 	

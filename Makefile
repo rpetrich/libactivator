@@ -14,12 +14,11 @@ libactivator_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
 BUNDLE_NAME = LibActivator
 LibActivator_OBJC_FILES = Preferences.m
 LibActivator_INSTALL_PATH = /System/Library/PreferenceBundles
-LibActivator_FRAMEWORKS = UIKit CoreGraphics
+LibActivator_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 LibActivator_PRIVATE_FRAMEWORKS = Preferences
 LibActivator_LDFLAGS = -L$(FW_OBJ_DIR) -lactivator
 
-GO_EASY_ON_ME = 1
-ADDITIONAL_CFLAGS = -Wno-unused -Wno-switch -include Common.h
+ADDITIONAL_CFLAGS = -include Common.h -std=c99
 
 ifeq ($(PROFILING),1)
 	ADDITIONAL_CFLAGS += -DCHEnableProfiling

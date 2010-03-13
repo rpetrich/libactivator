@@ -1,5 +1,4 @@
 #!/bin/sh
-ln -s /var/mobile /User 2> /dev/null
 mkdir -p /User/Library/Caches
 chmod 777 /User/Library/Caches
 chown mobile /User/Library/Caches

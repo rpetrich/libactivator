@@ -1,6 +1,0 @@
-{
-	title = "Single Press at SpringBoard";
-	group = "Home Button";
-	description = "Press home button when at springboard";
-	"compatible-modes" = ("springboard");
-}

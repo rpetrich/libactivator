@@ -27,6 +27,32 @@ static NSMutableArray *displayStacks;
 
 static LAActivator *sharedActivator;
 
+@interface NSObject(LAListener)
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event;
+- (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event;
+- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event;
+- (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;
+- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event;
+@end
+
+@implementation NSObject(LAListener)
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
+{
+}
+- (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event
+{
+}
+- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event
+{
+}
+- (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode
+{
+}
+- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event
+{
+}
+@end
+
 @implementation LAEvent
 
 @synthesize name = _name;
@@ -105,7 +131,7 @@ static LAActivator *sharedActivator;
 	NSBundle *_bundle = (bundle); \
 	NSString *_key = (key); \
 	NSString *_value = (value_); \
-	(_bundle) ? [_bundle localizedStringForKey:key value:_value table:nil] : _value; \
+	(_bundle) ? [_bundle localizedStringForKey:_key value:_value table:nil] : _value; \
 })
 
 @implementation LARemoteListener
@@ -126,19 +152,6 @@ static LAActivator *sharedActivator;
 	[super dealloc];
 }
 
-- (BOOL)respondsToSelector:(SEL)selector
-{
-	if (selector == @selector(activator:receiveEvent:) ||
-		selector == @selector(activator:abortEvent:) ||
-		selector == @selector(activator:otherListenerDidHandleEvent:)
-	) {
-		NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:NSStringFromSelector(selector), @"selector", _listenerName, @"listenerName", nil];
-		NSNumber *result = [[_messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(_cmd) userInfo:userInfo] objectForKey:@"result"];
-		return [result boolValue];
-	}
-	return [super respondsToSelector:selector];
-}
-
 - (void)_performRemoteSelector:(SEL)selector withEvent:(LAEvent *)event
 {
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:[NSKeyedArchiver archivedDataWithRootObject:event], @"event", _listenerName, @"listenerName", nil];
@@ -153,6 +166,11 @@ static LAActivator *sharedActivator;
 }
 
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event
+{
+	[self _performRemoteSelector:_cmd withEvent:event];
+}
+
+- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event
 {
 	[self _performRemoteSelector:_cmd withEvent:event];
 }
@@ -182,11 +200,12 @@ static LAActivator *sharedActivator;
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
 {
-	[event setHandled:YES];
-	if ([activator currentEventMode] == LAEventModeSpringBoard) 
+	if ([activator currentEventMode] == LAEventModeSpringBoard) {
 		[activator performSelector:@selector(_activateApplication:) withObject:_application afterDelay:0.0f];
-	else
-		[activator _activateApplication:_application];
+		[event setHandled:YES];
+	} else if ([activator _activateApplication:_application]) {
+		[event setHandled:YES];
+	}
 }
 
 @end
@@ -232,7 +251,6 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
 			[messagingCenter runServerOnCurrentThread];
 			// Remote messages to id<LAListener>
-			[messagingCenter registerForMessageName:@"respondsToSelector:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:receiveEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:abortEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:otherListenerDidHandleEvent:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
@@ -293,32 +311,10 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)_loadPreferences
 {
-	BOOL shouldResave = NO;
 	if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]])) {
-		/*if ((_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:@"/User/Library/Preferences/libactivator.plist"])) {
-			// Load old path
-			[[NSFileManager defaultManager] removeItemAtPath:@"/User/Library/Preferences/libactivator.plist" error:NULL];
-			shouldResave = YES;
-		} else {*/
-			// Create a new preference file
-			_preferences = [[NSMutableDictionary alloc] init];
-			/*return;
-		}*/
+		// Create a new preference file
+		_preferences = [[NSMutableDictionary alloc] init];
 	}
-	// Convert old-style preferences
-	/*for (NSString *eventName in [self availableEventNames]) {
-		NSString *oldPref = [@"LAEventListener-" stringByAppendingString:eventName];
-		NSString *oldValue = [_preferences objectForKey:oldPref];
-		if (oldValue) {
-			for (NSString *mode in [self compatibleEventModesForListenerWithName:oldValue])
-				[_preferences setObject:oldValue forKey:ListenerKeyForEventNameAndMode(eventName, mode)];
-			[_preferences removeObjectForKey:oldPref];
-			shouldResave = YES;
-		}
-	}
-	// Save if necessary
-	if (shouldResave)
-		[self _savePreferences];*/
 }
 
 - (void)_savePreferences
@@ -342,17 +338,10 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
 	id<LAListener> listener = [self listenerForName:listenerName];
-	id result;
-	if ([message isEqualToString:@"respondsToSelector:"]) {
-		SEL selector = NSSelectorFromString([userInfo objectForKey:@"selector"]);
-		result = [listener respondsToSelector:selector] ? (id)kCFBooleanTrue : (id)kCFBooleanFalse;
-	} else {
-		LAEvent *event = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"event"]];
-		[listener performSelector:NSSelectorFromString(message) withObject:self withObject:event];
-		result = [NSKeyedArchiver archivedDataWithRootObject:event];
-	}
-	result = [NSDictionary dictionaryWithObject:result forKey:@"result"];
-	return result;
+	LAEvent *event = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"event"]];
+	[listener performSelector:NSSelectorFromString(message) withObject:self withObject:event];
+	id result = [NSKeyedArchiver archivedDataWithRootObject:event];
+	return [NSDictionary dictionaryWithObject:result forKey:@"result"];
 }
 
 - (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
@@ -386,29 +375,35 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	[_applications removeObjectForKey:[application displayIdentifier]];
 }
 
-- (void)_activateApplication:(SBApplication *)application
+- (BOOL)_activateApplication:(SBApplication *)application
 {
 	SBApplication *springBoard = [CHSharedInstance(SBApplicationController) springBoard];
 	application = application ?: springBoard;
     SBApplication *oldApplication = [SBWActiveDisplayStack topApplication] ?: springBoard;
     if (oldApplication == application)
-    	return;
-	if (oldApplication == springBoard) {
-		[application setDisplaySetting:0x4 flag:YES];
-		[SBWPreActivateDisplayStack pushDisplay:application];
-	} else if (application == springBoard) {
-		[oldApplication setDeactivationSetting:0x2 flag:YES];
-		[SBWActiveDisplayStack popDisplay:oldApplication];
-		[SBWSuspendingDisplayStack pushDisplay:oldApplication];
+    	return NO;
+	SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:[application displayIdentifier]];
+	if (icon && [self currentEventMode] == LAEventModeSpringBoard) {
+		[icon launch];
 	} else {
-		[application setDisplaySetting:0x4 flag:YES];
-		[application setActivationSetting:0x40 flag:YES];
-		[application setActivationSetting:0x20000 flag:YES];
-		[SBWPreActivateDisplayStack pushDisplay:application];
-		[oldApplication setDeactivationSetting:0x2 flag:YES];
-		[SBWActiveDisplayStack popDisplay:oldApplication];
-		[SBWSuspendingDisplayStack pushDisplay:oldApplication];
-    }
+		if (oldApplication == springBoard) {
+			[application setDisplaySetting:0x4 flag:YES];
+			[SBWPreActivateDisplayStack pushDisplay:application];
+		} else if (application == springBoard) {
+			[oldApplication setDeactivationSetting:0x2 flag:YES];
+			[SBWActiveDisplayStack popDisplay:oldApplication];
+			[SBWSuspendingDisplayStack pushDisplay:oldApplication];
+		} else {
+			[application setDisplaySetting:0x4 flag:YES];
+			[application setActivationSetting:0x40 flag:YES];
+			[application setActivationSetting:0x20000 flag:YES];
+			[SBWPreActivateDisplayStack pushDisplay:application];
+			[oldApplication setDeactivationSetting:0x2 flag:YES];
+			[SBWActiveDisplayStack popDisplay:oldApplication];
+			[SBWSuspendingDisplayStack pushDisplay:oldApplication];
+		}
+	}
+	return YES;
 }
 
 - (NSDictionary *)_cachedAndSortedListeners
@@ -438,6 +433,13 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	return _cachedAndSortedListeners;
 }
 
+- (void)_eventModeChanged
+{
+	NSString *eventMode = [self currentEventMode];
+	for (id<LAListener> listener in [_listeners allValues])
+		[listener activator:self didChangeToEventMode:eventMode];
+}
+
 
 // Sending Events
 
@@ -449,20 +451,26 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 - (void)sendEventToListener:(LAEvent *)event
 {
 	id<LAListener> listener = [self listenerForEvent:event];
-	if ([listener respondsToSelector:@selector(activator:receiveEvent:)])
-		[listener activator:self receiveEvent:event];
+	[listener activator:self receiveEvent:event];
 	if ([event isHandled])
 		for (id<LAListener> other in [_listeners allValues])
 			if (other != listener)
-				if ([other respondsToSelector:@selector(activator:otherListenerDidHandleEvent:)])
-					[other activator:self otherListenerDidHandleEvent:event];
+				[other activator:self otherListenerDidHandleEvent:event];
 }
 
 - (void)sendAbortToListener:(LAEvent *)event
 {
-	id<LAListener> listener = [self listenerForEvent:event];
-	if ([listener respondsToSelector:@selector(activator:abortEvent:)])
-		[listener activator:self abortEvent:event];
+	[[self listenerForEvent:event] activator:self abortEvent:event];
+}
+
+- (void)sendDeactivateEventToListeners:(LAEvent *)event
+{
+	BOOL handled = [event isHandled];
+	for (id<LAListener> listener in [_listeners allValues]) {
+		[listener activator:self receiveDeactivateEvent:event];
+		handled |= [event isHandled];
+	}
+	[event setHandled:handled];
 }
 
 // Registration of listeners
@@ -810,7 +818,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 @end
 
-CHMethod(8, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdentifier, roleIdentifier, NSString *, roleIdentifier, path, NSString *, path, bundle, id, bundle, infoDictionary, NSDictionary *, infoDictionary, isSystemApplication, BOOL, isSystemApplication, signerIdentity, id, signerIdentity, provisioningProfileValidated, BOOL, validated)
+CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdentifier, roleIdentifier, NSString *, roleIdentifier, path, NSString *, path, bundle, id, bundle, infoDictionary, NSDictionary *, infoDictionary, isSystemApplication, BOOL, isSystemApplication, signerIdentity, id, signerIdentity, provisioningProfileValidated, BOOL, validated)
 {
 	if ((self = CHSuper(8, SBApplication, initWithBundleIdentifier, bundleIdentifier, roleIdentifier, roleIdentifier, path, path, bundle, bundle, infoDictionary, infoDictionary, isSystemApplication, isSystemApplication, signerIdentity, signerIdentity, provisioningProfileValidated, validated))) {
 		if (isSystemApplication) {
@@ -822,19 +830,22 @@ CHMethod(8, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdent
 			) {
 				return self;
 			}
+			if (![[NSFileManager defaultManager] fileExistsAtPath:[bundle executablePath]]) {
+				return self;
+			}
 		}
 		[sharedActivator _addApplication:self];
 	}
 	return self;
 }
 
-CHMethod(0, void, SBApplication, dealloc)
+CHOptimizedMethod(0, self, void, SBApplication, dealloc)
 {
 	[sharedActivator _removeApplication:self];
 	CHSuper(0, SBApplication, dealloc);
 }
 
-CHMethod(0, id, SBDisplayStack, init)
+CHOptimizedMethod(0, self, id, SBDisplayStack, init)
 {
 	if ((self = CHSuper(0, SBDisplayStack, init))) {
 		if (!displayStacks)
@@ -844,7 +855,7 @@ CHMethod(0, id, SBDisplayStack, init)
 	return self;
 }
 
-CHMethod(0, void, SBDisplayStack, dealloc)
+CHOptimizedMethod(0, self, void, SBDisplayStack, dealloc)
 {
 	[displayStacks removeObject:self];
 	CHSuper(0, SBDisplayStack, dealloc);
