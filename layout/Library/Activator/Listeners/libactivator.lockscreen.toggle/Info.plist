@@ -1,0 +1,6 @@
+{
+	title = "Lock/Unlock";
+	description = "Toggle showing lock screen";
+	group = "Lock Screen";
+	selector = "toggleLockScreen";
+}

@@ -162,6 +162,11 @@ extern NSString * const LAEventNameMotionShake;
 - (BOOL)takeScreenshot;
 - (BOOL)voiceControl;
 
+// Lock Screen
+- (BOOL)showLockScreen;
+- (BOOL)dismissLockScreen;
+- (BOOL)toggleLockScreen;
+
 // iPod
 - (BOOL)togglePlayback;
 - (BOOL)previousTrack;

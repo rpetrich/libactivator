@@ -12,6 +12,8 @@ CHDeclareClass(SBAlertItemsController);
 CHDeclareClass(SBNowPlayingAlertItem);
 CHDeclareClass(SBScreenShotter);
 CHDeclareClass(SBVoiceControlAlert);
+CHDeclareClass(SBAwayController);
+CHDeclareClass(SBUIController);
 
 static LASimpleListener *sharedSimpleListener;
 
@@ -90,6 +92,27 @@ static LASimpleListener *sharedSimpleListener;
 	return YES;
 }
 
+- (BOOL)showLockScreen
+{
+	SBUIController *controller = CHSharedInstance(SBUIController);
+	[controller lock];
+	[controller wakeUp:nil];
+	return YES;
+}
+
+- (BOOL)dismissLockScreen
+{
+	[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:YES];
+	return YES;
+}
+
+- (BOOL)toggleLockScreen
+{
+	return [[CHClass(SBAwayController) sharedAwayController] isLocked]
+		? [self dismissLockScreen]
+		: [self showLockScreen];
+}
+
 - (BOOL)togglePlayback
 {
 	MPMusicPlayerController *iPod = [MPMusicPlayerController iPodMusicPlayer];
@@ -161,6 +184,7 @@ static LASimpleListener *sharedSimpleListener;
 		CHAutoreleasePoolForScope();
 		LAActivator *activator = [LAActivator sharedInstance];
 		sharedSimpleListener = [[self alloc] init];
+		// System
 		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.homebutton"];
 		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.sleepbutton"];
 		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.respring"];
@@ -170,6 +194,11 @@ static LASimpleListener *sharedSimpleListener;
 		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.spotlight"];
 		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.take-screenshot"];
 		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
+		// Lock Screen
+		[activator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.dismiss"];
+		[activator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.show"];
+		[activator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.toggle"];
+		// iPod
 		[activator registerListener:sharedSimpleListener forName:@"libactivator.ipod.toggle-playback"];
 		[activator registerListener:sharedSimpleListener forName:@"libactivator.ipod.previous-track"];
 		[activator registerListener:sharedSimpleListener forName:@"libactivator.ipod.next-track"];
@@ -180,6 +209,8 @@ static LASimpleListener *sharedSimpleListener;
 		CHLoadLateClass(SBNowPlayingAlertItem);
 		CHLoadLateClass(SBScreenShotter);
 		CHLoadLateClass(SBVoiceControlAlert);
+		CHLoadLateClass(SBAwayController);
+		CHLoadLateClass(SBUIController);
 	}
 }
 
