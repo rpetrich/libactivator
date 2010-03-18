@@ -232,7 +232,7 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	return sharedActivator;
 }
 
-+ (void)load
++ (void)initialize
 {
 	sharedActivator = [[LAActivator alloc] init];
 }
@@ -613,6 +613,11 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	if (InSpringBoard)
 		return [[_listenerData allKeys] arrayByAddingObjectsFromArray:[_applications allKeys]];
 	return [self _performRemoteMessage:_cmd withObject:nil];
+}
+
+- (id)infoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)name
+{
+	return [[_listenerData objectForKey:name] objectForInfoDictionaryKey:key];
 }
 
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name

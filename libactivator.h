@@ -63,6 +63,7 @@
 - (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
 
 @property (nonatomic, readonly) NSArray *availableListenerNames;
+- (id)infoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)name;
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name;
 - (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
 - (BOOL)listenerWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;

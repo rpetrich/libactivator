@@ -1,0 +1,6 @@
+{
+	title = "Next Track";
+	description = "Skips to next song";
+	group = "iPod";
+	selector = "nextTrack";
+}

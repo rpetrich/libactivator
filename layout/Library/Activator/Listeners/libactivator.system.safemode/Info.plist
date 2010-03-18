@@ -2,4 +2,5 @@
 	title = "Safe Mode";
 	description = "Relaunch SpringBoard in safe mode";
 	group = "System Actions";
+	selector = "safeMode";
 }

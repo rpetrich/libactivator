@@ -4,19 +4,24 @@
 #import <SpringBoard/SpringBoard.h>
 #import <GraphicsServices/GraphicsServices.h>
 #import <CaptainHook/CaptainHook.h>
+#import <MediaPlayer/MediaPlayer.h>
 
 CHDeclareClass(SBIconController);
 CHDeclareClass(SBSearchController);
+CHDeclareClass(SBAlertItemsController);
+CHDeclareClass(SBNowPlayingAlertItem);
 
-@interface SystemActivator : NSObject<LAListener> {
-	SEL _action;
+__attribute__((visibility("hidden")))
+@interface LASystemActivator : NSObject<LAListener> {
 }
-- (id)initWithAction:(SEL)action;
++ (LASystemActivator *)sharedInstance;
 @end
 
-@implementation SystemActivator
+static LASystemActivator *sharedSystemActivator;
 
-- (void)homebutton
+@implementation LASystemActivator
+
+- (void)homeButton
 {
 	struct GSEventRecord record;
 	memset(&record, 0, sizeof(record));
@@ -27,7 +32,7 @@ CHDeclareClass(SBSearchController);
 	GSSendSystemEvent(&record);	
 }
 
-- (void)sleepbutton
+- (void)sleepButton
 {
 	struct GSEventRecord record;
 	memset(&record, 0, sizeof(record));
@@ -43,8 +48,8 @@ CHDeclareClass(SBSearchController);
 	[(SpringBoard *)[UIApplication sharedApplication] relaunchSpringBoard];
 }
 
-/* // A safemode method isn't needed; it should safe mode anyway :P
-- (void)safemode
+/* // A safeMode method isn't needed; it should safe mode anyway :P
+- (void)safeMode
 {
 	[(SpringBoard *)[UIApplication sharedApplication] enterSafeMode];
 }*/
@@ -54,7 +59,7 @@ CHDeclareClass(SBSearchController);
 	[(SpringBoard *)[UIApplication sharedApplication] reboot];
 }
 
-- (void)powerdown
+- (void)powerDown
 {
 	[(SpringBoard *)[UIApplication sharedApplication] powerDown];
 }
@@ -66,37 +71,80 @@ CHDeclareClass(SBSearchController);
 	[[CHSharedInstance(SBSearchController) searchView] setShowsKeyboard:YES animated:YES];	
 }
 
-- (id)initWithAction:(SEL)action
+- (void)togglePlayback
 {
-	if ((self = [super init])) {
-		_action = action;
+	MPMusicPlayerController *iPod = [MPMusicPlayerController iPodMusicPlayer];
+	switch ([iPod playbackState]) {
+		case MPMusicPlaybackStateStopped:
+		case MPMusicPlaybackStatePaused:
+		case MPMusicPlaybackStateInterrupted:
+			[iPod play];
+			break;
+		default:
+			[iPod pause];
+			break;
 	}
-	return self;
+}
+
+- (void)previousTrack
+{
+	[[MPMusicPlayerController iPodMusicPlayer] skipToPreviousItem];
+}
+
+- (void)nextTrack
+{
+	[[MPMusicPlayerController iPodMusicPlayer] skipToNextItem];
+}
+
+- (void)musicControls
+{
+	SBAlertItemsController *controller = CHSharedInstance(SBAlertItemsController);
+	if ([controller isShowingAlertOfClass:CHClass(SBNowPlayingAlertItem)])
+		[controller deactivateAlertItemsOfClass:CHClass(SBNowPlayingAlertItem)];
+	else {
+		shouldAddNowPlayingButton = NO;
+		SBNowPlayingAlertItem *newAlert = [CHAlloc(SBNowPlayingAlertItem) init];
+		[controller activateAlertItem:newAlert];
+		[newAlert release];
+	}
 }
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
 {
-	objc_msgSend(self, _action);
+	NSString *listenerName = [activator assignedListenerNameForEvent:event];
+	NSString *selector = [activator infoDictionaryValueOfKey:@"selector" forListenerWithName:listenerName];
+	objc_msgSend(self, NSSelectorFromString(selector));
 	[event setHandled:YES];
 }
 
 #define RegisterAction(name) \
-	[activator registerListener:[[self alloc] initWithAction:@selector(name)] forName:@"libactivator.system." #name]
-	
+	[activator registerListener:shared forName:name]
+
++ (LASystemActivator *)sharedInstance
+{
+	return sharedSystemActivator;
+}
+
 + (void)load
 {
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	CHAutoreleasePoolForScope();
 	LAActivator *activator = [LAActivator sharedInstance];
-	RegisterAction(homebutton);
-	RegisterAction(sleepbutton);
-	RegisterAction(respring);
-	RegisterAction(safemode);
-	RegisterAction(reboot);
-	RegisterAction(powerdown);
-	RegisterAction(spotlight);
+	sharedSystemActivator = [[self alloc] init];
+	[activator registerListener:sharedSystemActivator forName:@"libactivator.system.homebutton"];
+	[activator registerListener:sharedSystemActivator forName:@"libactivator.system.sleepbutton"];
+	[activator registerListener:sharedSystemActivator forName:@"libactivator.system.respring"];
+	[activator registerListener:sharedSystemActivator forName:@"libactivator.system.safemode"];
+	[activator registerListener:sharedSystemActivator forName:@"libactivator.system.reboot"];
+	[activator registerListener:sharedSystemActivator forName:@"libactivator.system.powerdown"];
+	[activator registerListener:sharedSystemActivator forName:@"libactivator.system.spotlight"];
+	[activator registerListener:sharedSystemActivator forName:@"libactivator.ipod.toggle-playback"];
+	[activator registerListener:sharedSystemActivator forName:@"libactivator.ipod.previous-track"];
+	[activator registerListener:sharedSystemActivator forName:@"libactivator.ipod.next-track"];
+	[activator registerListener:sharedSystemActivator forName:@"libactivator.ipod.music-controls"];
 	CHLoadLateClass(SBIconController);
 	CHLoadLateClass(SBSearchController);
-	[pool release];
+	CHLoadLateClass(SBAlertItemsController);
+	CHLoadLateClass(SBNowPlayingAlertItem);
 }
 
 @end 

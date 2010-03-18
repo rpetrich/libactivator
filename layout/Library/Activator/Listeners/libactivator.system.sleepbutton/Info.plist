@@ -2,4 +2,5 @@
 	title = "Sleep Button";
 	description = "Simulate a press of the sleep button";
 	group = "System Actions";
+	selector = "sleepButton";
 }

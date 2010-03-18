@@ -1,0 +1,6 @@
+{
+	title = "Music Controls";
+	description = "Show now playing popup";
+	group = "iPod";
+	selector = "musicControls";
+}

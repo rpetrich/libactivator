@@ -80,3 +80,6 @@ __attribute__((visibility("hidden")))
 
 @end
 
+__attribute__((visibility("hidden")))
+BOOL shouldAddNowPlayingButton;
+

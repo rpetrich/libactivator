@@ -2,4 +2,5 @@
 	title = "Home Button";
 	description = "Simulate a press of the home button";
 	group = "System Actions";
+	selector = "homeButton";
 }

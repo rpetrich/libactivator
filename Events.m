@@ -58,7 +58,6 @@ CHDeclareClass(SBStatusBarController);
 static BOOL shouldInterceptMenuPresses;
 static BOOL shouldSuppressMenuReleases;
 static BOOL shouldSuppressLockSound;
-static BOOL shouldAddNowPlayingButton;
 
 static LASlideGestureWindow *leftSlideGestureWindow;
 static LASlideGestureWindow *middleSlideGestureWindow;
@@ -680,17 +679,20 @@ NSInteger nowPlayingButtonIndex;
 CHOptimizedMethod(2, self, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePasscodeForActions, BOOL, requirePasscode)
 {
 	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
-	if (shouldAddNowPlayingButton && [activator assignedListenerNameForEvent:event]) {
-		CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
+	if (shouldAddNowPlayingButton) {
 		NSString *listenerName = [activator assignedListenerNameForEvent:event];
-		NSString *title = [activator localizedTitleForListenerName:listenerName];
-		id alertSheet = [self alertSheet];
-		//[alertSheet setNumberOfRows:2];
-		nowPlayingButtonIndex = [alertSheet addButtonWithTitle:title];
-	} else {
-		nowPlayingButtonIndex = -1000;
-		CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
+		if (listenerName && ![listenerName isEqualToString:@"libactivator.ipod.music-controls"]) {
+			CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
+			NSString *listenerName = [activator assignedListenerNameForEvent:event];
+			NSString *title = [activator localizedTitleForListenerName:listenerName];
+			id alertSheet = [self alertSheet];
+			//[alertSheet setNumberOfRows:2];
+			nowPlayingButtonIndex = [alertSheet addButtonWithTitle:title];
+			return;
+		}
 	}
+	nowPlayingButtonIndex = -1000;
+	CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
 }
 
 CHOptimizedMethod(2, self, void, SBNowPlayingAlertItem, alertSheet, id, sheet, buttonClicked, NSInteger, buttonIndex)
