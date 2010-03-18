@@ -147,3 +147,25 @@ extern NSString * const LAEventNameSlideInFromBottomLeft;
 extern NSString * const LAEventNameSlideInFromBottomRight;
 
 extern NSString * const LAEventNameMotionShake;
+
+@interface LASimpleListener : NSObject<LAListener> {
+}
++ (LASimpleListener *)sharedInstance;
+
+// System
+- (BOOL)homeButton;
+- (BOOL)sleepButton;
+- (BOOL)respring;
+- (BOOL)reboot;
+- (BOOL)powerDown;
+- (BOOL)spotlight;
+- (BOOL)takeScreenshot;
+- (BOOL)voiceControl;
+
+// iPod
+- (BOOL)togglePlayback;
+- (BOOL)previousTrack;
+- (BOOL)nextTrack;
+- (BOOL)musicControls;
+
+@end

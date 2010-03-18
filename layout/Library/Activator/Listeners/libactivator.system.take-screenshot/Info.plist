@@ -1,0 +1,6 @@
+{
+	title = "Take Screenshot";
+	description = "Save screen contents to photos";
+	group = "System Actions";
+	selector = "takeScreenshot";
+}

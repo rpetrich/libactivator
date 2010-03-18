@@ -1,0 +1,6 @@
+{
+	title = "Voice Control";
+	description = "Activate Voice Control (3GS only)";
+	group = "System Actions";
+	selector = "voiceControl";
+}

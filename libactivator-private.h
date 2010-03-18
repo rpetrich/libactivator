@@ -83,3 +83,10 @@ __attribute__((visibility("hidden")))
 __attribute__((visibility("hidden")))
 BOOL shouldAddNowPlayingButton;
 
+
+#define SBWPreActivateDisplayStack        (SBDisplayStack *)[displayStacks objectAtIndex:0]
+#define SBWActiveDisplayStack             (SBDisplayStack *)[displayStacks objectAtIndex:1]
+#define SBWSuspendingDisplayStack         (SBDisplayStack *)[displayStacks objectAtIndex:2]
+#define SBWSuspendedEventOnlyDisplayStack (SBDisplayStack *)[displayStacks objectAtIndex:3]
+__attribute__((visibility("hidden")))
+NSMutableArray *displayStacks;
