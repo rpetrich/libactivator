@@ -1,6 +1,5 @@
 {
 	title = "Swipe Left";
 	group = "Status Bar";
-	hidden = 1;
 	description = "Tap and drag left on statusbar";
 }

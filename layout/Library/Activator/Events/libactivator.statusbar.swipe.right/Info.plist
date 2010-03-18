@@ -1,6 +1,5 @@
 {
 	title = "Swipe Right";
 	group = "Status Bar";
-	hidden = 1;
 	description = "Tap and drag right on statusbar";
 }
