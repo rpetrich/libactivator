@@ -8,7 +8,10 @@ static LAActivator *activator;
 
 @interface ActivatorWebViewController : PSViewController<UIWebViewDelegate> {
 @private
+	UIView *_backgroundView;
+	UIActivityIndicatorView *_activityView;
 	UIWebView *_webView;
+	NSString *_navigationTitle;
 }
 
 @end
@@ -21,22 +24,45 @@ static LAActivator *activator;
 		CGRect frame;
 		frame.origin = CGPointZero;
 		frame.size = size;
+		_backgroundView = [[UIView alloc] initWithFrame:frame];
+		[_backgroundView setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
 		_webView = [[UIWebView alloc] initWithFrame:frame];
+		[_webView setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
+		[[_webView _scroller] setShowBackgroundShadow:NO];
 		[_webView setDelegate:self];
+		_activityView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+		frame.size = [_activityView frame].size;
+		frame.origin.x = (NSInteger)(size.width - frame.size.width) / 2;
+		frame.origin.y = (NSInteger)(size.height - frame.size.height) / 2;
+		[_activityView setFrame:frame];
+		[_activityView startAnimating];
+		[_backgroundView addSubview:_activityView];
+	}
+	return self;
+}
+
+- (id)initForContentSize:(CGSize)size withURL:(NSURL *)url
+{
+	if ((self = [self initForContentSize:size])) {
+		[_webView loadRequest:[NSURLRequest requestWithURL:url]];
 	}
 	return self;
 }
 
 - (void)dealloc
 {
+	[_navigationTitle release];
 	[_webView setDelegate:nil];
 	[_webView release];
+	[_activityView stopAnimating];
+	[_activityView release];
+	[_backgroundView release];
 	[super dealloc];
 }
 
 - (UIView *)view
 {
-	return _webView;
+	return _backgroundView;
 }
 
 - (UIWebView *)webView
@@ -46,7 +72,7 @@ static LAActivator *activator;
 
 - (CGSize)contentSize
 {
-	return [_webView frame].size;
+	return [_backgroundView frame].size;
 }
 
 - (void)pushController:(id<PSBaseView>)controller
@@ -57,7 +83,23 @@ static LAActivator *activator;
 
 - (NSString *)navigationTitle
 {
-	return @"Web View";
+	return _navigationTitle;
+}
+
+- (void)setNavigationTitle:(NSString *)navigationTitle
+{
+	[_navigationTitle autorelease];
+	_navigationTitle = [navigationTitle copy];
+}
+
+- (void)webViewDidFinishLoad:(UIWebView *)webView
+{
+	[_activityView stopAnimating];
+	[_activityView removeFromSuperview];
+	if ([_webView superview] != _backgroundView) {
+		[_webView removeFromSuperview];
+		[_backgroundView addSubview:_webView];
+	}
 }
 
 @end
@@ -605,8 +647,8 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 		[[cell textLabel] setText:[activator localizedTitleForEventMode:eventMode]];
 		[[cell detailTextLabel] setText:[activator localizedDescriptionForEventMode:eventMode]];
 	} else {
-		[[cell textLabel] setText:@"More Actions"];
-		[[cell detailTextLabel] setText:nil];
+		[[cell textLabel] setText:[activator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"]];
+		[[cell detailTextLabel] setText:[activator localizedStringForKey:@"MORE_ACTIONS_DETAIL" value:@"Get more actions via Cydia"]];
 	}
 	[cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
 	return cell;
@@ -615,7 +657,14 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
-	PSViewController *vc = [[ActivatorModeViewController alloc] initForContentSize:[self contentSize] withMode:[self eventModeForIndexPath:indexPath]];
+	PSViewController *vc;
+	if (indexPath.section != 2)
+		vc = [[ActivatorModeViewController alloc] initForContentSize:[self contentSize] withMode:[self eventModeForIndexPath:indexPath]];
+	else {
+		ActivatorWebViewController *wvc = [[ActivatorWebViewController alloc] initForContentSize:[self contentSize] withURL:[NSURL URLWithString:@"http://rpetri.ch/cydia/activator/actions"]];
+		[wvc setNavigationTitle:[activator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"]];
+		vc = wvc;
+	}
 	[self pushController:vc];
 	[vc release];
 }
