@@ -657,13 +657,13 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	path = [bundle pathForResource:@"Icon" ofType:@"png"];
 	if (path)
 		return [UIImage imageWithContentsOfFile:path];	
-	if (InSpringBoard) {
-		SBApplication *application = [_applications objectForKey:listenerName];
-		SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:[application displayIdentifier]];
-		return [icon icon] ?: [UIImage imageWithContentsOfFile:[application pathForIcon]];
+	if (!InSpringBoard) {
+		// Marshal through SpringBoard by converting to PNG
+		return [UIImage imageWithData:[self _performRemoteMessage:@selector(_iconDataForListenerName:) withObject:listenerName]];
 	}
-	// Marshal through SpringBoard by converting to PNG
-	return [UIImage imageWithData:[self _performRemoteMessage:@selector(_iconDataForListenerName:) withObject:listenerName]];
+	SBApplication *application = [_applications objectForKey:listenerName];
+	SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:[application displayIdentifier]];
+	return [icon icon] ?: [UIImage imageWithContentsOfFile:[application pathForIcon]];
 }
 
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName
@@ -675,26 +675,28 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	path = [bundle pathForResource:@"Icon-small" ofType:@"png"];
 	if (path)
 		return [UIImage imageWithContentsOfFile:path];	
-	if (InSpringBoard) {
-		UIImage *result = [self iconForListenerName:listenerName];
+	if (!InSpringBoard) {
+		// Marshal through SpringBoard by converting to PNG
+		return [UIImage imageWithData:[self _performRemoteMessage:@selector(_smallIconDataForListenerName:) withObject:listenerName]];
+	}
+	SBApplication *application = [_applications objectForKey:listenerName];
+	UIImage *result = [UIImage imageWithContentsOfFile:[application pathForSmallIcon]];
+	if (!result) {
+		SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:[application displayIdentifier]];
+		result = [icon smallIcon];
 		if (!result) {
-			SBApplication *application = [_applications objectForKey:listenerName];
-			result = [UIImage imageWithContentsOfFile:[application pathForSmallIcon]];
-			SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:[application displayIdentifier]];
-			result = [icon smallIcon];
+			result = [self iconForListenerName:listenerName];
 			if (!result)
 				return nil;
 		}
-		CGSize size = [result size];
-		if (size.width > 29.0f || size.height > 29.0f) {
-			size.width = 29.0f;
-			size.height = 29.0f;
-			result = [result _imageScaledToSize:size interpolationQuality:kCGInterpolationDefault];
-		}
-		return result;
 	}
-	// Marshal through SpringBoard by converting to PNG
-	return [UIImage imageWithData:[self _performRemoteMessage:@selector(_smallIconDataForListenerName:) withObject:listenerName]];
+	CGSize size = [result size];
+	if (size.width > 29.0f || size.height > 29.0f) {
+		size.width = 29.0f;
+		size.height = 29.0f;
+		result = [result _imageScaledToSize:size interpolationQuality:kCGInterpolationDefault];
+	}
+	return result;
 }
 
 // Event Modes
@@ -770,6 +772,8 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	NSBundle *bundle = [_eventData objectForKey:eventName];
 	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"] ?: @"";
+	if ([unlocalized length] == 0)
+		return @"";
 	return Localize(_mainBundle, [@"EVENT_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(bundle, unlocalized, unlocalized) ?: @"");
 }
 
@@ -779,6 +783,8 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		NSBundle *bundle = [_listenerData objectForKey:listenerName];
 		if (bundle) {
 			NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"] ?: @"";
+			if ([unlocalized length] == 0)
+				return @"";
 			return Localize(_mainBundle, [@"LISTENER_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(bundle, unlocalized, unlocalized));
 		} else {
 			if ([[_applications objectForKey:listenerName] isSystemApplication])
