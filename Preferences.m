@@ -435,6 +435,69 @@ static LAActivator *activator;
 
 @end
 
+@interface ActivatorEventGroupViewController : ActivatorTableViewController {
+@private
+	NSArray *_modes;
+	NSArray *_events;
+	NSString *_groupName;
+}
+@end
+
+@implementation ActivatorEventGroupViewController
+- (id)initForContentSize:(CGSize)contentSize withModes:(NSArray *)modes events:(NSMutableArray *)events groupName:(NSString *)groupName
+{
+	if ((self = [super initForContentSize:contentSize])) {
+		_modes = [modes copy];
+		_events = [events copy];
+		_groupName = [groupName copy];
+	}
+	return self;
+}
+
+- (void)dealloc
+{
+	[_modes release];
+	[_events release];
+	[_groupName release];
+	[super dealloc];
+}
+
+- (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section
+{
+	return [_events count];
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
+	NSString *eventName = [_events objectAtIndex:indexPath.row];
+	CGFloat alpha = [activator eventWithNameIsHidden:eventName] ? 0.66f : 1.0f;
+	UILabel *label = [cell textLabel];
+	[label setText:[activator localizedTitleForEventName:eventName]];
+	[label setAlpha:alpha];
+	UILabel *detailLabel = [cell detailTextLabel];
+	[detailLabel setText:[activator localizedDescriptionForEventName:eventName]];
+	[detailLabel setAlpha:alpha];
+	[cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
+	return cell;	
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
+	PSViewController *vc = [[ActivatorEventViewController alloc] initForContentSize:[self contentSize] withModes:_modes eventName:[_events objectAtIndex:indexPath.row]];
+	[self pushController:vc];
+	[vc release];
+}
+
+- (NSString *)navigationTitle
+{
+	return _groupName;
+}
+
+@end
+
+
 @interface ActivatorModeViewController : ActivatorTableViewController {
 @private
 	NSString *_eventMode;
@@ -490,6 +553,11 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 	return [_events objectForKey:[_groups objectAtIndex:index]];
 }
 
+- (BOOL)groupAtIndexIsLarge:(NSInteger)index
+{
+	return [[self groupAtIndex:index] count] > 7;
+}
+
 - (NSString *)eventNameForIndexPath:(NSIndexPath *)indexPath
 {
 	return [[self groupAtIndex:[indexPath section]] objectAtIndex:[indexPath row]];
@@ -502,24 +570,33 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
-	return [_groups objectAtIndex:section];
+	return [self groupAtIndexIsLarge:section] ? nil : [_groups objectAtIndex:section];
 }
 
 - (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section
 {
-	return [[self groupAtIndex:section] count];
+	return [self groupAtIndexIsLarge:section] ? 1 : [[self groupAtIndex:section] count];
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
-	NSString *eventName = [self eventNameForIndexPath:indexPath];
-	CGFloat alpha = [activator eventWithNameIsHidden:eventName] ? 0.66f : 1.0f;
 	UILabel *label = [cell textLabel];
-	[label setText:[activator localizedTitleForEventName:eventName]];
-	[label setAlpha:alpha];
 	UILabel *detailLabel = [cell detailTextLabel];
-	[detailLabel setText:[activator localizedDescriptionForEventName:eventName]];
+	CGFloat alpha;
+	NSInteger section = indexPath.section;
+	if ([self groupAtIndexIsLarge:section]) {
+		[label setText:[_groups objectAtIndex:section]];
+		NSString *template = [activator localizedStringForKey:@"N_ADDITIONAL_EVENTS" value:@"%i additional events"];
+		[detailLabel setText:[NSString stringWithFormat:template, [[self groupAtIndex:section] count]]];
+		alpha = 1.0f;		
+	} else {
+		NSString *eventName = [self eventNameForIndexPath:indexPath];
+		[label setText:[activator localizedTitleForEventName:eventName]];
+		[detailLabel setText:[activator localizedDescriptionForEventName:eventName]];
+		alpha = [activator eventWithNameIsHidden:eventName] ? 0.66f : 1.0f;
+	}
+	[label setAlpha:alpha];
 	[detailLabel setAlpha:alpha];
 	[cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
 	return cell;	
@@ -528,8 +605,13 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
+	PSViewController *vc;
+	CGSize contentSize = [self contentSize];
 	NSArray *modes = _eventMode ? [NSArray arrayWithObject:_eventMode] : [activator availableEventModes];
-	PSViewController *vc = [[ActivatorEventViewController alloc] initForContentSize:[self contentSize] withModes:modes eventName:[self eventNameForIndexPath:indexPath]];
+	if ([self groupAtIndexIsLarge:indexPath.section])
+		vc = [[ActivatorEventGroupViewController alloc] initForContentSize:contentSize withModes:modes events:[self groupAtIndex:indexPath.section] groupName:[_groups objectAtIndex:indexPath.section]];
+	else
+		vc = [[ActivatorEventViewController alloc] initForContentSize:contentSize withModes:modes eventName:[self eventNameForIndexPath:indexPath]];
 	[self pushController:vc];
 	[vc release];
 }

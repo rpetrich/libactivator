@@ -15,6 +15,7 @@
 	UNASSIGNED = "(unassigned)";
 	MORE_ACTIONS = "More Actions";
 	MORE_ACTIONS_DETAIL = "Get more actions via Cydia";
+	N_ADDITIONAL_EVENTS = "%i additional events";
 	
 	/* Modes */
 	
