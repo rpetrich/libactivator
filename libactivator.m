@@ -650,9 +650,13 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (UIImage *)iconForListenerName:(NSString *)listenerName
 {
-	NSString *path = [[_listenerData objectForKey:listenerName] pathForResource:@"icon" ofType:@"png"];
+	NSBundle *bundle = [_listenerData objectForKey:listenerName];
+	NSString *path = [bundle pathForResource:@"icon" ofType:@"png"];
 	if (path)
 		return [UIImage imageWithContentsOfFile:path];
+	path = [bundle pathForResource:@"Icon" ofType:@"png"];
+	if (path)
+		return [UIImage imageWithContentsOfFile:path];	
 	if (InSpringBoard) {
 		SBApplication *application = [_applications objectForKey:listenerName];
 		SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:[application displayIdentifier]];
@@ -664,9 +668,13 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName
 {
-	NSString *path = [[_listenerData objectForKey:listenerName] pathForResource:@"Icon-small" ofType:@"png"];
+	NSBundle *bundle = [_listenerData objectForKey:listenerName];
+	NSString *path = [bundle pathForResource:@"icon-small" ofType:@"png"];
 	if (path)
 		return [UIImage imageWithContentsOfFile:path];
+	path = [bundle pathForResource:@"Icon-small" ofType:@"png"];
+	if (path)
+		return [UIImage imageWithContentsOfFile:path];	
 	if (InSpringBoard) {
 		UIImage *result = [self iconForListenerName:listenerName];
 		if (!result) {
@@ -771,8 +779,14 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		NSBundle *bundle = [_listenerData objectForKey:listenerName];
 		if (bundle) {
 			NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"];
-			if (unlocalized)
-				return Localize(bundle, [@"LISTENER_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(bundle, unlocalized, unlocalized));
+			if (unlocalized) {
+				NSString *result = Localize(bundle, [@"LISTENER_GROUP_TITLE_" stringByAppendingString:unlocalized], nil);
+				if ([result length])
+					return result;
+				result = Localize(bundle, unlocalized, unlocalized);
+				if ([result length])
+					return result;
+			}
 			return @"";
 		} else {
 			if ([[_applications objectForKey:listenerName] isSystemApplication])
