@@ -6,6 +6,62 @@
 
 static LAActivator *activator;
 
+@interface ActivatorWebViewController : PSViewController<UIWebViewDelegate> {
+@private
+	UIWebView *_webView;
+}
+
+@end
+
+@implementation ActivatorWebViewController
+
+- (id)initForContentSize:(CGSize)size
+{
+	if ((self = [super initForContentSize:size])) {
+		CGRect frame;
+		frame.origin = CGPointZero;
+		frame.size = size;
+		_webView = [[UIWebView alloc] initWithFrame:frame];
+		[_webView setDelegate:self];
+	}
+	return self;
+}
+
+- (void)dealloc
+{
+	[_webView setDelegate:nil];
+	[_webView release];
+	[super dealloc];
+}
+
+- (UIView *)view
+{
+	return _webView;
+}
+
+- (UIWebView *)webView
+{
+	return _webView;
+}
+
+- (CGSize)contentSize
+{
+	return [_webView frame].size;
+}
+
+- (void)pushController:(id<PSBaseView>)controller
+{
+	[super pushController:controller];
+	[controller setParentController:self];
+}
+
+- (NSString *)navigationTitle
+{
+	return @"Web View";
+}
+
+@end
+
 @interface ActivatorTableViewController : PSViewController<UITableViewDataSource, UITableViewDelegate> {
 @private
 	UITableView *_tableView;
@@ -502,7 +558,7 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return 3;
+	return 4;
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
@@ -512,6 +568,8 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 			return 1;
 		case 1:
 			return [[activator availableEventModes] count];
+		case 2:
+			return 1;
 		default:
 			return 0;
 	}
@@ -520,9 +578,9 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 - (NSString *)tableView:(UITableView *)tableView titleForFooterInSection:(NSInteger)section
 {
 	switch (section) {
-		case 1:
-			return [activator localizedStringForKey:@"LOCALIZATION_ABOUT" value:@""];
 		case 2:
+			return [activator localizedStringForKey:@"LOCALIZATION_ABOUT" value:@""];
+		case 3:
 			return @"\u00A9 2009-2010 Ryan Petrich";
 		default:
 			return nil;
@@ -542,9 +600,14 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {	
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
-	NSString *eventMode = [self eventModeForIndexPath:indexPath];
-	[[cell textLabel] setText:[activator localizedTitleForEventMode:eventMode]];
-	[[cell detailTextLabel] setText:[activator localizedDescriptionForEventMode:eventMode]];
+	if (indexPath.section != 2) {
+		NSString *eventMode = [self eventModeForIndexPath:indexPath];
+		[[cell textLabel] setText:[activator localizedTitleForEventMode:eventMode]];
+		[[cell detailTextLabel] setText:[activator localizedDescriptionForEventMode:eventMode]];
+	} else {
+		[[cell textLabel] setText:@"More Actions"];
+		[[cell detailTextLabel] setText:nil];
+	}
 	[cell setAccessoryType:UITableViewCellAccessoryDisclosureIndicator];
 	return cell;
 }
