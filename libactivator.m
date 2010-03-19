@@ -778,21 +778,13 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	if (InSpringBoard) {
 		NSBundle *bundle = [_listenerData objectForKey:listenerName];
 		if (bundle) {
-			NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"];
-			if (unlocalized) {
-				NSString *result = Localize(bundle, [@"LISTENER_GROUP_TITLE_" stringByAppendingString:unlocalized], nil);
-				if ([result length])
-					return result;
-				result = Localize(bundle, unlocalized, unlocalized);
-				if ([result length])
-					return result;
-			}
-			return @"";
+			NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"] ?: @"";
+			return Localize(_mainBundle, [@"LISTENER_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(bundle, unlocalized, unlocalized));
 		} else {
 			if ([[_applications objectForKey:listenerName] isSystemApplication])
-				return Localize(bundle, @"LISTENER_GROUP_TITLE_System Applications", @"System Applications");
+				return Localize(_mainBundle, @"LISTENER_GROUP_TITLE_System Applications", @"System Applications");
 			else
-				return Localize(bundle, @"LISTENER_GROUP_TITLE_User Applications", @"User Applications");
+				return Localize(_mainBundle, @"LISTENER_GROUP_TITLE_User Applications", @"User Applications");
 		}
 	} else {
 		return [self _performRemoteMessage:_cmd withObject:listenerName];

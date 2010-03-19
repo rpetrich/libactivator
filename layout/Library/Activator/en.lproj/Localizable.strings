@@ -13,6 +13,8 @@
 	ACTIVATOR = "Activator";
 	CURRENTLY_ASSIGNED_TO = "Currently assigned to:";
 	UNASSIGNED = "(unassigned)";
+	MORE_ACTIONS = "More Actions";
+	MORE_ACTIONS_DETAIL = "Get more actions via Cydia";
 	
 	/* Modes */
 	
@@ -105,6 +107,8 @@
 	"LISTENER_GROUP_TITLE_System Actions" = "System Actions";
 	"LISTENER_GROUP_TITLE_System Applications" = "System Applications";
 	"LISTENER_GROUP_TITLE_User Applications" = "User Applications";
+	"LISTENER_GROUP_TITLE_iPod" = "iPod";
+	"LISTENER_GROUP_TITLE_Lock Screen" = "Lock Screen";
 	
 	/* Listener Names */
 	
@@ -128,5 +132,34 @@
 	
 	"LISTENER_TITLE_libactivator.system.spotlight" = "Spotlight";
 	"LISTENER_DESCRIPTION_libactivator.system.spotlight" = "Activate SpringBoard's search page";
+
+	"LISTENER_TITLE_libactivator.system.take-screenshot" = "Take Screenshot";
+	"LISTENER_DESCRIPTION_libactivator.system.take-screenshot" = "Save screen contents to photos";
+
+	"LISTENER_TITLE_libactivator.system.voice-control" = "Spotlight";
+	"LISTENER_DESCRIPTION_libactivator.system.voice-control" = "Activate Voice Control (3GS only)";
+
+	
+	"LISTENER_TITLE_libactivator.ipod.music-controls" = "Music Controls";
+	"LISTENER_DESCRIPTION_libactivator.ipod.music-controls" = "Show now playing popup";
+	
+	"LISTENER_TITLE_libactivator.ipod.next-track" = "Next Track";
+	"LISTENER_DESCRIPTION_libactivator.ipod.next-track" = "Skips to next song";
+	
+	"LISTENER_TITLE_libactivator.ipod.previous-track" = "Previous Track";
+	"LISTENER_DESCRIPTION_libactivator.ipod.previous-track" = "Returns to precious song";
+	
+	"LISTENER_TITLE_libactivator.ipod.toggle-playback" = "Play/Pause";
+	"LISTENER_DESCRIPTION_libactivator.ipod.toggle-playback" = "Toggles iPod playback";
+	
+	
+	"LISTENER_TITLE_libactivator.lockscreen.dismiss" = "Unlock Device";
+	"LISTENER_DESCRIPTION_libactivator.lockscreen.dismiss" = "Dismiss lock screen";
+	
+	"LISTENER_TITLE_libactivator.lockscreen.show" = "Lock Device";
+	"LISTENER_DESCRIPTION_libactivator.lockscreen.show" = "Show lock screen";
+	
+	"LISTENER_TITLE_libactivator.lockscreen.toggle" = "Unlock Device";
+	"LISTENER_DESCRIPTION_libactivator.lockscreen.toggle" = "Toggle showing lock screen";
 	
 }
