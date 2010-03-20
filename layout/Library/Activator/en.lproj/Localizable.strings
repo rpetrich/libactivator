@@ -137,11 +137,11 @@
 	"LISTENER_TITLE_libactivator.system.take-screenshot" = "Take Screenshot";
 	"LISTENER_DESCRIPTION_libactivator.system.take-screenshot" = "Save screen contents to photos";
 
-	"LISTENER_TITLE_libactivator.system.voice-control" = "Spotlight";
+	"LISTENER_TITLE_libactivator.system.voice-control" = "Voice Control";
 	"LISTENER_DESCRIPTION_libactivator.system.voice-control" = "Activate Voice Control (3GS only)";
 
 	
-	"LISTENER_TITLE_libactivator.ipod.music-controls" = "Music Controls";
+	"LISTENER_TITLE_libactivator.ipod.music-controls" = "iPod Controls";
 	"LISTENER_DESCRIPTION_libactivator.ipod.music-controls" = "Show now playing popup";
 	
 	"LISTENER_TITLE_libactivator.ipod.next-track" = "Next Track";
