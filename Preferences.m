@@ -92,6 +92,18 @@ static LAActivator *activator;
 	_navigationTitle = [navigationTitle copy];
 }
 
+- (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType
+{
+	NSURL *url = [request URL];
+	NSString *urlString = [url absoluteString];
+	if ([urlString isEqualToString:@"about:Blank"])
+		return YES;
+	if ([urlString hasPrefix:@"http://rpetri.ch/"])
+		return YES;
+	[[UIApplication sharedApplication] openURL:url];
+	return NO;
+}
+
 - (void)webViewDidFinishLoad:(UIWebView *)webView
 {
 	[_activityView stopAnimating];
@@ -743,7 +755,7 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 	if (indexPath.section != 2)
 		vc = [[ActivatorModeViewController alloc] initForContentSize:[self contentSize] withMode:[self eventModeForIndexPath:indexPath]];
 	else {
-		ActivatorWebViewController *wvc = [[ActivatorWebViewController alloc] initForContentSize:[self contentSize] withURL:[NSURL URLWithString:@"http://rpetri.ch/cydia/activator/actions"]];
+		ActivatorWebViewController *wvc = [[ActivatorWebViewController alloc] initForContentSize:[self contentSize] withURL:[NSURL URLWithString:@"http://rpetri.ch/cydia/activator/actions/"]];
 		[wvc setNavigationTitle:[activator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"]];
 		vc = wvc;
 	}
