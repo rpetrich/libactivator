@@ -7,6 +7,8 @@
 
 static LAActivator *activator;
 
+#define kWebURL [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/actions/?udid=", [[UIDevice currentDevice] uniqueIdentifier]]
+
 @interface ActivatorWebViewController : PSViewController<UIWebViewDelegate> {
 @private
 	UIView *_backgroundView;
@@ -27,14 +29,19 @@ static LAActivator *activator;
 		frame.size = size;
 		_backgroundView = [[UIView alloc] initWithFrame:frame];
 		[_backgroundView setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
+		[_backgroundView setAutoresizingMask:UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
 		_webView = [[UIWebView alloc] initWithFrame:frame];
+		[_webView setAutoresizingMask:UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
 		[_webView setBackgroundColor:[UIColor groupTableViewBackgroundColor]];
 		[[_webView _scroller] setShowBackgroundShadow:NO];
 		[_webView setDelegate:self];
+		[_webView setHidden:YES];
+		[_backgroundView addSubview:_webView];
 		_activityView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
 		frame.size = [_activityView frame].size;
 		frame.origin.x = (NSInteger)(size.width - frame.size.width) / 2;
 		frame.origin.y = (NSInteger)(size.height - frame.size.height) / 2;
+		[_activityView setAutoresizingMask:UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin | UIViewAutoresizingFlexibleBottomMargin];
 		[_activityView setFrame:frame];
 		[_activityView startAnimating];
 		[_backgroundView addSubview:_activityView];
@@ -108,11 +115,8 @@ static LAActivator *activator;
 - (void)webViewDidFinishLoad:(UIWebView *)webView
 {
 	[_activityView stopAnimating];
-	[_activityView removeFromSuperview];
-	if ([_webView superview] != _backgroundView) {
-		[_webView removeFromSuperview];
-		[_backgroundView addSubview:_webView];
-	}
+	[_activityView setHidden:YES];
+	[_webView setHidden:NO];
 }
 
 @end
@@ -141,6 +145,7 @@ static LAActivator *activator;
 		[_tableView setRowHeight:60.0f];
 		[_tableView setDataSource:self];
 		[_tableView setDelegate:self];
+		[_tableView setAutoresizingMask:UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight];
 	}
 	return self;
 }
@@ -678,8 +683,8 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 	[super viewDidBecomeVisible];
 	if (!_viewController && [[activator _getObjectForPreference:@"LAHideAds"] boolValue] == NO) {
 		ActivatorAdController *aac = [ActivatorAdController sharedInstance];
-		[aac setURL:@"http://rpetri.ch/cydia/activator/actions/"];
-		[aac displayOnTarget:[self view]];
+		[aac setURL:kWebURL];
+		[aac displayOnTarget:[[self view] superview]];
 	}
 }
 
@@ -772,7 +777,7 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 	if (indexPath.section != 2)
 		vc = [[ActivatorModeViewController alloc] initForContentSize:[self contentSize] withMode:[self eventModeForIndexPath:indexPath]];
 	else {
-		ActivatorWebViewController *wvc = [[ActivatorWebViewController alloc] initForContentSize:[self contentSize] withURL:[NSURL URLWithString:@"http://rpetri.ch/cydia/activator/actions/"]];
+		ActivatorWebViewController *wvc = [[ActivatorWebViewController alloc] initForContentSize:[self contentSize] withURL:[NSURL URLWithString:kWebURL]];
 		[wvc setNavigationTitle:[activator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"]];
 		vc = wvc;
 	}

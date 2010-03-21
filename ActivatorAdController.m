@@ -21,7 +21,6 @@ static ActivatorAdController *sharedAdController;
 {
 	if ((self = [super init])) {
 		_adView = [[UIWebView alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-		[_adView setDelegate:self];
 	}
 	return self;
 }
@@ -116,8 +115,10 @@ static ActivatorAdController *sharedAdController;
 	_target = [target retain];
 	if (isLoaded)
 		[self tryShowAnimated];
-	else
+	else {
+		[_adView setDelegate:self];
 		[_adView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:_URL]]];
+	}
 }
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType
