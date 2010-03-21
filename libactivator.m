@@ -328,6 +328,12 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	}
 }
 
+- (id)_getObjectForPreference:(NSString *)preference
+{
+	LoadPreferences();
+	return [_preferences objectForKey:preference];
+}
+
 - (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
 {
 	NSString *listenerName = [userInfo objectForKey:@"listenerName"];

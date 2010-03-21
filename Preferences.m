@@ -3,6 +3,7 @@
 
 #import "libactivator.h"
 #import "libactivator-private.h"
+#import "ActivatorAdController.h"
 
 static LAActivator *activator;
 
@@ -670,6 +671,22 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 		}
 	}
 	[super viewWillBecomeVisible:source];
+}
+
+- (void)viewDidBecomeVisible
+{
+	[super viewDidBecomeVisible];
+	if (!_viewController && [[activator _getObjectForPreference:@"LAHideAds"] boolValue] == NO) {
+		ActivatorAdController *aac = [ActivatorAdController sharedInstance];
+		[aac setURL:@"http://rpetri.ch/cydia/activator/actions/"];
+		[aac displayOnTarget:[self view]];
+	}
+}
+
+- (BOOL)popControllerWithAnimation:(BOOL)animation
+{
+	[[ActivatorAdController sharedInstance] hideAnimated:YES];
+	return [super popControllerWithAnimation:animation];
 }
 
 - (UIView *)view
