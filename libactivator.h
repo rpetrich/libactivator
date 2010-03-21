@@ -33,7 +33,6 @@
 	NSUInteger _suppressReload;
 	NSMutableDictionary *_eventData;
 	NSMutableDictionary *_listenerData;
-	NSMutableDictionary *_applications;
 	NSBundle *_mainBundle;
 	NSDictionary *_cachedAndSortedListeners;
 }
@@ -100,6 +99,19 @@
 - (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event;
 - (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;
 - (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event;
+@end
+
+@protocol LAVirtualListener <LAListener>
+@required
+- (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName;
+@optional
+- (NSString *)activator:(LAActivator *)activator requiresLocalizedDescriptionForListenerName:(NSString *)listenerName;
+- (NSString *)activator:(LAActivator *)activator requiresLocalizedGroupForListenerName:(NSString *)listenerName;
+- (NSNumber *)activator:(LAActivator *)activator requiresRequiresAssignmentForListenerName:(NSString *)listenerName;
+- (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)listenerName;
+- (UIImage *)activator:(LAActivator *)activator requiresIconForListenerName:(NSString *)listenerName;
+- (UIImage *)activator:(LAActivator *)activator requiresSmallIconForListenerName:(NSString *)listenerName;
+- (id)activator:(LAActivator *)activator requiresInfoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)listenerName;
 @end
 
 // Settings Controller

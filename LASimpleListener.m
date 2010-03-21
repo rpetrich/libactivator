@@ -69,7 +69,7 @@ static LASimpleListener *sharedSimpleListener;
 
 - (BOOL)spotlight
 {
-	[[LAActivator sharedInstance] _activateApplication:nil];
+	[[LAApplicationListener sharedInstance] activateApplication:nil];
 	[CHSharedInstance(SBIconController) scrollToIconListAtIndex:-1 animate:NO];
 	[[CHSharedInstance(SBSearchController) searchView] setShowsKeyboard:YES animated:YES];
 	return YES;
