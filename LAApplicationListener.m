@@ -137,7 +137,10 @@ CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString
 				return self;
 			}
 		}
-		[[LAActivator sharedInstance] registerListener:[LAApplicationListener sharedInstance] forName:[self displayIdentifier]];
+		NSString *listenerName = [self displayIdentifier];
+		LAActivator *activator = [LAActivator sharedInstance];
+		if (![activator listenerForName:listenerName])
+			[activator registerListener:[LAApplicationListener sharedInstance] forName:listenerName];
 	}
 	return self;
 }
