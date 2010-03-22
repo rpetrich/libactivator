@@ -19,7 +19,7 @@
 	
 	/* Modes */
 	
-	MODE_TITLE_all = "Anytime";
+	MODE_TITLE_all = "Anywhere";
 	MODE_DESCRIPTION_all = "";
 	
 	MODE_TITLE_springboard = "At Home Screen";
