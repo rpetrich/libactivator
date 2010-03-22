@@ -439,6 +439,8 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name
 {
+	[_cachedAndSortedListeners release];
+	_cachedAndSortedListeners = nil;
 	[_listeners setObject:listener forKey:name];
 	LoadPreferences();
 	NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
@@ -450,6 +452,8 @@ NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)unregisterListenerWithName:(NSString *)name
 {
+	[_cachedAndSortedListeners release];
+	_cachedAndSortedListeners = nil;
 	[_listeners removeObjectForKey:name];
 }
 
