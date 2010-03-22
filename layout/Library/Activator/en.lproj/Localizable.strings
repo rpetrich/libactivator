@@ -160,7 +160,7 @@
 	"LISTENER_TITLE_libactivator.lockscreen.show" = "Lock Device";
 	"LISTENER_DESCRIPTION_libactivator.lockscreen.show" = "Show lock screen";
 	
-	"LISTENER_TITLE_libactivator.lockscreen.toggle" = "Unlock Device";
+	"LISTENER_TITLE_libactivator.lockscreen.toggle" = "Lock/Unlock";
 	"LISTENER_DESCRIPTION_libactivator.lockscreen.toggle" = "Toggle showing lock screen";
 	
 }
