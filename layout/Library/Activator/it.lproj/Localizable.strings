@@ -95,13 +95,13 @@ MODE_DESCRIPTION_lockscreen = "Bloccato con lockscreen visibile";
 "EVENT_DESCRIPTION_libactivator.statusbar.tap.double" = "Doppia pressione sulla barra di stato";
  
 "EVENT_TITLE_libactivator.volume.display-tap" = "Pressione visiva";
-"EVENT_DESCRIPTION_libactivator.volume.display-tap" = "Premi sul popup visivo del volume";
+"EVENT_DESCRIPTION_libactivator.volume.display-tap" = "Premere sul popup visivo del volume";
  
 "EVENT_TITLE_libactivator.volume.down-up" = "Giù, Sù";
-"EVENT_DESCRIPTION_libactivator.volume.down-up" = "Premi volume giù, poi sù";
+"EVENT_DESCRIPTION_libactivator.volume.down-up" = "Premere volume giù, poi sù";
  
 "EVENT_TITLE_libactivator.volume.up-down" = "Sù, Giù";
-"EVENT_DESCRIPTION_libactivator.volume.up-down" = "Premi volume sù, poi giù";
+"EVENT_DESCRIPTION_libactivator.volume.up-down" = "Premere volume sù, poi giù";
  
 /* Listener Groups */
  
@@ -135,7 +135,7 @@ MODE_DESCRIPTION_lockscreen = "Bloccato con lockscreen visibile";
 "LISTENER_DESCRIPTION_libactivator.system.spotlight" = "Mostra il cerca nella SpringBoard";
  
 "LISTENER_TITLE_libactivator.system.take-screenshot" = "Cattura schermo";
-"LISTENER_DESCRIPTION_libactivator.system.take-screenshot" = "Salva il contenuto dello schermo come foto";
+"LISTENER_DESCRIPTION_libactivator.system.take-screenshot" = "Cattura il contenuto dello schermo";
  
 "LISTENER_TITLE_libactivator.system.voice-control" = "Controllo vocale";
 "LISTENER_DESCRIPTION_libactivator.system.voice-control" = "Attiva il controllo vocale (solo 3GS)";
@@ -161,6 +161,6 @@ MODE_DESCRIPTION_lockscreen = "Bloccato con lockscreen visibile";
 "LISTENER_DESCRIPTION_libactivator.lockscreen.show" = "Attiva la lockscreen";
  
 "LISTENER_TITLE_libactivator.lockscreen.toggle" = "Sblocca dispositivo";
-"LISTENER_DESCRIPTION_libactivator.lockscreen.toggle" = "Alterna visualizzazione della lockscreen";
+"LISTENER_DESCRIPTION_libactivator.lockscreen.toggle" = "Alterna visualizzazione lockscreen";
  
 }
