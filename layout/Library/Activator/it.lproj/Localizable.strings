@@ -44,13 +44,13 @@ MODE_DESCRIPTION_lockscreen = "Bloccato con lockscreen visibile";
 /* Events */
  
 "EVENT_TITLE_libactivator.lock.hold.short" = "Pressione breve";
-"EVENT_DESCRIPTION_libactivator.lock.hold.short" = "Mantieni premuto il pulsante power";
+"EVENT_DESCRIPTION_libactivator.lock.hold.short" = "Mantenere premuto il pulsante power";
  
 "EVENT_TITLE_libactivator.lock.press.double" = "Doppia pressione";
 "EVENT_DESCRIPTION_libactivator.lock.press.double" = "Premere due volte il pulsante power";
  
 "EVENT_TITLE_libactivator.menu.hold.short" = "Pressione breve";
-"EVENT_DESCRIPTION_libactivator.menu.hold.short" = "Mantieni premuto il pulsante home";
+"EVENT_DESCRIPTION_libactivator.menu.hold.short" = "Mantenere premuto il pulsante home";
  
 "EVENT_TITLE_libactivator.menu.press.at-springboard" = "Pressione singola";
 "EVENT_DESCRIPTION_libactivator.menu.press.at-springboard" = "Premere il pulsante home (SpringBoard)";
@@ -62,37 +62,37 @@ MODE_DESCRIPTION_lockscreen = "Bloccato con lockscreen visibile";
 "EVENT_DESCRIPTION_libactivator.menu.press.single" = "Premere il pulsante home";
  
 "EVENT_TITLE_libactivator.motion.shake" = "Scuoti dispositivo";
-"EVENT_DESCRIPTION_libactivator.motion.shake" = "Scuoti!";
+"EVENT_DESCRIPTION_libactivator.motion.shake" = "Scuotere!";
  
 "EVENT_TITLE_libactivator.slide-in.bottom" = "Dal basso";
-"EVENT_DESCRIPTION_libactivator.slide-in.bottom" = "Scorri sullo schermo dal basso";
+"EVENT_DESCRIPTION_libactivator.slide-in.bottom" = "Scorrere sullo schermo dal basso";
  
 "EVENT_TITLE_libactivator.slide-in.bottom-left" = "Dal basso (sinistra)";
-"EVENT_DESCRIPTION_libactivator.slide-in.bottom-left" = "Scorri sullo schermo dal basso (sinistra)";
+"EVENT_DESCRIPTION_libactivator.slide-in.bottom-left" = "Scorrere sullo schermo dal basso (sinistra)";
  
 "EVENT_TITLE_libactivator.slide-in.bottom-right" = "Dal basso (destra)";
-"EVENT_DESCRIPTION_libactivator.slide-in.bottom-right" = "Scorri sullo schermo dal basso (destra)";
+"EVENT_DESCRIPTION_libactivator.slide-in.bottom-right" = "Scorrere sullo schermo dal basso (destra)";
  
 "EVENT_TITLE_libactivator.springboard.pinch" = "Zoom icone (comprimi)";
-"EVENT_DESCRIPTION_libactivator.springboard.pinch" = "Comprimi le icone con 2 dita";
+"EVENT_DESCRIPTION_libactivator.springboard.pinch" = "Comprimere le icone con 2 dita";
  
 "EVENT_TITLE_libactivator.springboard.spread" = "Zoom icone (allarga)";
-"EVENT_DESCRIPTION_libactivator.springboard.spread" = "Allarga le icone con 2 dita";
+"EVENT_DESCRIPTION_libactivator.springboard.spread" = "Allargare le icone con 2 dita";
  
 "EVENT_TITLE_libactivator.statusbar.hold" = "Pressione";
-"EVENT_DESCRIPTION_libactivator.statusbar.hold" = "Mantieni premuto sulla barra di stato";
+"EVENT_DESCRIPTION_libactivator.statusbar.hold" = "Mantenere premuto sulla barra di stato";
  
 "EVENT_TITLE_libactivator.statusbar.swipe.down" = "Scorri giù";
-"EVENT_DESCRIPTION_libactivator.statusbar.swipe.down" = "Scorri giù dalla barra di stato";
+"EVENT_DESCRIPTION_libactivator.statusbar.swipe.down" = "Scorrere giù dalla barra di stato";
  
 "EVENT_TITLE_libactivator.statusbar.swipe.left" = "Scorri a sinistra";
-"EVENT_DESCRIPTION_libactivator.statusbar.swipe.left" = "Scorri a sinistra sulla barra di stato";
+"EVENT_DESCRIPTION_libactivator.statusbar.swipe.left" = "Scorrere a sinistra sulla barra di stato";
  
 "EVENT_TITLE_libactivator.statusbar.swipe.right" = "Scorri a destra";
-"EVENT_DESCRIPTION_libactivator.statusbar.swipe.right" = "Scorri a destra sulla barra di stato";
+"EVENT_DESCRIPTION_libactivator.statusbar.swipe.right" = "Scorrere a destra sulla barra di stato";
  
 "EVENT_TITLE_libactivator.statusbar.tap.double" = "Doppia pressione";
-"EVENT_DESCRIPTION_libactivator.statusbar.tap.double" = "Doppia pressione sulla barra di stato";
+"EVENT_DESCRIPTION_libactivator.statusbar.tap.double" = "Premere due volte sulla barra di stato";
  
 "EVENT_TITLE_libactivator.volume.display-tap" = "Pressione visiva";
 "EVENT_DESCRIPTION_libactivator.volume.display-tap" = "Premere sul popup visivo del volume";
