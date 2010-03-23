@@ -3,11 +3,9 @@
 @interface LAListenerSettingsViewController () <UITableViewDelegate, UITableViewDataSource, UIAlertViewDelegate>
 @end
 
-static LAActivator *activator;
-
-NSInteger CompareEventNamesCallback(id a, id b, void *context)
+static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 {
-	return [[activator localizedTitleForEventName:a] localizedCaseInsensitiveCompare:[activator localizedTitleForEventName:b]];
+	return [[LASharedActivator localizedTitleForEventName:a] localizedCaseInsensitiveCompare:[LASharedActivator localizedTitleForEventName:b]];
 }
 
 @implementation LAListenerSettingsViewController 
@@ -15,12 +13,11 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 - (id)init
 {
 	if ((self = [super initWithNibName:nil bundle:nil])) {
-		activator = [LAActivator sharedInstance];
-		BOOL showHidden = [[[NSDictionary dictionaryWithContentsOfFile:[activator settingsFilePath]] objectForKey:@"LAShowHiddenEvents"] boolValue];
+		BOOL showHidden = [[[NSDictionary dictionaryWithContentsOfFile:[LASharedActivator settingsFilePath]] objectForKey:@"LAShowHiddenEvents"] boolValue];
 		_events = [[NSMutableDictionary alloc] init];
-		for (NSString *eventName in [activator availableEventNames]) {
-			if (!([activator eventWithNameIsHidden:eventName] || showHidden)) {
-				NSString *key = [activator localizedGroupForEventName:eventName]?:@"";
+		for (NSString *eventName in [LASharedActivator availableEventNames]) {
+			if (!([LASharedActivator eventWithNameIsHidden:eventName] || showHidden)) {
+				NSString *key = [LASharedActivator localizedGroupForEventName:eventName]?:@"";
 				NSMutableArray *groupList = [_events objectForKey:key];
 				if (!groupList) {
 					groupList = [NSMutableArray array];
@@ -99,8 +96,8 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 - (NSArray *)compatibleModesAssignedToListener:(NSString *)name eventName:(NSString *)eventName
 {
 	NSMutableArray *result = [NSMutableArray array];
-	for (NSString *mode in [activator compatibleEventModesForListenerWithName:_listenerName]) {
-		NSString *assignedName = [activator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]];
+	for (NSString *mode in [LASharedActivator compatibleEventModesForListenerWithName:_listenerName]) {
+		NSString *assignedName = [LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]];
 		if ([assignedName isEqual:name])
 			[result addObject:mode];
 	}
@@ -109,11 +106,11 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (BOOL)allowedToUnassignEvent:(NSString *)eventName fromListener:(NSString *)listenerName
 {
-	if (![activator listenerWithNameRequiresAssignment:listenerName])
+	if (![LASharedActivator listenerWithNameRequiresAssignment:listenerName])
 		return YES;
-	NSInteger assignedCount = [[activator eventsAssignedToListenerWithName:listenerName] count];
-	for (NSString *mode in [activator compatibleEventModesForListenerWithName:_listenerName])
-		if ([[activator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]] isEqual:listenerName])
+	NSInteger assignedCount = [[LASharedActivator eventsAssignedToListenerWithName:listenerName] count];
+	for (NSString *mode in [LASharedActivator compatibleEventModesForListenerWithName:_listenerName])
+		if ([[LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]] isEqual:listenerName])
 			assignedCount--;
 	return assignedCount > 0;	
 }
@@ -128,21 +125,21 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 		[[self compatibleModesAssignedToListener:_listenerName eventName:eventName] count] ?
 		UITableViewCellAccessoryCheckmark :
 		UITableViewCellAccessoryNone];
-	CGFloat alpha = [activator eventWithNameIsHidden:eventName] ? 0.66f : 1.0f;
+	CGFloat alpha = [LASharedActivator eventWithNameIsHidden:eventName] ? 0.66f : 1.0f;
 	UILabel *label = [cell textLabel];
-	[label setText:[activator localizedTitleForEventName:eventName]];
+	[label setText:[LASharedActivator localizedTitleForEventName:eventName]];
 	[label setAlpha:alpha];
 	UILabel *detailLabel = [cell detailTextLabel];
-	[detailLabel setText:[activator localizedDescriptionForEventName:eventName]];
+	[detailLabel setText:[LASharedActivator localizedDescriptionForEventName:eventName]];
 	[detailLabel setAlpha:alpha];
 	return cell;
 }
 
 - (void)showLastEventMessageForListener:(NSString *)listenerName
 {
-	NSString *title = [activator localizedStringForKey:@"CANT_DEACTIVATE_REMAINING" value:@"Can't deactivate\nremaining event"];
-	NSString *message = [NSString stringWithFormat:[activator localizedStringForKey:@"AT_LEAST_ONE_ASSIGNMENT_REQUIRED" value:@"At least one event must be\nassigned to %@"], [activator localizedTitleForListenerName:listenerName]];
-	NSString *cancelButtonTitle = [activator localizedStringForKey:@"ALERT_OK" value:@"OK"];
+	NSString *title = [LASharedActivator localizedStringForKey:@"CANT_DEACTIVATE_REMAINING" value:@"Can't deactivate\nremaining event"];
+	NSString *message = [NSString stringWithFormat:[LASharedActivator localizedStringForKey:@"AT_LEAST_ONE_ASSIGNMENT_REQUIRED" value:@"At least one event must be\nassigned to %@"], [LASharedActivator localizedTitleForListenerName:listenerName]];
+	NSString *cancelButtonTitle = [LASharedActivator localizedStringForKey:@"ALERT_OK" value:@"OK"];
 	UIAlertView *av = [[UIAlertView alloc] initWithTitle:title message:message delegate:nil cancelButtonTitle:cancelButtonTitle otherButtonTitles:nil];
 	[av show];
 	[av release];
@@ -154,8 +151,8 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 	NSString *eventName = [self eventNameForRowAtIndexPath:indexPath];
 	// Find compatible modes
 	NSMutableArray *compatibleModes = [NSMutableArray array];
-	for (NSString *mode in [activator compatibleEventModesForListenerWithName:_listenerName])
-		if ([activator eventWithName:eventName isCompatibleWithMode:mode])
+	for (NSString *mode in [LASharedActivator compatibleEventModesForListenerWithName:_listenerName])
+		if ([LASharedActivator eventWithName:eventName isCompatibleWithMode:mode])
 			[compatibleModes addObject:mode];
 	NSArray *assigned = [self compatibleModesAssignedToListener:_listenerName eventName:eventName];
 	if ([assigned count] == [compatibleModes count]) {
@@ -167,15 +164,15 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 		}
 		// Unassign and update cell accessory
 		for (NSString *mode in assigned)
-			[activator unassignEvent:[LAEvent eventWithName:eventName mode:mode]];
+			[LASharedActivator unassignEvent:[LAEvent eventWithName:eventName mode:mode]];
 		[cell setAccessoryType:UITableViewCellAccessoryNone];
 	} else {
 		// Check if allowed to unassign other listeners. if not bail
 		NSMutableArray *otherTitles = [NSMutableArray array];
 		for (NSString *mode in compatibleModes) {
-			NSString *otherListener = [activator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]];
+			NSString *otherListener = [LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]];
 			if (otherListener && ![otherListener isEqual:_listenerName]) {
-				NSString *otherTitle = [activator localizedTitleForListenerName:otherListener];
+				NSString *otherTitle = [LASharedActivator localizedTitleForListenerName:otherListener];
 				if (![otherTitles containsObject:otherTitle])
 					[otherTitles addObject:otherTitle];
 				if (![self allowedToUnassignEvent:eventName fromListener:otherListener]) {
@@ -187,10 +184,10 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 		}
 		// Show Reassign message if necessary
 		if ([otherTitles count]) {
-			NSString *separator = [activator localizedStringForKey:@"ALERT_VALUE_AND" value:@" and "];
-			NSString *alertTitle = [NSString stringWithFormat:[activator localizedStringForKey:@"ALREADY_ASSIGNED_TO" value:@"Already assigned to\n%@"], [otherTitles componentsJoinedByString:separator]];
-			NSString *cancelButtonTitle = [activator localizedStringForKey:@"ALERT_CANCEL" value:@"Cancel"];
-			NSString *reassignButtonTitle = [activator localizedStringForKey:@"ALERT_REASSIGN" value:@"Reassign"];
+			NSString *separator = [LASharedActivator localizedStringForKey:@"ALERT_VALUE_AND" value:@" and "];
+			NSString *alertTitle = [NSString stringWithFormat:[LASharedActivator localizedStringForKey:@"ALREADY_ASSIGNED_TO" value:@"Already assigned to\n%@"], [otherTitles componentsJoinedByString:separator]];
+			NSString *cancelButtonTitle = [LASharedActivator localizedStringForKey:@"ALERT_CANCEL" value:@"Cancel"];
+			NSString *reassignButtonTitle = [LASharedActivator localizedStringForKey:@"ALERT_REASSIGN" value:@"Reassign"];
 			UIAlertView *av = [[UIAlertView alloc] initWithTitle:alertTitle message:nil delegate:self cancelButtonTitle:cancelButtonTitle otherButtonTitles:reassignButtonTitle, nil];
 			[av show];
 			[av release];
@@ -199,7 +196,7 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 		}
 		// Assign and update cell accessory
 		for (NSString *mode in compatibleModes)
-			[activator assignEvent:[LAEvent eventWithName:eventName mode:mode] toListenerWithName:_listenerName];
+			[LASharedActivator assignEvent:[LAEvent eventWithName:eventName mode:mode] toListenerWithName:_listenerName];
 		[cell setAccessoryType:UITableViewCellAccessoryCheckmark];
 	}
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];
@@ -212,8 +209,8 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 	UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
 	NSString *eventName = [self eventNameForRowAtIndexPath:indexPath];
 	if (buttonIndex != [alertView cancelButtonIndex]) {
-		for (NSString *mode in [activator compatibleEventModesForListenerWithName:_listenerName])
-			[activator assignEvent:[LAEvent eventWithName:eventName mode:mode] toListenerWithName:_listenerName];
+		for (NSString *mode in [LASharedActivator compatibleEventModesForListenerWithName:_listenerName])
+			[LASharedActivator assignEvent:[LAEvent eventWithName:eventName mode:mode] toListenerWithName:_listenerName];
 		[cell setAccessoryType:UITableViewCellAccessoryCheckmark];
 	}
 	[tableView deselectRowAtIndexPath:indexPath animated:YES];

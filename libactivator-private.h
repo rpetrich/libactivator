@@ -22,12 +22,9 @@
 
 __attribute__((visibility("hidden")))
 @interface LARemoteListener : NSObject<LAListener> {
-@private
-	NSString *_listenerName;
-	CPDistributedMessagingCenter *_messagingCenter;
 }
 
-- (id)initWithListenerName:(NSString *)listenerName;
++ (LARemoteListener *)sharedInstance;
 
 @end
 
@@ -73,7 +70,7 @@ __attribute__((visibility("hidden")))
 BOOL shouldAddNowPlayingButton;
 
 __attribute__((visibility("hidden")))
-@interface LAApplicationListener : NSObject<LAVirtualListener> {
+@interface LAApplicationListener : NSObject<LAListener> {
 }
 
 + (LAApplicationListener *)sharedInstance;
@@ -81,3 +78,37 @@ __attribute__((visibility("hidden")))
 
 @end
 
+@interface NSObject(LAListener) <LAListener>
+- (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;
+
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
+- (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
+- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
+- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
+
+- (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName;
+- (NSString *)activator:(LAActivator *)activator requiresLocalizedDescriptionForListenerName:(NSString *)listenerName;
+- (NSString *)activator:(LAActivator *)activator requiresLocalizedGroupForListenerName:(NSString *)listenerName;
+- (NSNumber *)activator:(LAActivator *)activator requiresRequiresAssignmentForListenerName:(NSString *)name;
+- (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)name;
+- (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName;
+- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName;
+- (id)activator:(LAActivator *)activator requiresInfoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)listenerName;
+
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event;
+- (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event;
+- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event;
+- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event;
+@end
+
+__attribute__((visibility("hidden")))
+NSMutableDictionary *listenerData;
+__attribute__((visibility("hidden")))
+NSBundle *activatorBundle;
+
+#define Localize(bundle, key, value_) ({ \
+	NSBundle *_bundle = (bundle); \
+	NSString *_key = (key); \
+	NSString *_value = (value_); \
+	(_bundle) ? [_bundle localizedStringForKey:_key value:_value table:nil] : _value; \
+})

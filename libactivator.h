@@ -32,9 +32,10 @@
 	NSMutableDictionary *_preferences;
 	NSUInteger _suppressReload;
 	NSMutableDictionary *_eventData;
-	NSMutableDictionary *_listenerData;
 	NSBundle *_mainBundle;
 	NSDictionary *_cachedAndSortedListeners;
+	NSMutableDictionary *_cachedListenerTitles;
+	NSMutableDictionary *_cachedListenerGroups;
 }
 + (LAActivator *)sharedInstance;
 
@@ -74,6 +75,8 @@
 
 @end
 
+extern LAActivator *LASharedActivator;
+
 @interface LAActivator (Localization)
 - (NSString *)localizedStringForKey:(NSString *)key value:(NSString *)value;
 
@@ -92,26 +95,33 @@
 // Listeners
 
 @protocol LAListener <NSObject>
-@required
-- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event;
 @optional
+
+- (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;
+
+// Incoming events
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
+- (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
+- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
+- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
+
+// Simpler versions
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event;
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event;
 - (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event;
-- (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;
 - (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event;
-@end
 
-@protocol LAVirtualListener <LAListener>
-@required
+// Metadata (may be cached)
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName;
-@optional
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedDescriptionForListenerName:(NSString *)listenerName;
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedGroupForListenerName:(NSString *)listenerName;
 - (NSNumber *)activator:(LAActivator *)activator requiresRequiresAssignmentForListenerName:(NSString *)listenerName;
 - (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)listenerName;
-- (UIImage *)activator:(LAActivator *)activator requiresIconForListenerName:(NSString *)listenerName;
-- (UIImage *)activator:(LAActivator *)activator requiresSmallIconForListenerName:(NSString *)listenerName;
+- (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName;
+- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName;
 - (id)activator:(LAActivator *)activator requiresInfoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)listenerName;
+
+
 @end
 
 // Settings Controller

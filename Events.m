@@ -674,7 +674,7 @@ CHOptimizedMethod(2, self, void, SBStatusBar, touchesEnded, NSSet *, touches, wi
 	CHSuper(2, SBStatusBar, touchesEnded, touches, withEvent, event);
 }
 
-NSInteger nowPlayingButtonIndex;
+static NSInteger nowPlayingButtonIndex;
 
 CHOptimizedMethod(2, self, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePasscodeForActions, BOOL, requirePasscode)
 {

@@ -64,9 +64,9 @@ static NSMutableArray *displayStacks;
 	return YES;
 }
 
-- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
-	SBApplication *application = SBApp([activator assignedListenerNameForEvent:event]);
+	SBApplication *application = SBApp(listenerName);
 	if ([activator currentEventMode] == LAEventModeSpringBoard) {
 		[self performSelector:@selector(activateApplication:) withObject:application afterDelay:0.0f];
 		[event setHandled:YES];
@@ -93,30 +93,37 @@ static NSMutableArray *displayStacks;
 	return [NSArray arrayWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil];
 }
 
-- (UIImage *)activator:(LAActivator *)activator requiresIconForListenerName:(NSString *)listenerName
+- (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName
 {
 	SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:listenerName];
-	return [icon icon] ?: [UIImage imageWithContentsOfFile:[SBApp(listenerName) pathForIcon]];
+	UIImage *image = [icon icon];
+	if (image)
+		return UIImagePNGRepresentation(image);
+	return [NSData dataWithContentsOfFile:[SBApp(listenerName) pathForIcon]];
 }
-- (UIImage *)activator:(LAActivator *)activator requiresSmallIconForListenerName:(NSString *)listenerName
+- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
 {
 	SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:listenerName];
-	UIImage *result = [icon smallIcon];
-	if (!result) {
-		result = [UIImage imageWithContentsOfFile:[SBApp(listenerName) pathForSmallIcon]];
-		if (!result) {
-			result = [self activator:activator requiresIconForListenerName:listenerName];
-			if (!result)
-				return nil;
+	UIImage *image = [icon smallIcon];
+	if (!image) {
+		SBApplication *app = SBApp(listenerName);
+		NSData *result = [NSData dataWithContentsOfFile:[app pathForSmallIcon]];
+		if (result)
+			return result;
+		image = [icon icon];
+		if (!image) {
+			 image = [UIImage imageWithContentsOfFile:[app pathForIcon]];
+			 if (!image)
+			 	return nil;
 		}
 	}
-	CGSize size = [result size];
+	CGSize size = [image size];
 	if (size.width > 29.0f || size.height > 29.0f) {
 		size.width = 29.0f;
 		size.height = 29.0f;
-		result = [result _imageScaledToSize:size interpolationQuality:kCGInterpolationDefault];
+		image = [image _imageScaledToSize:size interpolationQuality:kCGInterpolationDefault];
 	}
-	return result;
+	return UIImagePNGRepresentation(image);
 }
 
 @end
