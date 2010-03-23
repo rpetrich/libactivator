@@ -298,13 +298,15 @@ static LAActivator *activator;
 			NSArray *group = [_listeners objectForKey:key];
 			NSMutableArray *mutableGroup = [NSMutableArray array];
 			BOOL hasItems = NO;
-			for (NSString *listenerName in group)
-				for (NSString *mode in _modes)
-					if ([activator listenerWithName:listenerName isCompatibleWithMode:mode]) {
-						[mutableGroup addObject:listenerName];
-						hasItems = YES;
-						break;
-					}
+			for (NSString *listenerName in group) {
+				if ([activator listenerWithName:listenerName isCompatibleWithEventName:eventName])
+					for (NSString *mode in _modes)
+						if ([activator listenerWithName:listenerName isCompatibleWithMode:mode]) {
+							[mutableGroup addObject:listenerName];
+							hasItems = YES;
+							break;
+						}
+			}
 			if (hasItems)
 				[_listeners setObject:mutableGroup forKey:key];
 			else

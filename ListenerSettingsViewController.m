@@ -26,6 +26,7 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 				[groupList addObject:eventName];
 			}
 		}
+		_compatibleEvents = [[NSMutableDictionary alloc] init];
 		NSArray *groupNames = [_events allKeys];
 		for (NSString *key in groupNames)
 			[[_events objectForKey:key] sortUsingFunction:CompareEventNamesCallback context:nil];
@@ -36,6 +37,7 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (void)dealloc
 {
+	[_compatibleEvents release];
 	[_groups release];
 	[_listenerName release];
 	[_eventMode release];
@@ -53,6 +55,13 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 	if (![_listenerName isEqual:listenerName]) {
 		[_listenerName release];
 		_listenerName = [listenerName copy];
+		for (NSString *group in _groups) {
+			NSMutableArray *events = [NSMutableArray array];
+			for (NSString *eventName in [_events objectForKey:group])
+				if ([LASharedActivator listenerWithName:_listenerName isCompatibleWithEventName:eventName])
+					[events addObject:eventName];
+			[_compatibleEvents setObject:events forKey:group];
+		}
 		if ([self isViewLoaded])
 			[(UITableView *)[self view] reloadData];
 	}
@@ -70,7 +79,7 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (NSMutableArray *)groupAtIndex:(NSInteger)index
 {
-	return [_events objectForKey:[_groups objectAtIndex:index]];
+	return [_compatibleEvents objectForKey:[_groups objectAtIndex:index]];
 }
 
 - (NSString *)eventNameForRowAtIndexPath:(NSIndexPath *)indexPath

@@ -3,4 +3,5 @@
 	description = "Simulate a press of the sleep button";
 	group = "System Actions";
 	selector = "sleepButton";
+	"incompatible-events" = ("libactivator.lock.hold.short", "libactivator.lock.press.double", "libactivator.menu.hold.short", "libactivator.menu.press.double", "libactivator.menu.press.single");
 }

@@ -165,9 +165,8 @@ static LASimpleListener *sharedSimpleListener;
 	return YES;
 }
 
-- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerWithName:(NSString *)listenerName
 {
-	NSString *listenerName = [activator assignedListenerNameForEvent:event];
 	NSString *selector = [activator infoDictionaryValueOfKey:@"selector" forListenerWithName:listenerName];
 	if (objc_msgSend(self, NSSelectorFromString(selector), activator, event))
 		[event setHandled:YES];
@@ -178,7 +177,7 @@ static LASimpleListener *sharedSimpleListener;
 	return sharedSimpleListener;
 }
 
-+ (void)load
++ (void)initialize
 {
 	if (!sharedSimpleListener) {
 		CHAutoreleasePoolForScope();

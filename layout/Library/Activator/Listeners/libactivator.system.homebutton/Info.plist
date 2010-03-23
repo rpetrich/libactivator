@@ -3,4 +3,5 @@
 	description = "Simulate a press of the home button";
 	group = "System Actions";
 	selector = "homeButton";
+	"incompatible-events" = ("libactivator.lock.hold.short", "libactivator.lock.press.double", "libactivator.menu.hold.short", "libactivator.menu.press.double", "libactivator.menu.press.single");
 }

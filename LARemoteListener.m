@@ -85,6 +85,10 @@ static LARemoteListener *sharedInstance;
 	return [super activator:activator requiresSmallIconDataForListenerName:listenerName]
 		?: [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
 }
+- (NSNumber *)activator:(LAActivator *)activator requiresIsCompatibleWithEventName:(NSString *)eventName listenerName:(NSString *)listenerName
+{
+	return [self _performRemoteSelector:_cmd withObject:eventName withObject:listenerName forListenerName:listenerName];
+}
 - (id)activator:(LAActivator *)activator requiresInfoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)listenerName
 {
 	return [self _performRemoteSelector:_cmd withObject:key withObject:listenerName forListenerName:listenerName];

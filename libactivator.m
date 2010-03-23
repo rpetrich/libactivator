@@ -65,6 +65,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			[messagingCenter registerForMessageName:@"activator:requiresCompatibleEventModesForListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"activator:requiresIsCompatibleWithEventName:forListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:requiresInfoDictionaryValueOfKey:forListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			// Remote messages to LAActivator
 			[messagingCenter registerForMessageName:@"_cachedAndSortedListeners" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
@@ -378,14 +379,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSArray *)availableListenerNames
 {
-	if (InSpringBoard) {
-		NSMutableArray *result = [[_listeners allKeys] mutableCopy];
-		for (id key in [listenerData allKeys])
-			if (![result containsObject:key])
-				[result addObject:key];
-		return [result autorelease];
-	}
-	return [self _performRemoteMessage:_cmd withObject:nil];
+	return InSpringBoard ? [_listeners allKeys] : [self _performRemoteMessage:_cmd withObject:nil];
 }
 
 - (id)infoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)name
@@ -403,12 +397,18 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	return [[self listenerForName:name] activator:self requiresCompatibleEventModesForListenerWithName:name] ?: [self availableEventModes];
 }
 
-- (BOOL)listenerWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
+- (BOOL)listenerWithName:(NSString *)listenerName isCompatibleWithMode:(NSString *)eventMode
 {
-	if (eventMode)
+	if (listenerName)
 		// TODO: optimize this
-		return [[self compatibleEventModesForListenerWithName:eventName] containsObject:eventMode];
+		return [[self compatibleEventModesForListenerWithName:listenerName] containsObject:eventMode];
 	return YES;
+}
+
+- (BOOL)listenerWithName:(NSString *)listenerName isCompatibleWithEventName:(NSString *)eventName
+{
+	NSNumber *result = [[self listenerForName:listenerName] activator:self requiresIsCompatibleWithEventName:eventName listenerName:listenerName];
+	return result ? [result boolValue] : YES;
 }
 
 - (UIImage *)iconForListenerName:(NSString *)listenerName
@@ -547,4 +547,5 @@ CHConstructor
 			[listenerData setObject:[NSBundle bundleWithPath:[@"/Library/Activator/Listeners" stringByAppendingPathComponent:fileName]] forKey:fileName];
 	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, PreferencesChangedCallback, CFSTR("libactivator.preferenceschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 	LASharedActivator = [[LAActivator alloc] init];
+	[LASimpleListener sharedInstance];
 }

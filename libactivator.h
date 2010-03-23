@@ -66,7 +66,8 @@
 - (id)infoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)name;
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name;
 - (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
-- (BOOL)listenerWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
+- (BOOL)listenerWithName:(NSString *)listenerName isCompatibleWithMode:(NSString *)eventMode;
+- (BOOL)listenerWithName:(NSString *)listenerName isCompatibleWithEventName:(NSString *)eventName;
 - (UIImage *)iconForListenerName:(NSString *)listenerName;
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName;
 
@@ -119,8 +120,8 @@ extern LAActivator *LASharedActivator;
 - (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)listenerName;
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName;
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName;
+- (NSNumber *)activator:(LAActivator *)activator requiresIsCompatibleWithEventName:(NSString *)eventName listenerName:(NSString *)listenerName;
 - (id)activator:(LAActivator *)activator requiresInfoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)listenerName;
-
 
 @end
 
@@ -131,6 +132,7 @@ extern LAActivator *LASharedActivator;
 	NSString *_listenerName;
 	NSString *_eventMode;
 	NSMutableDictionary *_events;
+	NSMutableDictionary *_compatibleEvents;
 	NSArray *_groups;
 }
 
