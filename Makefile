@@ -18,7 +18,7 @@ LibActivator_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 LibActivator_PRIVATE_FRAMEWORKS = Preferences
 LibActivator_LDFLAGS = -L$(FW_OBJ_DIR) -lactivator
 
-ADDITIONAL_CFLAGS = -include Common.h -std=c99
+ADDITIONAL_CFLAGS = -std=c99
 
 ifeq ($(PROFILING),1)
 	ADDITIONAL_CFLAGS += -DCHEnableProfiling
@@ -31,15 +31,6 @@ endif
 include framework/makefiles/common.mk
 include framework/makefiles/library.mk
 include framework/makefiles/bundle.mk
-
-before-all:: Common.h
-
-clean::
-	rm -f Common.h
-
-Common.h:
-	echo "#define kPackageName \"$(shell grep ^Package: layout/DEBIAN/control | cut -d ' ' -f 2)\"" > Common.h
-	echo "#define kPackageVersion \"$(shell grep ^Version: layout/DEBIAN/control | cut -d ' ' -f 2)\"" >> Common.h
 
 internal-package::
 	mkdir -p $(FW_PACKAGE_STAGING_DIR)/usr/include/libactivator
