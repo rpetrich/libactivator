@@ -167,6 +167,7 @@ static LASimpleListener *sharedSimpleListener;
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
+	NSString *selector = [activator infoDictionaryValueOfKey:@"selector" forListenerWithName:listenerName];
 	if (objc_msgSend(self, NSSelectorFromString(selector), activator, event))
 		[event setHandled:YES];
 }
