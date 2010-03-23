@@ -66,30 +66,24 @@ static LASlideGestureWindow *rightSlideGestureWindow;
 static LAQuickDoDelegate *sharedQuickDoDelegate;
 static UIButton *quickDoButton;
 
-static LAActivator *activator;
-
-CHConstructor {
-	activator = [LAActivator sharedInstance];
-}
-
 CHInline
 static LAEvent *LASendEventWithName(NSString *eventName)
 {
-	LAEvent *event = [[[LAEvent alloc] initWithName:eventName mode:[activator currentEventMode]] autorelease];
-	[activator sendEventToListener:event];
+	LAEvent *event = [[[LAEvent alloc] initWithName:eventName mode:[LASharedActivator currentEventMode]] autorelease];
+	[LASharedActivator sendEventToListener:event];
 	return event;
 }
 
 CHInline
 static void LAAbortEvent(LAEvent *event)
 {
-	[activator sendAbortToListener:event];
+	[LASharedActivator sendAbortToListener:event];
 }
 
 CHInline
 static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 {
-	return [activator listenerForEvent:[LAEvent eventWithName:eventName mode:[activator currentEventMode]]];
+	return [LASharedActivator listenerForEvent:[LAEvent eventWithName:eventName mode:[LASharedActivator currentEventMode]]];
 }
 
 @implementation LASlideGestureWindow
@@ -157,7 +151,7 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 
 - (void)updateVisibility
 {
-	[self setHidden:[activator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName]] == nil];
+	[self setHidden:[LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName]] == nil];
 }
 
 - (void)dealloc
@@ -485,12 +479,12 @@ CHOptimizedMethod(0, self, void, iHome, inject)
 
 CHOptimizedMethod(0, self, BOOL, SBUIController, clickedMenuButton)
 {
-	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressSingle mode:[activator currentEventMode]];
-	[activator sendDeactivateEventToListeners:event];
+	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressSingle mode:[LASharedActivator currentEventMode]];
+	[LASharedActivator sendDeactivateEventToListeners:event];
 	if ([event isHandled])
 		return YES;
 	if (![CHSharedInstance(SBIconController) isEditing]) {
-		[activator sendEventToListener:event];
+		[LASharedActivator sendEventToListener:event];
 		if ([event isHandled])
 			return YES;
 	}
@@ -511,21 +505,21 @@ CHOptimizedMethod(0, self, void, SBUIController, tearDownIconListAndBar)
 {
 	CHSuper(0, SBUIController, tearDownIconListAndBar);
 	[LASlideGestureWindow updateVisibility];
-	[activator _eventModeChanged];
+	[LASharedActivator _eventModeChanged];
 }
 
 CHOptimizedMethod(1, self, void, SBUIController, restoreIconList, BOOL, animate)
 {
 	CHSuper(1, SBUIController, restoreIconList, animate);
 	[LASlideGestureWindow updateVisibility];
-	[activator _eventModeChanged];
+	[LASharedActivator _eventModeChanged];
 }
 
 CHOptimizedMethod(0, self, void, SBUIController, lock)
 {
 	CHSuper(0, SBUIController, lock);
 	[LASlideGestureWindow updateVisibility];
-	[activator _eventModeChanged];
+	[LASharedActivator _eventModeChanged];
 }
 
 CHOptimizedMethod(2, self, void, SBIconController, scrollToIconListAtIndex, NSInteger, index, animate, BOOL, animate)
@@ -680,11 +674,11 @@ CHOptimizedMethod(2, self, void, SBNowPlayingAlertItem, configure, BOOL, configu
 {
 	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
 	if (shouldAddNowPlayingButton) {
-		NSString *listenerName = [activator assignedListenerNameForEvent:event];
+		NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
 		if (listenerName && ![listenerName isEqualToString:@"libactivator.ipod.music-controls"]) {
 			CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
-			NSString *listenerName = [activator assignedListenerNameForEvent:event];
-			NSString *title = [activator localizedTitleForListenerName:listenerName];
+			NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
+			NSString *title = [LASharedActivator localizedTitleForListenerName:listenerName];
 			id alertSheet = [self alertSheet];
 			//[alertSheet setNumberOfRows:2];
 			nowPlayingButtonIndex = [alertSheet addButtonWithTitle:title];
