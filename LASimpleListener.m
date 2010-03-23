@@ -165,9 +165,8 @@ static LASimpleListener *sharedSimpleListener;
 	return YES;
 }
 
-- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerWithName:(NSString *)listenerName
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
-	NSString *selector = [activator infoDictionaryValueOfKey:@"selector" forListenerWithName:listenerName];
 	if (objc_msgSend(self, NSSelectorFromString(selector), activator, event))
 		[event setHandled:YES];
 }
@@ -181,27 +180,26 @@ static LASimpleListener *sharedSimpleListener;
 {
 	if (!sharedSimpleListener) {
 		CHAutoreleasePoolForScope();
-		LAActivator *activator = [LAActivator sharedInstance];
 		sharedSimpleListener = [[self alloc] init];
 		// System
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.homebutton"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.sleepbutton"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.respring"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.safemode"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.reboot"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.powerdown"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.spotlight"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.take-screenshot"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.homebutton"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.sleepbutton"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.respring"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.safemode"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.reboot"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.powerdown"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.spotlight"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.take-screenshot"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
 		// Lock Screen
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.dismiss"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.show"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.toggle"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.dismiss"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.show"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.toggle"];
 		// iPod
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.ipod.toggle-playback"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.ipod.previous-track"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.ipod.next-track"];
-		[activator registerListener:sharedSimpleListener forName:@"libactivator.ipod.music-controls"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.toggle-playback"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.previous-track"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.next-track"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.music-controls"];
 		CHLoadLateClass(SBIconController);
 		CHLoadLateClass(SBSearchController);
 		CHLoadLateClass(SBAlertItemsController);
