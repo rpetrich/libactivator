@@ -148,7 +148,7 @@
 	"LISTENER_DESCRIPTION_libactivator.ipod.next-track" = "Skips to next song";
 	
 	"LISTENER_TITLE_libactivator.ipod.previous-track" = "Previous Track";
-	"LISTENER_DESCRIPTION_libactivator.ipod.previous-track" = "Returns to precious song";
+	"LISTENER_DESCRIPTION_libactivator.ipod.previous-track" = "Returns to previous song";
 	
 	"LISTENER_TITLE_libactivator.ipod.toggle-playback" = "Play/Pause";
 	"LISTENER_DESCRIPTION_libactivator.ipod.toggle-playback" = "Toggles iPod playback";
