@@ -1,5 +1,7 @@
 #import "libactivator-private.h"
 
+#import <CoreFoundation/CoreFoundation.h>
+
 @implementation NSObject(LAListener)
 - (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode
 {
@@ -65,6 +67,12 @@
 	NSBundle *bundle = [listenerData objectForKey:listenerName];
 	return [NSData dataWithContentsOfFile:[bundle pathForResource:@"icon-small" ofType:@"png"]]
 		?: [NSData dataWithContentsOfFile:[bundle pathForResource:@"Icon-small" ofType:@"png"]];
+}
+- (NSNumber *)activator:(LAActivator *)activator requiresIsCompatibleWithEventName:(NSString *)eventName listenerName:(NSString *)listenerName
+{
+	return [[[listenerData objectForKey:listenerName] objectForInfoDictionaryKey:@"incompatible-events"] containsObject:eventName]
+		? (NSNumber *)kCFBooleanFalse
+		: (NSNumber *)kCFBooleanTrue;
 }
 - (id)activator:(LAActivator *)activator requiresInfoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)listenerName
 {

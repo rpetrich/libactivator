@@ -6,7 +6,7 @@ else
 
 # libactivator.dylib (/usr/lib)
 LIBRARY_NAME = libactivator
-libactivator_OBJC_FILES =  libactivator.m Events.m LAEvent.m LAApplicationListener.m LASimpleListener.m LARemoteListener.m ListenerSettingsViewController.m
+libactivator_OBJC_FILES =  libactivator.m Events.m LAEvent.m LAApplicationListener.m LASimpleListener.m LARemoteListener.m LAListener.m ListenerSettingsViewController.m
 libactivator_FRAMEWORKS = UIKit CoreGraphics MediaPlayer
 libactivator_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
 

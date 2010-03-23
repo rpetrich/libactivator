@@ -78,7 +78,7 @@ __attribute__((visibility("hidden")))
 
 @end
 
-@interface NSObject(LAListener) <LAListener>
+@interface NSObject(LAListener)
 - (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
@@ -93,6 +93,7 @@ __attribute__((visibility("hidden")))
 - (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)name;
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName;
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName;
+- (NSNumber *)activator:(LAActivator *)activator requiresIsCompatibleWithEventName:(NSString *)eventName listenerName:(NSString *)listenerName;
 - (id)activator:(LAActivator *)activator requiresInfoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)listenerName;
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event;
