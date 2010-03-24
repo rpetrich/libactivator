@@ -10,7 +10,7 @@ Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=libactivat
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Author: Ryan Petrich <rpetrich@gmail.com>
 Sponsor: thebigboss.org <http://thebigboss.org>
-Conflicts: com.booleanmagic.overboard (<= 1.1), com.sinfuliphone.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6), com.beyoip.lockinfo (<= 2.0.0-6), com.sinfuliphone.lockinfo (<= 2.0.0-6), sbsettings (<= 3.0.6)
-Replaces: com.booleanmagic.overboard (<= 1.1), com.sinfuliphone.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6), com.beyoip.lockinfo (<= 2.0.0-6), com.sinfuliphone.lockinfo (<= 2.0.0-6)
+Conflicts: com.booleanmagic.overboard (<= 1.1), com.sinfuliphone.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6), com.beyoip.lockinfo (<= 2.0.0-6), com.sinfuliphone.lockinfo (<= 2.0.0-6), com.gbtech.libactivator, sbsettings (<= 3.0.6)
+Replaces: com.booleanmagic.overboard (<= 1.1), com.sinfuliphone.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6), com.beyoip.lockinfo (<= 2.0.0-6), com.sinfuliphone.lockinfo (<= 2.0.0-6), com.gbtech.libactivator
 Section: System
 dev: rpetrich
