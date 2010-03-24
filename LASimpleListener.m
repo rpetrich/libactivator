@@ -14,6 +14,7 @@ CHDeclareClass(SBScreenShotter);
 CHDeclareClass(SBVoiceControlAlert);
 CHDeclareClass(SBAwayController);
 CHDeclareClass(SBUIController);
+CHDeclareClass(SBStatusBarController);
 
 static LASimpleListener *sharedSimpleListener;
 
@@ -210,6 +211,7 @@ static LASimpleListener *sharedSimpleListener;
 		CHLoadLateClass(SBVoiceControlAlert);
 		CHLoadLateClass(SBAwayController);
 		CHLoadLateClass(SBUIController);
+		CHLoadLateClass(SBStatusBarController);
 	}
 }
 
