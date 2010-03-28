@@ -65,13 +65,13 @@ MODE_DESCRIPTION_lockscreen = "Bloccato con lockscreen visibile";
 "EVENT_DESCRIPTION_libactivator.motion.shake" = "Scuotere!";
  
 "EVENT_TITLE_libactivator.slide-in.bottom" = "Dal basso";
-"EVENT_DESCRIPTION_libactivator.slide-in.bottom" = "Scorrere sullo schermo dal basso";
+"EVENT_DESCRIPTION_libactivator.slide-in.bottom" = "Scorrere dal basso";
  
 "EVENT_TITLE_libactivator.slide-in.bottom-left" = "Dal basso (sinistra)";
-"EVENT_DESCRIPTION_libactivator.slide-in.bottom-left" = "Scorrere sullo schermo dal basso (sinistra)";
+"EVENT_DESCRIPTION_libactivator.slide-in.bottom-left" = "Scorrere dal basso (sinistra)";
  
 "EVENT_TITLE_libactivator.slide-in.bottom-right" = "Dal basso (destra)";
-"EVENT_DESCRIPTION_libactivator.slide-in.bottom-right" = "Scorrere sullo schermo dal basso (destra)";
+"EVENT_DESCRIPTION_libactivator.slide-in.bottom-right" = "Scorrere dal basso (destra)";
  
 "EVENT_TITLE_libactivator.springboard.pinch" = "Zoom icone (comprimi)";
 "EVENT_DESCRIPTION_libactivator.springboard.pinch" = "Comprimere le icone con 2 dita";
