@@ -22,6 +22,10 @@
 
 @end
 
+typedef enum {
+    LAActivatorVersion_1_3 = 1030000
+} LAActivatorVersion;
+
 // Activator
 
 @protocol LAListener;
@@ -38,6 +42,8 @@
 	NSMutableDictionary *_cachedListenerGroups;
 }
 + (LAActivator *)sharedInstance;
+
+- (LAActivatorVersion)version;
 
 @property (nonatomic, readonly) NSString *settingsFilePath;
 

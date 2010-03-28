@@ -96,6 +96,11 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	[super dealloc];
 }
 
+- (LAActivatorVersion)version
+{
+	return LAActivatorVersion_1_3;
+}
+
 // Preferences
 
 - (void)_reloadPreferences
