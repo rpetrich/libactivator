@@ -15,6 +15,7 @@ CHDeclareClass(SBVoiceControlAlert);
 CHDeclareClass(SBAwayController);
 CHDeclareClass(SBUIController);
 CHDeclareClass(SBStatusBarController);
+CHDeclareClass(SBMediaController);
 
 static LASimpleListener *sharedSimpleListener;
 
@@ -117,39 +118,19 @@ static LASimpleListener *sharedSimpleListener;
 
 - (BOOL)togglePlayback
 {
-	MPMusicPlayerController *iPod = [MPMusicPlayerController iPodMusicPlayer];
-	switch ([iPod playbackState]) {
-		case MPMusicPlaybackStateStopped:
-		case MPMusicPlaybackStatePaused:
-		case MPMusicPlaybackStateInterrupted:
-			[iPod play];
-			break;
-		default:
-			[iPod pause];
-			break;
-	}
+	[CHSharedInstance(SBMediaController) togglePlayPause];
 	return YES;
 }
 
 - (BOOL)previousTrack
 {
-	[[MPMusicPlayerController iPodMusicPlayer] skipToPreviousItem];
+	[CHSharedInstance(SBMediaController) changeTrack:-1];
 	return YES;
 }
 
 - (BOOL)nextTrack
 {
-	MPMusicPlayerController *iPod = [MPMusicPlayerController iPodMusicPlayer];
-	switch ([iPod playbackState]) {
-		case MPMusicPlaybackStateStopped:
-		case MPMusicPlaybackStatePaused:
-		case MPMusicPlaybackStateInterrupted:
-			[iPod play];
-			break;
-		default:
-			[iPod skipToNextItem];
-			break;
-	}
+	[CHSharedInstance(SBMediaController) changeTrack:1];
 	return YES;
 }
 
@@ -212,6 +193,7 @@ static LASimpleListener *sharedSimpleListener;
 		CHLoadLateClass(SBAwayController);
 		CHLoadLateClass(SBUIController);
 		CHLoadLateClass(SBStatusBarController);
+		CHLoadLateClass(SBMediaController);
 	}
 }
 
