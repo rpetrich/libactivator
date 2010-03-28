@@ -14,6 +14,7 @@ CHDeclareClass(SBScreenShotter);
 CHDeclareClass(SBVoiceControlAlert);
 CHDeclareClass(SBAwayController);
 CHDeclareClass(SBUIController);
+CHDeclareClass(SBStatusBarController);
 
 static LASimpleListener *sharedSimpleListener;
 
@@ -103,6 +104,7 @@ static LASimpleListener *sharedSimpleListener;
 - (BOOL)dismissLockScreen
 {
 	[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:YES];
+	[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
 	return YES;
 }
 
@@ -209,6 +211,7 @@ static LASimpleListener *sharedSimpleListener;
 		CHLoadLateClass(SBVoiceControlAlert);
 		CHLoadLateClass(SBAwayController);
 		CHLoadLateClass(SBUIController);
+		CHLoadLateClass(SBStatusBarController);
 	}
 }
 
