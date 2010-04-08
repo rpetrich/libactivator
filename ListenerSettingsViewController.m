@@ -182,7 +182,7 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 			NSString *otherListener = [LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]];
 			if (otherListener && ![otherListener isEqual:_listenerName]) {
 				NSString *otherTitle = [LASharedActivator localizedTitleForListenerName:otherListener];
-				if (![otherTitles containsObject:otherTitle])
+				if (otherTitle && ![otherTitles containsObject:otherTitle])
 					[otherTitles addObject:otherTitle];
 				if (![self allowedToUnassignEvent:eventName fromListener:otherListener]) {
 					[self showLastEventMessageForListener:otherListener];
