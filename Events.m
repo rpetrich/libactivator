@@ -53,6 +53,7 @@ CHDeclareClass(SBStatusBar);
 CHDeclareClass(SBNowPlayingAlertItem);
 CHDeclareClass(SBAwayController);
 CHDeclareClass(VolumeControl);
+CHDeclareClass(SBVolumeHUDView);
 CHDeclareClass(SBStatusBarController);
 
 static BOOL shouldInterceptMenuPresses;
@@ -704,20 +705,31 @@ CHOptimizedMethod(0, self, void, SBAwayController, playLockSound)
 
 static LAVolumeTapWindow *volumeTapWindow;
 
+static void ShowVolumeTapWindow(UIWindow *window)
+{
+	if (volumeTapWindow)
+		[volumeTapWindow setFrame:[window frame]];
+	else
+		volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:[window frame]];
+	[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
+	[volumeTapWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
+	[volumeTapWindow setHidden:NO];
+}
+
+static void HideVolumeTapWindow()
+{
+	[volumeTapWindow setHidden:YES];
+	[volumeTapWindow release];
+	volumeTapWindow = nil;
+}
+
 CHOptimizedMethod(0, self, void, VolumeControl, _createUI)
 {
 	if (LAListenerForEventWithName(LAEventNameVolumeDisplayTap)) {
 		CHSuper(0, VolumeControl, _createUI);
 		UIWindow *window = CHIvar(self, _volumeWindow, UIWindow *);
-		if (window) {
-			if (volumeTapWindow)
-				[volumeTapWindow setFrame:[window frame]];
-			else
-				volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:[window frame]];
-			[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
-			[volumeTapWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
-			[volumeTapWindow setHidden:NO];
-		}
+		if (window)
+			ShowVolumeTapWindow(window);
 	} else {
 		CHSuper(0, VolumeControl, _createUI);
 	}
@@ -725,10 +737,18 @@ CHOptimizedMethod(0, self, void, VolumeControl, _createUI)
 
 CHOptimizedMethod(0, self, void, VolumeControl, _tearDown)
 {
-	[volumeTapWindow setHidden:YES];
-	[volumeTapWindow release];
-	volumeTapWindow = nil;
+	HideVolumeTapWindow();
 	CHSuper(0, VolumeControl, _tearDown);
+}
+
+CHOptimizedMethod(0, super, void, SBVolumeHUDView, didMoveToWindow)
+{
+	UIWindow *window = [self window];
+	if (window)
+		ShowVolumeTapWindow(window);
+	else
+		HideVolumeTapWindow();
+	CHSuper(0, SBVolumeHUDView, didMoveToWindow);
 }
 
 CHConstructor
@@ -788,6 +808,10 @@ CHConstructor
 	CHLoadLateClass(VolumeControl);
 	CHHook(0, VolumeControl, _createUI);
 	CHHook(0, VolumeControl, _tearDown);
+	
+	CHLoadLateClass(SBVolumeHUDView);
+	if (CHClass(SBVolumeHUDView))
+		CHHook(0, SBVolumeHUDView, didMoveToWindow);
 
 	CHLoadLateClass(iHome);
 	if (CHClass(iHome))
