@@ -51,6 +51,7 @@ CHDeclareClass(SBIconScrollView);
 CHDeclareClass(SBIcon);
 CHDeclareClass(SBStatusBar);
 CHDeclareClass(SBNowPlayingAlertItem);
+CHDeclareClass(SBVoiceControlAlert);
 CHDeclareClass(SBAwayController);
 CHDeclareClass(VolumeControl);
 CHDeclareClass(SBVolumeHUDView);
@@ -700,6 +701,16 @@ CHOptimizedMethod(2, self, void, SBNowPlayingAlertItem, alertSheet, id, sheet, b
 		LASendEventWithName(LAEventNameMenuPressDouble);
 }
 
+CHOptimizedMethod(0, self, id, SBVoiceControlAlert, initFromMenuButton)
+{
+	if (menuEventToAbort) {
+		LAAbortEvent(menuEventToAbort);
+		[menuEventToAbort release];
+		menuEventToAbort = nil;
+	}
+	return CHSuper(0, SBVoiceControlAlert, initFromMenuButton);
+}
+
 CHOptimizedMethod(0, self, void, SBAwayController, playLockSound)
 {
 	if (!shouldSuppressLockSound)
@@ -804,6 +815,9 @@ CHConstructor
 	CHLoadLateClass(SBNowPlayingAlertItem);
 	CHHook(2, SBNowPlayingAlertItem, configure, requirePasscodeForActions);
 	CHHook(2, SBNowPlayingAlertItem, alertSheet, buttonClicked);
+	
+	CHLoadLateClass(SBVoiceControlAlert);
+	CHHook(0, SBVoiceControlAlert, initFromMenuButton);
 	
 	CHLoadLateClass(SBAwayController);
 	CHHook(0, SBAwayController, playLockSound);
