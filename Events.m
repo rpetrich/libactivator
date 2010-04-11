@@ -416,6 +416,7 @@ CHOptimizedMethod(0, new, void, SpringBoard, activatorMenuButtonTimerCompleted)
 	menuEventToAbort = [LASendEventWithName(LAEventNameMenuHoldShort) retain];
 }
 
+static NSUInteger previousToLastVolumeEvent;
 static NSUInteger lastVolumeEvent;
 
 CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
@@ -424,20 +425,24 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 	switch (GSEventGetType(gsEvent)) {
 		case kGSEventVolumeUpButtonUp:
 			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorCancelVolumeChord) object:nil];
-			if (lastVolumeEvent == kGSEventVolumeDownButtonUp) {
+			if (lastVolumeEvent == kGSEventVolumeDownButtonUp && previousToLastVolumeEvent == 0) {
+				previousToLastVolumeEvent = 0;
 				lastVolumeEvent = 0;
 				LASendEventWithName(LAEventNameVolumeDownUp);
 			} else {
+				previousToLastVolumeEvent = lastVolumeEvent;
 				lastVolumeEvent = kGSEventVolumeUpButtonUp;
 				[self performSelector:@selector(activatorCancelVolumeChord) withObject:nil afterDelay:kButtonHoldDelay];
 			}
 			break;
 		case kGSEventVolumeDownButtonUp:
 			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorCancelVolumeChord) object:nil];
-			if (lastVolumeEvent == kGSEventVolumeUpButtonUp) {
+			if (lastVolumeEvent == kGSEventVolumeUpButtonUp && previousToLastVolumeEvent == 0) {
+				previousToLastVolumeEvent = 0;
 				lastVolumeEvent = 0;
 				LASendEventWithName(LAEventNameVolumeUpDown);
 			} else {
+				previousToLastVolumeEvent = lastVolumeEvent;
 				lastVolumeEvent = kGSEventVolumeDownButtonUp;
 				[self performSelector:@selector(activatorCancelVolumeChord) withObject:nil afterDelay:kButtonHoldDelay];
 			}
@@ -449,6 +454,7 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 
 CHOptimizedMethod(0, new, void, SpringBoard, activatorCancelVolumeChord)
 {
+	previousToLastVolumeEvent = 0;
 	lastVolumeEvent = 0;
 }
 
