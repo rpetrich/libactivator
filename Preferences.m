@@ -5,12 +5,22 @@
 #import "libactivator-private.h"
 #import "ActivatorAdController.h"
 
+// TODO: figure out the proper way to store this in headers
+@interface PSViewController (OS32)
+@property (nonatomic, retain) PSSpecifier *specifier;
+@end
+
 static LAActivator *activator;
 
 #define kWebURL [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/actions/?udid=", [[UIDevice currentDevice] uniqueIdentifier]]
 
 @interface ActivatorSettingsViewController : PSViewController {
+@private
+	NSString *_navigationTitle;
 }
+- (id)initForContentSize:(CGSize)size;
+- (void)loadFromSpecifier:(PSSpecifier *)specifier;
+@property (nonatomic, copy) NSString *navigationTitle;
 @end
 
 @implementation ActivatorSettingsViewController
@@ -23,6 +33,42 @@ static LAActivator *activator;
 		return [super init];
 }
 
+- (void)dealloc
+{
+	[_navigationTitle release];
+	[super dealloc];
+}
+
+- (NSString *)navigationTitle
+{
+	return [[_navigationTitle retain] autorelease];
+}
+
+- (void)setNavigationTitle:(NSString *)navigationTitle
+{
+	[_navigationTitle autorelease];
+	_navigationTitle = [navigationTitle retain];
+	if ([self respondsToSelector:@selector(navigationItem)])
+		[[self navigationItem] setTitle:_navigationTitle];
+}
+
+- (void)setSpecifier:(PSSpecifier *)specifier
+{
+	[self loadFromSpecifier:specifier];
+	[super setSpecifier:specifier];
+}
+
+- (void)viewWillBecomeVisible:(void *)source
+{
+	if (source)
+		[self loadFromSpecifier:(PSSpecifier *)source];
+	[super viewWillBecomeVisible:source];
+}
+
+- (void)loadFromSpecifier:(PSSpecifier *)specifier
+{
+}
+
 @end
 
 @interface ActivatorWebViewController : ActivatorSettingsViewController<UIWebViewDelegate> {
@@ -30,7 +76,6 @@ static LAActivator *activator;
 	UIView *_backgroundView;
 	UIActivityIndicatorView *_activityView;
 	UIWebView *_webView;
-	NSString *_navigationTitle;
 }
 
 @end
@@ -75,7 +120,6 @@ static LAActivator *activator;
 
 - (void)dealloc
 {
-	[_navigationTitle release];
 	[_webView setDelegate:nil];
 	[_webView release];
 	[_activityView stopAnimating];
@@ -103,17 +147,6 @@ static LAActivator *activator;
 {
 	[super pushController:controller];
 	[controller setParentController:self];
-}
-
-- (NSString *)navigationTitle
-{
-	return _navigationTitle;
-}
-
-- (void)setNavigationTitle:(NSString *)navigationTitle
-{
-	[_navigationTitle autorelease];
-	_navigationTitle = [navigationTitle copy];
 }
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType
@@ -330,6 +363,7 @@ static LAActivator *activator;
 		}
 		_groups = [[[_listeners allKeys] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] retain];
 		_eventName = [eventName copy];
+		[self setNavigationTitle:[activator localizedTitleForEventName:_eventName]];
 		CGRect headerFrame;
 		headerFrame.origin.x = 0.0f;
 		headerFrame.origin.y = 0.0f;
@@ -464,11 +498,6 @@ static LAActivator *activator;
 	[self updateHeader];
 }
 
-- (NSString *)navigationTitle
-{
-	return [activator localizedTitleForEventName:_eventName];
-}
-
 @end
 
 @interface ActivatorEventGroupViewController : ActivatorTableViewController {
@@ -486,6 +515,7 @@ static LAActivator *activator;
 		_modes = [modes copy];
 		_events = [events copy];
 		_groupName = [groupName copy];
+		[self setNavigationTitle:_groupName];
 	}
 	return self;
 }
@@ -526,11 +556,6 @@ static LAActivator *activator;
 	[vc release];
 }
 
-- (NSString *)navigationTitle
-{
-	return _groupName;
-}
-
 @end
 
 
@@ -553,6 +578,7 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 {
 	if ((self = [super initForContentSize:contentSize])) {
 		_eventMode = [mode copy];
+		[self setNavigationTitle:[activator localizedTitleForEventMode:_eventMode]];
 		BOOL showHidden = [[[NSDictionary dictionaryWithContentsOfFile:[activator settingsFilePath]] objectForKey:@"LAShowHiddenEvents"] boolValue];
 		_events = [[NSMutableDictionary alloc] init];
 		for (NSString *eventName in [activator availableEventNames]) {
@@ -652,48 +678,54 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 	[vc release];
 }
 
-- (NSString *)navigationTitle
-{
-	return [activator localizedTitleForEventMode:_eventMode];
-}
-
 @end
 
 @interface ActivatorSettingsController : ActivatorTableViewController {
 @private
-	NSString *_title;
 	LAListenerSettingsViewController *_viewController;
 	CGSize _size;
 }
+- (void)resetTitle;
 @end
 
 @implementation ActivatorSettingsController
 
+- (id)initForContentSize:(CGSize)size
+{
+	if ((self = [super initForContentSize:size])) {
+		[self resetTitle];
+	}
+	return self;
+}
+
 - (void)dealloc
 {
 	[_viewController release];
-	[_title release];
 	[super dealloc];
 }
 
-- (void)viewWillBecomeVisible:(void *)source
+- (void)resetTitle
+{
+	[self setNavigationTitle:[activator localizedStringForKey:@"ACTIVATOR" value:@"Activator"]];
+}
+
+- (void)loadFromSpecifier:(PSSpecifier *)specifier
 {
 	// Load LAListenerSettingsViewController if activatorListener is set in the specifier
 	[_viewController release];
 	_viewController = nil;
-	[_title release];
-	_title = nil;
-	if (source) {
-		PSSpecifier *specifier = (PSSpecifier *)source;
-		NSString *listenerName = [specifier propertyForKey:@"activatorListener"];
-		if ([listenerName length]) {
-			NSLog(@"libactivator: Configuring %@", listenerName);
-			_viewController = [[LAListenerSettingsViewController alloc] init];
-			[_viewController setListenerName:listenerName];
-			_title = [[specifier propertyForKey:@"activatorTitle"]?:[specifier name] copy];
+	NSString *listenerName = [specifier propertyForKey:@"activatorListener"];
+	if ([listenerName length]) {
+		NSLog(@"libactivator: Configuring %@", listenerName);
+		_viewController = [[LAListenerSettingsViewController alloc] init];
+		[_viewController setListenerName:listenerName];
+		NSString *title = [[specifier propertyForKey:@"activatorTitle"]?:[specifier name] copy];
+		if ([title length]) {
+			[self setNavigationTitle:title];
+			return;
 		}
 	}
-	[super viewWillBecomeVisible:source];
+	[self resetTitle];
 }
 
 - (void)viewDidBecomeVisible
@@ -722,14 +754,6 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 		view = replacement;
 	}
 	return view;
-}
-
-- (NSString *)navigationTitle
-{
-	if ([_title length])
-		return _title;
-	else
-		return [activator localizedStringForKey:@"ACTIVATOR" value:@"Activator"];
 }
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
