@@ -302,6 +302,7 @@ CHOptimizedMethod(0, new, void, SpringBoard, activatorFixStatusBar)
 
 CHOptimizedMethod(1, self, void, SpringBoard, lockButtonUp, GSEventRef, event)
 {
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonHoldCompleted) object:nil];
 	if (lockHoldEventToAbort) {
 		[lockHoldEventToAbort release];
 		lockHoldEventToAbort = nil;
@@ -337,7 +338,6 @@ CHOptimizedMethod(1, self, void, SpringBoard, lockButtonUp, GSEventRef, event)
 			CHSuper(1, SpringBoard, lockButtonUp, event);
 		}
 	} else {
-		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonHoldCompleted) object:nil];
 		[self performSelector:@selector(activatorLockButtonDoubleTapAborted) withObject:nil afterDelay:kButtonHoldDelay];
 		isWaitingForLockDoubleTap = YES;
 		CHSuper(1, SpringBoard, lockButtonUp, event);
