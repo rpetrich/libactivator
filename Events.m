@@ -480,14 +480,18 @@ CHOptimizedMethod(0, self, void, iHome, inject)
 
 CHOptimizedMethod(0, self, BOOL, SBUIController, clickedMenuButton)
 {
-	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressSingle mode:[LASharedActivator currentEventMode]];
+	NSString *mode = [LASharedActivator currentEventMode];
+	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressSingle mode:mode];
 	[LASharedActivator sendDeactivateEventToListeners:event];
 	if ([event isHandled])
 		return YES;
 	if (![CHSharedInstance(SBIconController) isEditing]) {
 		[LASharedActivator sendEventToListener:event];
-		if ([event isHandled])
+		if ([event isHandled]) {
+			if (mode == LAEventModeApplication)
+				CHSuper(0, SBUIController, clickedMenuButton);
 			return YES;
+		}
 	}
 	return CHSuper(0, SBUIController, clickedMenuButton);
 }
