@@ -412,10 +412,7 @@ CHOptimizedMethod(0, self, void, SpringBoard, menuButtonWasHeld)
 CHOptimizedMethod(0, new, void, SpringBoard, activatorMenuButtonTimerCompleted)
 {
 	[menuEventToAbort release];
-	menuEventToAbort = nil;
-	LAEvent *event = LASendEventWithName(LAEventNameMenuHoldShort);
-	if ([event isHandled])
-		menuEventToAbort = [event retain];
+	menuEventToAbort = [LASendEventWithName(LAEventNameMenuHoldShort) retain];
 }
 
 static NSUInteger lastVolumeEvent;
@@ -480,6 +477,8 @@ CHOptimizedMethod(0, self, void, iHome, inject)
 
 CHOptimizedMethod(0, self, BOOL, SBUIController, clickedMenuButton)
 {
+	if (menuEventToAbort)
+		return YES;
 	NSString *mode = [LASharedActivator currentEventMode];
 	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressSingle mode:mode];
 	[LASharedActivator sendDeactivateEventToListeners:event];
