@@ -9,7 +9,23 @@ static LAActivator *activator;
 
 #define kWebURL [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/actions/?udid=", [[UIDevice currentDevice] uniqueIdentifier]]
 
-@interface ActivatorWebViewController : PSViewController<UIWebViewDelegate> {
+@interface ActivatorSettingsViewController : PSViewController {
+}
+@end
+
+@implementation ActivatorSettingsViewController
+
+- (id)initForContentSize:(CGSize)size
+{
+	if ([[PSViewController class] instancesRespondToSelector:@selector(initForContentSize:)])
+		return [super initForContentSize:size];
+	else
+		return [super init];
+}
+
+@end
+
+@interface ActivatorWebViewController : ActivatorSettingsViewController<UIWebViewDelegate> {
 @private
 	UIView *_backgroundView;
 	UIActivityIndicatorView *_activityView;
@@ -121,7 +137,7 @@ static LAActivator *activator;
 
 @end
 
-@interface ActivatorTableViewController : PSViewController<UITableViewDataSource, UITableViewDelegate> {
+@interface ActivatorTableViewController : ActivatorSettingsViewController<UITableViewDataSource, UITableViewDelegate> {
 @private
 	UITableView *_tableView;
 }
