@@ -727,13 +727,15 @@ static LAVolumeTapWindow *volumeTapWindow;
 
 static void ShowVolumeTapWindow(UIWindow *window)
 {
-	if (volumeTapWindow)
-		[volumeTapWindow setFrame:[window frame]];
-	else
-		volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:[window frame]];
-	[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
-	[volumeTapWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
-	[volumeTapWindow setHidden:NO];
+	if ([LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:LAEventNameVolumeDisplayTap]]) {
+		if (volumeTapWindow)
+			[volumeTapWindow setFrame:[window frame]];
+		else
+			volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:[window frame]];
+		[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
+		[volumeTapWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
+		[volumeTapWindow setHidden:NO];
+	}
 }
 
 static void HideVolumeTapWindow()
