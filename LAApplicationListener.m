@@ -20,6 +20,11 @@ static NSMutableArray *displayStacks;
 
 #define SBApp(dispId) [CHSharedInstance(SBApplicationController) applicationWithDisplayIdentifier:dispId]
 
+// TODO: Figure out the proper way to put this in the headers
+@interface SBIcon (OS32)
+- (UIImage *)getIconImage:(NSInteger)sizeIndex;
+@end
+
 @implementation LAApplicationListener
 
 + (void)initialize
@@ -96,7 +101,11 @@ static NSMutableArray *displayStacks;
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName
 {
 	SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:listenerName];
-	UIImage *image = [icon icon];
+	UIImage *image;
+	if ([icon respondsToSelector:@selector(getIconImage:)])
+		image = [icon getIconImage:1];
+	else
+		image = [icon icon];	
 	if (image)
 		return UIImagePNGRepresentation(image);
 	return [NSData dataWithContentsOfFile:[SBApp(listenerName) pathForIcon]];
@@ -104,7 +113,11 @@ static NSMutableArray *displayStacks;
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
 {
 	SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:listenerName];
-	UIImage *image = [icon smallIcon];
+	UIImage *image;
+	if ([icon respondsToSelector:@selector(getIconImage:)])
+		image = [icon getIconImage:0];
+	else
+		image = [icon smallIcon];	
 	if (!image) {
 		SBApplication *app = SBApp(listenerName);
 		NSData *result = [NSData dataWithContentsOfFile:[app pathForSmallIcon]];
