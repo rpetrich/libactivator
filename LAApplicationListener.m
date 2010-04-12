@@ -21,9 +21,20 @@ static NSMutableArray *displayStacks;
 #define SBApp(dispId) [CHSharedInstance(SBApplicationController) applicationWithDisplayIdentifier:dispId]
 
 // TODO: Figure out the proper way to put this in the headers
+#if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_3_2
+@interface SBIcon (OS30)
+- (UIImage *)icon;
+- (UIImage *)smallIcon;
+@end
+@interface SBApplication (OS30)
+- (NSString *)pathForIcon;
+- (NSString *)pathForSmallIcon;
+@end
+#else
 @interface SBIcon (OS32)
 - (UIImage *)getIconImage:(NSInteger)sizeIndex;
 @end
+#endif
 
 @implementation LAApplicationListener
 
