@@ -46,6 +46,7 @@ NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake
 CHDeclareClass(SpringBoard);
 CHDeclareClass(iHome);
 CHDeclareClass(SBUIController);
+CHDeclareClass(SBScreenShotter);
 CHDeclareClass(SBIconController);
 CHDeclareClass(SBIconScrollView);
 CHDeclareClass(SBIcon);
@@ -375,10 +376,12 @@ CHOptimizedMethod(0, self, void, SpringBoard, _showEditAlertView)
 }
 
 static LAEvent *menuEventToAbort;
+static BOOL justTookScreenshot;
 
 CHOptimizedMethod(1, self, void, SpringBoard, menuButtonDown, GSEventRef, event)
 {
 	[self performSelector:@selector(activatorMenuButtonTimerCompleted) withObject:nil afterDelay:kButtonHoldDelay];
+	justTookScreenshot = NO;
 	shouldSuppressMenuReleases = NO;
 	CHSuper(1, SpringBoard, menuButtonDown, event);
 }
@@ -386,7 +389,13 @@ CHOptimizedMethod(1, self, void, SpringBoard, menuButtonDown, GSEventRef, event)
 CHOptimizedMethod(1, self, void, SpringBoard, menuButtonUp, GSEventRef, event)
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorMenuButtonTimerCompleted) object:nil];
-	if (menuEventToAbort || shouldSuppressMenuReleases) {
+	if (justTookScreenshot) {
+		LAAbortEvent(menuEventToAbort);
+		[menuEventToAbort release];
+		menuEventToAbort = nil;
+		CHSuper(1, SpringBoard, menuButtonUp, event);
+		justTookScreenshot = NO;
+	} else if (menuEventToAbort || shouldSuppressMenuReleases) {
 		[menuEventToAbort release];
 		menuEventToAbort = nil;
 		NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _menuButtonTimer, NSTimer *);
@@ -484,7 +493,7 @@ CHOptimizedMethod(0, self, void, iHome, inject)
 
 CHOptimizedMethod(0, self, BOOL, SBUIController, clickedMenuButton)
 {
-	if (menuEventToAbort)
+	if (menuEventToAbort || justTookScreenshot)
 		return YES;
 	NSString *mode = [LASharedActivator currentEventMode];
 	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressSingle mode:mode];
@@ -531,6 +540,12 @@ CHOptimizedMethod(0, self, void, SBUIController, lock)
 	CHSuper(0, SBUIController, lock);
 	[LASlideGestureWindow updateVisibility];
 	[LASharedActivator _eventModeChanged];
+}
+
+CHOptimizedMethod(1, self, void, SBScreenShotter, saveScreenshot, BOOL, something)
+{
+	justTookScreenshot = YES;
+	CHSuper(1, SBScreenShotter, saveScreenshot, something);
 }
 
 CHOptimizedMethod(2, self, void, SBIconController, scrollToIconListAtIndex, NSInteger, index, animate, BOOL, animate)
@@ -800,6 +815,9 @@ CHConstructor
 	CHHook(0, SBUIController, tearDownIconListAndBar);
 	CHHook(1, SBUIController, restoreIconList);
 	CHHook(0, SBUIController, lock);
+
+	CHLoadLateClass(SBScreenShotter);
+	CHHook(1, SBScreenShotter, saveScreenshot);
 
 	CHLoadLateClass(SBIconController);
 	CHHook(2, SBIconController, scrollToIconListAtIndex, animate);
