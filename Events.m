@@ -738,6 +738,16 @@ CHOptimizedMethod(0, self, void, SBAwayController, playLockSound)
 		CHSuper(0, SBAwayController, playLockSound);
 }
 
+CHOptimizedMethod(0, self, BOOL, SBAwayController, handleMenuButtonTap)
+{
+	NSString *mode = [LASharedActivator currentEventMode];
+	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressSingle mode:mode];
+	[LASharedActivator sendDeactivateEventToListeners:event];
+	if ([event isHandled])
+		return YES;
+	return CHSuper(0, SBAwayController, handleMenuButtonTap);
+}
+
 static LAVolumeTapWindow *volumeTapWindow;
 
 static void ShowVolumeTapWindow(UIWindow *window)
@@ -847,6 +857,7 @@ CHConstructor
 	
 	CHLoadLateClass(SBAwayController);
 	CHHook(0, SBAwayController, playLockSound);
+	CHHook(0, SBAwayController, handleMenuButtonTap);
 
 	CHLoadLateClass(VolumeControl);
 	CHHook(0, VolumeControl, _createUI);
