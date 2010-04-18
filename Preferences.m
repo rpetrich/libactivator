@@ -246,16 +246,28 @@ static LAActivator *activator;
 
 @end
 
+@protocol ActivatorEventViewHeaderDelegate;
+
 @interface ActivatorEventViewHeader : UIView {
 @private
 	NSString *_listenerName;
+	id<ActivatorEventViewHeaderDelegate> _delegate;
 }
 
 @property (nonatomic, copy) NSString *listenerName;
+@property (nonatomic, assign) id<ActivatorEventViewHeaderDelegate> delegate;
 
 @end
 
+@protocol ActivatorEventViewHeaderDelegate <NSObject>
+@required
+- (void)eventViewHeaderCloseButtonTapped:(ActivatorEventViewHeader *)eventViewHeader;
+@end
+
+
 @implementation ActivatorEventViewHeader
+
+@synthesize delegate = _delegate;
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -299,6 +311,37 @@ static LAActivator *activator;
 	CGContextSetShadowWithColor(c, CGSizeMake(0.0f, -1.0f), 0.0f, [[UIColor whiteColor] CGColor]);
 	[[activator localizedStringForKey:@"CURRENTLY_ASSIGNED_TO" value:@"Currently assigned to:"] drawAtPoint:CGPointMake(20.0f, 9.0f) withFont:[UIFont boldSystemFontOfSize:17.0f]];
 	if ([_listenerName length]) {
+		// Draw Close Button
+		CGContextBeginPath(c);
+		CGRect closeRect;
+		closeRect.origin.x = line.size.width - 5;
+		closeRect.origin.y = 40.0f;
+		closeRect.size.width = 20.0f;
+		closeRect.size.height = 20.0f;
+		CGContextAddEllipseInRect(c, closeRect);
+		const CGFloat lineWidth = 1.25f;
+		const CGPoint points[] = {
+			{ closeRect.origin.x + (closeRect.size.width / 4), closeRect.origin.y + (closeRect.size.height / 4) },
+			{ closeRect.origin.x + (closeRect.size.width / 4) + lineWidth, closeRect.origin.y + (closeRect.size.height / 4) },
+			{ closeRect.origin.x + (closeRect.size.width / 2), closeRect.origin.y + (closeRect.size.height / 2) - lineWidth },
+			{ closeRect.origin.x + (closeRect.size.width * 3 / 4) - lineWidth, closeRect.origin.y + (closeRect.size.height / 4) },
+			{ closeRect.origin.x + (closeRect.size.width * 3 / 4), closeRect.origin.y + (closeRect.size.height / 4) },
+			{ closeRect.origin.x + (closeRect.size.width * 3 / 4), closeRect.origin.y + (closeRect.size.height / 4) + lineWidth },
+			{ closeRect.origin.x + (closeRect.size.width / 2) + lineWidth, closeRect.origin.y + (closeRect.size.height / 2) },
+			{ closeRect.origin.x + (closeRect.size.width * 3 / 4), closeRect.origin.y + (closeRect.size.height * 3 / 4) - lineWidth },
+			{ closeRect.origin.x + (closeRect.size.width * 3 / 4), closeRect.origin.y + (closeRect.size.height * 3 / 4) },
+			{ closeRect.origin.x + (closeRect.size.width * 3 / 4) - lineWidth, closeRect.origin.y + (closeRect.size.height * 3 / 4) },
+			{ closeRect.origin.x + (closeRect.size.width / 2), closeRect.origin.y + (closeRect.size.height / 2) + lineWidth },
+			{ closeRect.origin.x + (closeRect.size.width / 4) + lineWidth, closeRect.origin.y + (closeRect.size.height * 3 / 4) },
+			{ closeRect.origin.x + (closeRect.size.width / 4), closeRect.origin.y + (closeRect.size.height * 3 / 4) },
+			{ closeRect.origin.x + (closeRect.size.width / 4), closeRect.origin.y + (closeRect.size.height * 3 / 4) - lineWidth },
+			{ closeRect.origin.x + (closeRect.size.width / 2) - lineWidth, closeRect.origin.y + (closeRect.size.height / 2) },
+			{ closeRect.origin.x + (closeRect.size.width / 4), closeRect.origin.y + (closeRect.size.height / 4) + lineWidth }
+		};
+		CGContextAddLines(c, points, 16);
+		CGContextClosePath(c);
+		CGContextEOFillPath(c);
+		// Draw Image
 		UIImage *image = [activator smallIconForListenerName:_listenerName];
 		CGFloat x;
 		if (image) {
@@ -307,6 +350,7 @@ static LAActivator *activator;
 		} else {
 			x = 30.0f;
 		}
+		// Draw Text
 		[[UIColor blackColor] setFill];
 		[[activator localizedTitleForListenerName:_listenerName] drawAtPoint:CGPointMake(x, 39.0f) withFont:[UIFont boldSystemFontOfSize:19.0f]];
 	} else {
@@ -314,9 +358,15 @@ static LAActivator *activator;
 	}
 }
 
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	[super touchesEnded:touches withEvent:event];
+	[_delegate eventViewHeaderCloseButtonTapped:self];
+}
+
 @end
 
-@interface ActivatorEventViewController : ActivatorTableViewController {
+@interface ActivatorEventViewController : ActivatorTableViewController<ActivatorEventViewHeaderDelegate> {
 @private
 	NSArray *_modes;
 	NSString *_eventName;
@@ -370,6 +420,7 @@ static LAActivator *activator;
 		headerFrame.size.width = contentSize.width;
 		headerFrame.size.height = 76.0f;
 		_headerView = [[ActivatorEventViewHeader alloc] initWithFrame:headerFrame];
+		[_headerView setDelegate:self];
 		[self updateHeader];
 	}
 	return self;
@@ -377,6 +428,7 @@ static LAActivator *activator;
 
 - (void)dealloc
 {
+	[_headerView setDelegate:nil];
 	[_headerView release];
 	[_groups release];
 	[_listeners release];
@@ -404,6 +456,25 @@ static LAActivator *activator;
 		if ([[activator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:mode]] isEqual:listenerName])
 			assignedCount--;
 	return assignedCount > 0;
+}
+
+- (void)eventViewHeaderCloseButtonTapped:(ActivatorEventViewHeader *)eventViewHeader
+{
+	NSMutableArray *events = [NSMutableArray array];
+	for (NSString *mode in _modes) {
+		LAEvent *event = [LAEvent eventWithName:_eventName mode:mode];
+		NSString *listenerName = [activator assignedListenerNameForEvent:event];
+		if (listenerName) {
+			if (![self allowedToUnassignEventsFromListener:listenerName]) {
+				[self showLastEventMessageForListener:listenerName];
+				return;
+			}
+			[events addObject:event];
+		}
+	}
+	for (LAEvent *event in events)
+		[activator unassignEvent:event];
+	[eventViewHeader setListenerName:nil];
 }
 
 - (NSMutableArray *)groupAtIndex:(NSInteger)index
