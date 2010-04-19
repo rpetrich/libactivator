@@ -711,7 +711,7 @@ CHOptimizedMethod(2, self, void, UIStatusBar, touchesBegan, NSSet *, touches, wi
 	CHSuper(2, UIStatusBar, touchesBegan, touches, withEvent, event);
 }
 
-CHOptimizedMethod(2, self, void, UIStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
+CHMethod(2, void, UIStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	if (!hasSentStatusBarEvent) {
 		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorHoldEventCompleted) object:nil];
