@@ -899,3 +899,10 @@ NSInteger CompareEventNamesCallback(id a, id b, void *context)
 }
 
 @end
+
+__attribute__((constructor))
+static void Init() {
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	NSLog(@"Activator: Loaded in settings");
+	[pool release];
+}
