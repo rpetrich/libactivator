@@ -51,6 +51,7 @@ CHDeclareClass(SBIconController);
 CHDeclareClass(SBIconScrollView);
 CHDeclareClass(SBIcon);
 CHDeclareClass(SBStatusBar);
+CHDeclareClass(UIStatusBar);
 CHDeclareClass(SBNowPlayingAlertItem);
 CHDeclareClass(SBVoiceControlAlert);
 CHDeclareClass(SBAwayController);
@@ -694,6 +695,56 @@ CHOptimizedMethod(2, self, void, SBStatusBar, touchesEnded, NSSet *, touches, wi
 	CHSuper(2, SBStatusBar, touchesEnded, touches, withEvent, event);
 }
 
+CHOptimizedMethod(0, new, void, UIStatusBar, activatorHoldEventCompleted)
+{
+	if (!hasSentStatusBarEvent) {
+		hasSentStatusBarEvent = YES;
+		LASendEventWithName(LAEventNameStatusBarHold);
+	}
+}
+
+CHOptimizedMethod(2, self, void, UIStatusBar, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
+{
+	[self performSelector:@selector(activatorHoldEventCompleted) withObject:nil afterDelay:kStatusBarHoldDelay];
+	statusBarTouchDown = [[touches anyObject] locationInView:self];
+	hasSentStatusBarEvent = NO;
+	CHSuper(2, UIStatusBar, touchesBegan, touches, withEvent, event);
+}
+
+CHOptimizedMethod(2, self, void, UIStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
+{
+	if (!hasSentStatusBarEvent) {
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorHoldEventCompleted) object:nil];
+		CGPoint currentPosition = [[touches anyObject] locationInView:self];
+		CGFloat deltaX = currentPosition.x - statusBarTouchDown.x;
+		CGFloat deltaY = currentPosition.y - statusBarTouchDown.y;
+		if ((deltaX * deltaX) > (deltaY * deltaY)) {
+			if (deltaX > kStatusBarHorizontalSwipeThreshold) {
+				hasSentStatusBarEvent = YES;
+				LASendEventWithName(LAEventNameStatusBarSwipeRight);
+			} else if (deltaX < -kStatusBarHorizontalSwipeThreshold) {
+				hasSentStatusBarEvent = YES;
+				LASendEventWithName(LAEventNameStatusBarSwipeLeft);
+			}
+		} else {
+			if (deltaY > kStatusBarVerticalSwipeThreshold) {
+				hasSentStatusBarEvent = YES;
+				LASendEventWithName(LAEventNameStatusBarSwipeDown);
+			}
+		}
+	}
+	CHSuper(2, UIStatusBar, touchesMoved, touches, withEvent, event);
+}
+
+CHOptimizedMethod(2, self, void, UIStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
+{
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorHoldEventCompleted) object:nil];
+	if (!hasSentStatusBarEvent)
+		if ([[touches anyObject] tapCount] == 2)
+			LASendEventWithName(LAEventNameStatusBarTapDouble);
+	CHSuper(2, UIStatusBar, touchesEnded, touches, withEvent, event);
+}
+
 static NSInteger nowPlayingButtonIndex;
 
 CHOptimizedMethod(2, self, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePasscodeForActions, BOOL, requirePasscode)
@@ -847,6 +898,12 @@ CHConstructor
 	CHHook(2, SBStatusBar, touchesBegan, withEvent);
 	CHHook(2, SBStatusBar, touchesMoved, withEvent);
 	CHHook(2, SBStatusBar, touchesEnded, withEvent);
+	
+	CHLoadLateClass(UIStatusBar);
+	CHHook(0, UIStatusBar, activatorHoldEventCompleted);
+	CHHook(2, UIStatusBar, touchesBegan, withEvent);
+	CHHook(2, UIStatusBar, touchesMoved, withEvent);
+	CHHook(2, UIStatusBar, touchesEnded, withEvent);
 	
 	CHLoadLateClass(SBNowPlayingAlertItem);
 	CHHook(2, SBNowPlayingAlertItem, configure, requirePasscodeForActions);
