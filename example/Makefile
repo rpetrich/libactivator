@@ -8,7 +8,7 @@ else
 TWEAK_NAME = ExampleListener
 ExampleListener_OBJC_FILES = ExampleListener.m
 ExampleListener_FRAMEWORKS = Foundation UIKit
-ExampleListener_LDFLAGS = -lactivator
+ExampleListener_LDFLAGS = -lactivator -L../obj
 
 include framework/makefiles/common.mk
 include framework/makefiles/tweak.mk
