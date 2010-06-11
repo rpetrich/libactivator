@@ -10,6 +10,7 @@
 - (void)_loadPreferences;
 - (void)_savePreferences;
 - (void)_reloadPreferences;
+- (void)_resetPreferences;
 - (id)_getObjectForPreference:(NSString *)preference;
 
 - (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;

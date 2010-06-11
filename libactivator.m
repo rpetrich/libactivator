@@ -136,6 +136,12 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	}
 }
 
+- (void)_resetPreferences
+{
+	unlink([[self settingsFilePath] UTF8String]);
+	notify_post("com.apple.language.changed");
+}
+
 - (id)_getObjectForPreference:(NSString *)preference
 {
 	LoadPreferences();
