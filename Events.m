@@ -850,83 +850,85 @@ CHOptimizedMethod(0, super, void, SBVolumeHUDView, didMoveToWindow)
 }
 
 CHConstructor
-{  
-	CHLoadLateClass(SpringBoard);
-	CHHook(0, SpringBoard, _handleMenuButtonEvent);
-	CHHook(0, SpringBoard, allowMenuDoubleTap);
-	CHHook(0, SpringBoard, handleMenuDoubleTap);
-	CHHook(0, SpringBoard, isLocked);
-	CHHook(1, SpringBoard, lockButtonDown);
-	CHHook(0, SpringBoard, activatorFixStatusBar);
-	CHHook(1, SpringBoard, lockButtonUp);
-	CHHook(0, SpringBoard, lockButtonWasHeld);
-	CHHook(0, SpringBoard, activatorLockButtonHoldCompleted);
-	CHHook(0, SpringBoard, activatorLockButtonDoubleTapAborted);
-	CHHook(1, SpringBoard, menuButtonDown);
-	CHHook(1, SpringBoard, menuButtonUp);
-	CHHook(0, SpringBoard, menuButtonWasHeld);
-	CHHook(0, SpringBoard, activatorMenuButtonTimerCompleted);
-	CHHook(1, SpringBoard, volumeChanged);
-	CHHook(0, SpringBoard, activatorCancelVolumeChord);
-	CHHook(0, SpringBoard, _showEditAlertView);
+{
+	if (CHLoadLateClass(UIStatusBar)) {
+		CHHook(0, UIStatusBar, activatorHoldEventCompleted);
+		CHHook(2, UIStatusBar, touchesBegan, withEvent);
+		CHHook(2, UIStatusBar, touchesMoved, withEvent);
+		CHHook(2, UIStatusBar, touchesEnded, withEvent);
+	}
 	
-	CHLoadLateClass(SBUIController);
-	CHHook(0, SBUIController, clickedMenuButton);
-	CHHook(0, SBUIController, finishLaunching);
-	CHHook(0, SBUIController, tearDownIconListAndBar);
-	CHHook(1, SBUIController, restoreIconList);
-	CHHook(0, SBUIController, lock);
-
-	CHLoadLateClass(SBScreenShotter);
-	CHHook(1, SBScreenShotter, saveScreenshot);
-
-	CHLoadLateClass(SBIconController);
-	CHHook(2, SBIconController, scrollToIconListAtIndex, animate);
+	if (CHLoadLateClass(SpringBoard)) {
+		CHHook(0, SpringBoard, _handleMenuButtonEvent);
+		CHHook(0, SpringBoard, allowMenuDoubleTap);
+		CHHook(0, SpringBoard, handleMenuDoubleTap);
+		CHHook(0, SpringBoard, isLocked);
+		CHHook(1, SpringBoard, lockButtonDown);
+		CHHook(0, SpringBoard, activatorFixStatusBar);
+		CHHook(1, SpringBoard, lockButtonUp);
+		CHHook(0, SpringBoard, lockButtonWasHeld);
+		CHHook(0, SpringBoard, activatorLockButtonHoldCompleted);
+		CHHook(0, SpringBoard, activatorLockButtonDoubleTapAborted);
+		CHHook(1, SpringBoard, menuButtonDown);
+		CHHook(1, SpringBoard, menuButtonUp);
+		CHHook(0, SpringBoard, menuButtonWasHeld);
+		CHHook(0, SpringBoard, activatorMenuButtonTimerCompleted);
+		CHHook(1, SpringBoard, volumeChanged);
+		CHHook(0, SpringBoard, activatorCancelVolumeChord);
+		CHHook(0, SpringBoard, _showEditAlertView);
+		
+		CHLoadLateClass(SBUIController);
+		CHHook(0, SBUIController, clickedMenuButton);
+		CHHook(0, SBUIController, finishLaunching);
+		CHHook(0, SBUIController, tearDownIconListAndBar);
+		CHHook(1, SBUIController, restoreIconList);
+		CHHook(0, SBUIController, lock);
 	
-	CHLoadLateClass(SBIconScrollView);
-	CHHook(1, SBIconScrollView, initWithFrame);
-	CHHook(2, SBIconScrollView, touchesBegan, withEvent);
-	CHHook(1, SBIconScrollView, handlePinch);
+		CHLoadLateClass(SBScreenShotter);
+		CHHook(1, SBScreenShotter, saveScreenshot);
 	
-	CHLoadLateClass(SBIcon);
-	CHHook(0, SBIcon, initWithDefaultSize);
-	CHHook(2, SBIcon, touchesBegan, withEvent);
-	CHHook(2, SBIcon, touchesMoved, withEvent);
+		CHLoadLateClass(SBIconController);
+		CHHook(2, SBIconController, scrollToIconListAtIndex, animate);
+		
+		CHLoadLateClass(SBIconScrollView);
+		CHHook(1, SBIconScrollView, initWithFrame);
+		CHHook(2, SBIconScrollView, touchesBegan, withEvent);
+		CHHook(1, SBIconScrollView, handlePinch);
+		
+		CHLoadLateClass(SBIcon);
+		CHHook(0, SBIcon, initWithDefaultSize);
+		CHHook(2, SBIcon, touchesBegan, withEvent);
+		CHHook(2, SBIcon, touchesMoved, withEvent);
+		
+		CHLoadLateClass(SBStatusBar);
+		CHHook(0, SBStatusBar, activatorHoldEventCompleted);
+		CHHook(2, SBStatusBar, touchesBegan, withEvent);
+		CHHook(2, SBStatusBar, touchesMoved, withEvent);
+		CHHook(2, SBStatusBar, touchesEnded, withEvent);
+		
+		CHLoadLateClass(SBNowPlayingAlertItem);
+		CHHook(2, SBNowPlayingAlertItem, configure, requirePasscodeForActions);
+		CHHook(2, SBNowPlayingAlertItem, alertSheet, buttonClicked);
+		
+		CHLoadLateClass(SBVoiceControlAlert);
+		CHHook(0, SBVoiceControlAlert, initFromMenuButton);
+		
+		CHLoadLateClass(SBAwayController);
+		CHHook(0, SBAwayController, playLockSound);
+		CHHook(0, SBAwayController, handleMenuButtonTap);
 	
-	CHLoadLateClass(SBStatusBar);
-	CHHook(0, SBStatusBar, activatorHoldEventCompleted);
-	CHHook(2, SBStatusBar, touchesBegan, withEvent);
-	CHHook(2, SBStatusBar, touchesMoved, withEvent);
-	CHHook(2, SBStatusBar, touchesEnded, withEvent);
+		CHLoadLateClass(VolumeControl);
+		CHHook(0, VolumeControl, _createUI);
+		CHHook(0, VolumeControl, _tearDown);
+		
+		CHLoadLateClass(SBVolumeHUDView);
+		if (CHClass(SBVolumeHUDView))
+			CHHook(0, SBVolumeHUDView, didMoveToWindow);
 	
-	CHLoadLateClass(UIStatusBar);
-	CHHook(0, UIStatusBar, activatorHoldEventCompleted);
-	CHHook(2, UIStatusBar, touchesBegan, withEvent);
-	CHHook(2, UIStatusBar, touchesMoved, withEvent);
-	CHHook(2, UIStatusBar, touchesEnded, withEvent);
-	
-	CHLoadLateClass(SBNowPlayingAlertItem);
-	CHHook(2, SBNowPlayingAlertItem, configure, requirePasscodeForActions);
-	CHHook(2, SBNowPlayingAlertItem, alertSheet, buttonClicked);
-	
-	CHLoadLateClass(SBVoiceControlAlert);
-	CHHook(0, SBVoiceControlAlert, initFromMenuButton);
-	
-	CHLoadLateClass(SBAwayController);
-	CHHook(0, SBAwayController, playLockSound);
-	CHHook(0, SBAwayController, handleMenuButtonTap);
-
-	CHLoadLateClass(VolumeControl);
-	CHHook(0, VolumeControl, _createUI);
-	CHHook(0, VolumeControl, _tearDown);
-	
-	CHLoadLateClass(SBVolumeHUDView);
-	if (CHClass(SBVolumeHUDView))
-		CHHook(0, SBVolumeHUDView, didMoveToWindow);
-
-	CHLoadLateClass(iHome);
-	if (CHClass(iHome))
-		CHHook(0, iHome, inject);
-	
-	CHLoadLateClass(SBStatusBarController);
+		CHLoadLateClass(iHome);
+		if (CHClass(iHome))
+			CHHook(0, iHome, inject);
+		
+		CHLoadLateClass(SBStatusBarController);
+	}
 }
