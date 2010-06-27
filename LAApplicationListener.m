@@ -33,6 +33,10 @@ static NSMutableArray *displayStacks;
 @interface SBIcon (OS32)
 - (UIImage *)getIconImage:(NSInteger)sizeIndex;
 @end
+@interface SBIconModel (OS40)
+- (SBIcon *)leafIconForIdentifier:(NSString *)displayIdentifier;
+- (NSArray *)leafIcons;
+@end
 #endif
 
 @implementation LAApplicationListener
@@ -105,7 +109,12 @@ static NSMutableArray *displayStacks;
 
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName
 {
-	SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:listenerName];
+	SBIcon *icon;
+	SBIconModel *iconModel = CHSharedInstance(SBIconModel);
+	if ([iconModel respondsToSelector:@selector(leafIconForIdentifier:)])
+		icon = [iconModel leafIconForIdentifier:listenerName];
+	else
+		icon = [iconModel iconForDisplayIdentifier:listenerName];
 	UIImage *image;
 	if ([icon respondsToSelector:@selector(getIconImage:)])
 		image = [icon getIconImage:1];
@@ -113,11 +122,19 @@ static NSMutableArray *displayStacks;
 		image = [icon icon];	
 	if (image)
 		return UIImagePNGRepresentation(image);
-	return [NSData dataWithContentsOfFile:[SBApp(listenerName) pathForIcon]];
+	SBApplication *app = SBApp(listenerName);
+	if ([app respondsToSelector:@selector(pathForIcon)])
+		return [NSData dataWithContentsOfFile:[app pathForIcon]];
+	return nil;
 }
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
 {
-	SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:listenerName];
+	SBIcon *icon;
+	SBIconModel *iconModel = CHSharedInstance(SBIconModel);
+	if ([iconModel respondsToSelector:@selector(leafIconForIdentifier:)])
+		icon = [iconModel leafIconForIdentifier:listenerName];
+	else
+		icon = [iconModel iconForDisplayIdentifier:listenerName];
 	UIImage *image;
 	if ([icon respondsToSelector:@selector(getIconImage:)])
 		image = [icon getIconImage:0];
@@ -125,14 +142,19 @@ static NSMutableArray *displayStacks;
 		image = [icon smallIcon];	
 	if (!image) {
 		SBApplication *app = SBApp(listenerName);
-		NSData *result = [NSData dataWithContentsOfFile:[app pathForSmallIcon]];
-		if (result)
-			return result;
+		NSData *result;
+		if ([app respondsToSelector:@selector(pathForSmallIcon)]) {
+			result = [NSData dataWithContentsOfFile:[app pathForSmallIcon]];
+			if (result)
+				return result;
+		}
 		image = [icon icon];
 		if (!image) {
-			 image = [UIImage imageWithContentsOfFile:[app pathForIcon]];
-			 if (!image)
-			 	return nil;
+			if (![app respondsToSelector:@selector(pathForIcon)])
+				return nil;
+			image = [UIImage imageWithContentsOfFile:[app pathForIcon]];
+			if (!image)
+				return nil;
 		}
 	}
 	CGSize size = [image size];
