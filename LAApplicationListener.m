@@ -9,7 +9,6 @@ CHDeclareClass(SBApplication);
 CHDeclareClass(SBDisplayStack);
 CHDeclareClass(SBIconModel);
 
-static NSMutableDictionary *applications;
 static LAApplicationListener *sharedApplicationListener;
 static NSMutableArray *displayStacks;
 
@@ -37,11 +36,6 @@ static NSMutableArray *displayStacks;
 #endif
 
 @implementation LAApplicationListener
-
-+ (void)initialize
-{
-	sharedApplicationListener = [[self alloc] init];
-}
 
 + (LAApplicationListener *)sharedInstance
 {
@@ -169,24 +163,21 @@ CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString
 			}
 		}
 		NSString *listenerName = [self displayIdentifier];
-		LAActivator *activator = [LAActivator sharedInstance];
-		if (![activator listenerForName:listenerName])
-			[activator registerListener:[LAApplicationListener sharedInstance] forName:listenerName];
+		if (![LASharedActivator listenerForName:listenerName])
+			[LASharedActivator registerListener:[LAApplicationListener sharedInstance] forName:listenerName];
 	}
 	return self;
 }
 
 CHOptimizedMethod(0, self, void, SBApplication, dealloc)
 {
-	[applications removeObjectForKey:[self displayIdentifier]];
+	[LASharedActivator unregisterListenerWithName:[self displayIdentifier]];
 	CHSuper(0, SBApplication, dealloc);
 }
 
 CHOptimizedMethod(0, self, id, SBDisplayStack, init)
 {
 	if ((self = CHSuper(0, SBDisplayStack, init))) {
-		if (!displayStacks)
-			displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
 		[displayStacks addObject:self];
 	}
 	return self;
@@ -199,12 +190,15 @@ CHOptimizedMethod(0, self, void, SBDisplayStack, dealloc)
 }
 
 CHConstructor {
-	CHLoadLateClass(SBApplicationController);
-	CHLoadLateClass(SBApplication);
-	CHHook(8, SBApplication, initWithBundleIdentifier, roleIdentifier, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
-	CHHook(0, SBApplication, dealloc);
-	CHLoadLateClass(SBDisplayStack);
-	CHHook(0, SBDisplayStack, init);
-	CHHook(0, SBDisplayStack, dealloc);
-	CHLoadLateClass(SBIconModel);
+	if (CHLoadLateClass(SBApplicationController)) {
+		sharedApplicationListener = [[LAApplicationListener alloc] init];
+		displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
+		CHLoadLateClass(SBApplication);
+		CHHook(8, SBApplication, initWithBundleIdentifier, roleIdentifier, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
+		CHHook(0, SBApplication, dealloc);
+		CHLoadLateClass(SBDisplayStack);
+		CHHook(0, SBDisplayStack, init);
+		CHHook(0, SBDisplayStack, dealloc);
+		CHLoadLateClass(SBIconModel);
+	}
 }
