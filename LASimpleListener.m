@@ -1,5 +1,6 @@
 #import "libactivator.h"
 #import "libactivator-private.h"
+#import "LAApplicationListener.h"
 #import <UIKit/UIKit.h>
 #import <SpringBoard/SpringBoard.h>
 #import <GraphicsServices/GraphicsServices.h>

@@ -1,5 +1,7 @@
 #import "libactivator.h"
 #import "libactivator-private.h"
+#import "LAApplicationListener.h"
+
 #import <Foundation/Foundation.h>
 #import <SpringBoard/SpringBoard.h>
 #import <CaptainHook/CaptainHook.h>
@@ -41,7 +43,7 @@ static NSMutableArray *displayStacks;
 
 @implementation LAApplicationListener
 
-+ (LAApplicationListener *)sharedInstance
++ (id)sharedInstance
 {
 	return sharedApplicationListener;
 }

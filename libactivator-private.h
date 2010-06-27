@@ -70,15 +70,6 @@ __attribute__((visibility("hidden")))
 __attribute__((visibility("hidden")))
 BOOL shouldAddNowPlayingButton;
 
-__attribute__((visibility("hidden")))
-@interface LAApplicationListener : NSObject<LAListener> {
-}
-
-+ (LAApplicationListener *)sharedInstance;
-- (BOOL)activateApplication:(SBApplication *)application;
-
-@end
-
 @interface NSObject(LAListener)
 - (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;
 
