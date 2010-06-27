@@ -1,5 +1,6 @@
 #import "libactivator.h"
 #import "libactivator-private.h"
+#import "SimulatorCompat.h"
 
 #import <SpringBoard/SpringBoard.h>
 #import <CaptainHook/CaptainHook.h>
@@ -43,7 +44,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSString *)settingsFilePath
 {
-	return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Caches/libactivator.plist"];
+	return SCMobilePath(@"/Library/Caches/libactivator.plist");
 }
 
 - (id)init
@@ -78,9 +79,10 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
   		}
 		// Cache event data
 		_eventData = [[NSMutableDictionary alloc] init];
-		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Events" error:NULL])
+		NSString *eventsPath = SCRootPath(@"/Library/Activator/Events");
+		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:eventsPath error:NULL])
 			if (![fileName hasPrefix:@"."])
-				[_eventData setObject:[NSBundle bundleWithPath:[@"/Library/Activator/Events" stringByAppendingPathComponent:fileName]] forKey:fileName];
+				[_eventData setObject:[NSBundle bundleWithPath:[eventsPath stringByAppendingPathComponent:fileName]] forKey:fileName];
 		_cachedListenerTitles = [[NSMutableDictionary alloc] init];
 		_cachedListenerGroups = [[NSMutableDictionary alloc] init];
 	}
@@ -563,14 +565,16 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 CHConstructor
 {
 	CHAutoreleasePoolForScope();
-	CHLoadLateClass(SBIconController);
-	activatorBundle = [[NSBundle alloc] initWithPath:@"/Library/Activator"];
-	// Cache listener data
-	listenerData = [[NSMutableDictionary alloc] init];
-	for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:@"/Library/Activator/Listeners" error:NULL])
-		if (![fileName hasPrefix:@"."])
-			[listenerData setObject:[NSBundle bundleWithPath:[@"/Library/Activator/Listeners" stringByAppendingPathComponent:fileName]] forKey:fileName];
-	CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, PreferencesChangedCallback, CFSTR("libactivator.preferenceschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 	LASharedActivator = [[LAActivator alloc] init];
-	[LASimpleListener sharedInstance];
+	activatorBundle = [[NSBundle alloc] initWithPath:SCRootPath(@"/Library/Activator")];
+	if (CHLoadLateClass(SBIconController)) {
+		// Cache listener data
+		listenerData = [[NSMutableDictionary alloc] init];
+		NSString *listenersPath = SCRootPath(@"/Library/Activator/Listeners");
+		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:listenersPath error:NULL])
+			if (![fileName hasPrefix:@"."])
+				[listenerData setObject:[NSBundle bundleWithPath:[listenersPath stringByAppendingPathComponent:fileName]] forKey:fileName];
+		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, PreferencesChangedCallback, CFSTR("libactivator.preferenceschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+		[LASimpleListener sharedInstance];
+	}
 }
