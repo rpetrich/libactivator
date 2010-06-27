@@ -71,6 +71,8 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			[messagingCenter registerForMessageName:@"_cachedAndSortedListeners" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+			// Preferences
+			[messagingCenter registerForMessageName:@"savePreferences" target:self selector:@selector(_savePreferencesFromMessageName:userInfo:)];
 			// Does not retain values!
 			_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
   		}
@@ -119,19 +121,31 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	}
 }
 
+- (void)_savePreferencesFromMessageName:(NSString *)messageName userInfo:(NSDictionary *)userInfo
+{
+	[_preferences autorelease];
+	_preferences = [userInfo mutableCopy];
+	[self _savePreferences];
+}
+
 - (void)_savePreferences
 {
 	if (_preferences) {
-		_suppressReload++;
-		CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
-		CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
-		CFRelease(url);
-		CFWriteStreamOpen(stream);
-		CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, NULL);
-		CFWriteStreamClose(stream);
-		CFRelease(stream);
-		chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-		notify_post("libactivator.preferenceschanged");
+		_suppressReload--;
+		if (_listeners) {
+			CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
+			CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
+			CFRelease(url);
+			CFWriteStreamOpen(stream);
+			CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, NULL);
+			CFWriteStreamClose(stream);
+			CFRelease(stream);
+			chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+			notify_post("libactivator.preferenceschanged");
+		} else {
+			CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+			[messagingCenter sendMessageName:@"savePreferences" userInfo:_preferences];
+		}
 		_suppressReload--;
 	}
 }
