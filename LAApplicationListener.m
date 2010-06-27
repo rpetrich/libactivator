@@ -94,6 +94,11 @@ static NSMutableArray *displayStacks;
 	return [SBApp(listenerName) displayName];
 }
 
+- (NSString *)activator:(LAActivator *)activator requiresLocalizedDescriptionForListenerName:(NSString *)listenerName
+{
+	return [activator localizedStringForKey:@"LISTENER_DESCRIPTION_application" value:@"Activate application"];
+}
+
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedGroupForListenerName:(NSString *)listenerName
 {
 	if ([SBApp(listenerName) isSystemApplication])
