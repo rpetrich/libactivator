@@ -76,6 +76,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			// Preferences
 			[messagingCenter registerForMessageName:@"savePreferences" target:self selector:@selector(_savePreferencesFromMessageName:userInfo:)];
+			[messagingCenter registerForMessageName:@"resetPreferences" target:self selector:@selector(_resetPreferences)];
 			// Does not retain values!
 			_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
   		}
@@ -127,16 +128,18 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)_savePreferencesFromMessageName:(NSString *)messageName userInfo:(NSDictionary *)userInfo
 {
-	[_preferences autorelease];
-	_preferences = [userInfo mutableCopy];
-	[self _savePreferences];
+	if (userInfo) {
+		[_preferences autorelease];
+		_preferences = [userInfo mutableCopy];
+		[self _savePreferences];
+	}
 }
 
 - (void)_savePreferences
 {
 	if (_preferences) {
-		_suppressReload--;
-		if (_listeners) {
+		if (InSpringBoard) {
+			_suppressReload--;
 			CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
 			CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
 			CFRelease(url);
@@ -146,18 +149,24 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			CFRelease(stream);
 			chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 			notify_post("libactivator.preferenceschanged");
+			_suppressReload--;
 		} else {
 			CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
 			[messagingCenter sendMessageName:@"savePreferences" userInfo:_preferences];
 		}
-		_suppressReload--;
 	}
 }
 
 - (void)_resetPreferences
 {
-	unlink([[self settingsFilePath] UTF8String]);
-	notify_post("com.apple.language.changed");
+	if (InSpringBoard) {
+		unlink([[self settingsFilePath] UTF8String]);
+		[(SpringBoard *)[UIApplication sharedApplication] relaunchSpringBoard];
+		//notify_post("com.apple.language.changed");
+	} else {
+		CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+		[messagingCenter sendMessageName:@"resetPreferences" userInfo:nil];
+	}
 }
 
 - (id)_getObjectForPreference:(NSString *)preference
