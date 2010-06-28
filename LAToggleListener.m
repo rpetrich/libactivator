@@ -69,6 +69,16 @@ static LAToggleListener *sharedInstance;
 	return sharedInstance;
 }
 
++ (NSString *)togglesPath
+{
+	return SCMobilePath(@"/Library/SBSettings/Toggles/");
+}
+
++ (NSString *)defaultThemePath
+{
+	return SCMobilePath(@"/Library/SBSettings/Themes/Default/");
+}
+
 - (id)init
 {
 	if ((self = [super init])) {
@@ -82,15 +92,16 @@ static LAToggleListener *sharedInstance;
 		}
 		toggles = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);	
 		NSFileManager *fileManager = [NSFileManager defaultManager];
-		for (NSString *subpath in [fileManager contentsOfDirectoryAtPath:SCMobilePath(@"/Library/SBSettings/Toggles/") error:NULL]) {
+		NSString *togglesPath = [LAToggleListener togglesPath];
+		for (NSString *subpath in [fileManager contentsOfDirectoryAtPath:togglesPath error:NULL]) {
 			if ([subpath hasPrefix:@"."])
 				continue;
 			if ([subpath isEqualToString:@"Fast Notes"])
 				continue;
 			if ([subpath isEqualToString:@"Brightness"])
 				continue;
-			const char *togglePath = [[NSString stringWithFormat:SCMobilePath(@"/Library/SBSettings/Toggles/%@/Toggle.dylib"), subpath] UTF8String];
-			void *toggle = dlopen(togglePath, RTLD_LAZY);
+			NSString *togglePath = [[togglesPath stringByAppendingPathComponent:subpath] stringByAppendingPathComponent:@"Toggle.dylib"];
+			void *toggle = dlopen([togglePath UTF8String], RTLD_LAZY);
 			if (toggle && isCapable(toggle)) {
 				[LASharedActivator registerListener:self forName:ListenerNameFromToggleName(subpath)];
 				CFDictionaryAddValue(toggles, subpath, toggle);
@@ -126,12 +137,13 @@ static LAToggleListener *sharedInstance;
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName
 {
 	NSString *toggleName = ToggleNameFromListenerName(listenerName);
-	NSString *path = [NSString stringWithFormat:SCMobilePath(@"/Library/SBSettings/Themes/Default/%@/on.png"), toggleName];
+	NSString *defaultThemePath = [LAToggleListener defaultThemePath];
+	NSString *path = [[defaultThemePath stringByAppendingPathComponent:toggleName] stringByAppendingPathComponent:@"on.png"];
 	NSData *data = [NSData dataWithContentsOfFile:path];
 	if (data)
 		return data;
 	else
-		return [NSData dataWithContentsOfFile:SCMobilePath(@"/Library/SBSettings/Themes/Default/blankon.png")];
+		return [NSData dataWithContentsOfFile:[defaultThemePath stringByAppendingPathComponent:@"blankon.png"]];
 }
 
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
