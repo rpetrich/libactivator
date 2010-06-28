@@ -37,7 +37,11 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 @implementation LAActivator
 
-#define LoadPreferences() do { if (!_preferences) [self _loadPreferences]; } while(0)
+#define LoadPreferences() do { \
+	if (_preferences == nil) \
+		if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]])) \
+			_preferences = [[NSMutableDictionary alloc] init]; \
+} while(0)
 
 + (LAActivator *)sharedInstance
 {
@@ -112,16 +116,11 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)_reloadPreferences
 {
+#ifdef DEBUG
+	NSLog(@"Activator: Reloading Preferences");
+#endif
 	[_preferences release];
 	_preferences = nil;
-}
-
-- (void)_loadPreferences
-{
-	if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]])) {
-		// Create a new preference file
-		_preferences = [[NSMutableDictionary alloc] init];
-	}
 }
 
 - (void)_resetPreferences
@@ -139,7 +138,11 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 - (id)_getObjectForPreference:(NSString *)preference
 {
 	LoadPreferences();
-	return [_preferences objectForKey:preference];
+	id value = [_preferences objectForKey:preference];
+#ifdef DEBUG
+	NSLog(@"Activator: Getting Preference %@ resulted in %@", preference, value);
+#endif
+	return value;
 }
 
 - (void)_setObjectForPreferenceFromMessageName:(NSString *)messageName userInfo:(NSDictionary *)userInfo
@@ -155,6 +158,9 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	else
 		[_preferences removeObjectForKey:preference];
 	if (InSpringBoard) {
+#ifdef DEBUG
+		NSLog(@"Activator: Setting preference %@ to %@", preference, value);
+#endif
 		CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
 		CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
 		CFRelease(url);
@@ -288,9 +294,8 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	[_cachedAndSortedListeners release];
 	_cachedAndSortedListeners = nil;
 	[_listeners setObject:listener forKey:name];
-	LoadPreferences();
 	NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
-	if (![[_preferences objectForKey:key] boolValue])
+	if (![[self _getObjectForPreference:key] boolValue])
 		[self _setObject:(id)kCFBooleanTrue forPreference:key];
 }
 
@@ -300,9 +305,8 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	_cachedAndSortedListeners = nil;
 	[_listeners setObject:listener forKey:name];
 	if (!ignoreHasSeen) {
-		LoadPreferences();
 		NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
-		if (![[_preferences objectForKey:key] boolValue])
+		if (![[self _getObjectForPreference:key] boolValue])
 			[self _setObject:(id)kCFBooleanTrue forPreference:key];
 	}
 }
@@ -318,15 +322,14 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (BOOL)hasSeenListenerWithName:(NSString *)name
 {
-	LoadPreferences();
-	return [[_preferences objectForKey:[@"LAHasSeenListener-" stringByAppendingString:name]] boolValue];
+	NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
+	return [[self _getObjectForPreference:key] boolValue];
 }
 
 // Setting Assignments
 
 - (void)assignEvent:(LAEvent *)event toListenerWithName:(NSString *)listenerName
 {
-	LoadPreferences();
 	NSString *eventName = [event name];
 	NSString *eventMode = [event mode];
 	if ([eventMode length]) {
@@ -342,17 +345,16 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)unassignEvent:(LAEvent *)event
 {
-	LoadPreferences();
 	NSString *eventName = [event name];
 	NSString *eventMode = [event mode];
 	if ([eventMode length]) {
 		NSString *prefName = ListenerKeyForEventNameAndMode(eventName, eventMode);
-		if ([_preferences objectForKey:prefName])
+		if ([self _getObjectForPreference:prefName])
 			[self _setObject:nil forPreference:prefName];
 	} else {
 		for (NSString *mode in [self availableEventModes]) {
 			NSString *prefName = ListenerKeyForEventNameAndMode(eventName, mode);
-			if ([_preferences objectForKey:prefName])
+			if ([self _getObjectForPreference:prefName])
 				[self _setObject:nil forPreference:prefName];
 		}
 	}
@@ -362,21 +364,18 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSString *)assignedListenerNameForEvent:(LAEvent *)event
 {
-	LoadPreferences();
 	NSString *prefName = ListenerKeyForEventNameAndMode([event name], [event mode] ?: [self currentEventMode]);
-	NSString *prefValue = [_preferences objectForKey:prefName];
-	return prefValue;
+	return [self _getObjectForPreference:prefName];
 }
 
 - (NSArray *)eventsAssignedToListenerWithName:(NSString *)listenerName
 {
 	NSArray *events = [self availableEventNames];
 	NSMutableArray *result = [NSMutableArray array];
-	LoadPreferences();
 	for (NSString *eventMode in [self availableEventModes]) {
 		for (NSString *eventName in events) {
 			NSString *prefName = ListenerKeyForEventNameAndMode(eventName, eventMode);
-			NSString *assignedListener = [_preferences objectForKey:prefName];
+			NSString *assignedListener = [self _getObjectForPreference:prefName];
 			if ([assignedListener isEqual:listenerName])
 				[result addObject:[LAEvent eventWithName:eventName mode:eventMode]];
 		}

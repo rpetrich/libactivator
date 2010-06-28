@@ -7,7 +7,6 @@
 
 @interface LAActivator ()
 
-- (void)_loadPreferences;
 - (void)_reloadPreferences;
 - (void)_resetPreferences;
 - (id)_getObjectForPreference:(NSString *)preference;
