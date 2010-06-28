@@ -1,5 +1,7 @@
 #import "libactivator.h"
 #import "libactivator-private.h"
+#import "LAApplicationListener.h"
+#import "LAToggleListener.h"
 #import "SimulatorCompat.h"
 
 #import <SpringBoard/SpringBoard.h>
@@ -576,5 +578,6 @@ CHConstructor
 				[listenerData setObject:[NSBundle bundleWithPath:[listenersPath stringByAppendingPathComponent:fileName]] forKey:fileName];
 		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, PreferencesChangedCallback, CFSTR("libactivator.preferenceschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 		[LASimpleListener sharedInstance];
+		[LAToggleListener sharedInstance];
 	}
 }
