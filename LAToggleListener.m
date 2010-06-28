@@ -103,7 +103,7 @@ static LAToggleListener *sharedInstance;
 			NSString *togglePath = [[togglesPath stringByAppendingPathComponent:subpath] stringByAppendingPathComponent:@"Toggle.dylib"];
 			void *toggle = dlopen([togglePath UTF8String], RTLD_LAZY);
 			if (toggle && isCapable(toggle)) {
-				[LASharedActivator registerListener:self forName:ListenerNameFromToggleName(subpath)];
+				[LASharedActivator registerListener:self forName:ListenerNameFromToggleName(subpath) ignoreHasSeen:YES];
 				CFDictionaryAddValue(toggles, subpath, toggle);
 			} else {
 				dlclose(toggle);

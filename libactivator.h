@@ -23,7 +23,8 @@
 @end
 
 typedef enum {
-    LAActivatorVersion_1_3 = 1030000
+    LAActivatorVersion_1_3 = 1030000,
+    LAActivatorVersion_1_4 = 1040000
 } LAActivatorVersion;
 
 // Activator
@@ -34,7 +35,6 @@ typedef enum {
 @private
 	NSMutableDictionary *_listeners;
 	NSMutableDictionary *_preferences;
-	NSUInteger _suppressReload;
 	NSMutableDictionary *_eventData;
 	NSBundle *_mainBundle;
 	NSDictionary *_cachedAndSortedListeners;

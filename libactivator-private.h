@@ -8,10 +8,12 @@
 @interface LAActivator ()
 
 - (void)_loadPreferences;
-- (void)_savePreferences;
 - (void)_reloadPreferences;
 - (void)_resetPreferences;
 - (id)_getObjectForPreference:(NSString *)preference;
+- (void)_setObject:(id)value forPreference:(NSString *)preference;
+
+- (void)registerListener:(id<LAListener>)listener forName:(NSString *)name ignoreHasSeen:(BOOL)ignoreHasSeen;
 
 - (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
 - (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;

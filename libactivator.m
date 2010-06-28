@@ -75,7 +75,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			// Preferences
-			[messagingCenter registerForMessageName:@"savePreferences" target:self selector:@selector(_savePreferencesFromMessageName:userInfo:)];
+			[messagingCenter registerForMessageName:@"setObjectForPreference" target:self selector:@selector(_setObjectForPreferenceFromMessageName:userInfo:)];
 			[messagingCenter registerForMessageName:@"resetPreferences" target:self selector:@selector(_resetPreferences)];
 			// Does not retain values!
 			_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
@@ -112,10 +112,8 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)_reloadPreferences
 {
-	if (_suppressReload == 0) {
-		[_preferences release];
-		_preferences = nil;
-	}
+	[_preferences release];
+	_preferences = nil;
 }
 
 - (void)_loadPreferences
@@ -123,37 +121,6 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]])) {
 		// Create a new preference file
 		_preferences = [[NSMutableDictionary alloc] init];
-	}
-}
-
-- (void)_savePreferencesFromMessageName:(NSString *)messageName userInfo:(NSDictionary *)userInfo
-{
-	if (userInfo) {
-		[_preferences autorelease];
-		_preferences = [userInfo mutableCopy];
-		[self _savePreferences];
-	}
-}
-
-- (void)_savePreferences
-{
-	if (_preferences) {
-		if (InSpringBoard) {
-			_suppressReload--;
-			CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
-			CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
-			CFRelease(url);
-			CFWriteStreamOpen(stream);
-			CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, NULL);
-			CFWriteStreamClose(stream);
-			CFRelease(stream);
-			chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-			notify_post("libactivator.preferenceschanged");
-			_suppressReload--;
-		} else {
-			CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
-			[messagingCenter sendMessageName:@"savePreferences" userInfo:_preferences];
-		}
 	}
 }
 
@@ -173,6 +140,35 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	LoadPreferences();
 	return [_preferences objectForKey:preference];
+}
+
+- (void)_setObjectForPreferenceFromMessageName:(NSString *)messageName userInfo:(NSDictionary *)userInfo
+{
+	[self _setObject:[userInfo objectForKey:@"value"] forPreference:[userInfo objectForKey:@"preference"]];
+}
+
+- (void)_setObject:(id)value forPreference:(NSString *)preference
+{
+	LoadPreferences();
+	if (value)
+		[_preferences setObject:value forKey:preference];
+	else
+		[_preferences removeObjectForKey:preference];
+	if (InSpringBoard) {
+		CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
+		CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
+		CFRelease(url);
+		CFWriteStreamOpen(stream);
+		CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, NULL);
+		CFWriteStreamClose(stream);
+		CFRelease(stream);
+		chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+		notify_post("libactivator.preferenceschanged");
+	} else {
+		// TODO: perform remote
+		CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+		[messagingCenter sendMessageName:@"setObjectForPreference" userInfo:[NSDictionary dictionaryWithObjectsAndKeys:preference, @"preference", value, @"value", nil]];
+	}
 }
 
 - (NSDictionary *)_handleRemoteListenerEventMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
@@ -294,9 +290,20 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	[_listeners setObject:listener forKey:name];
 	LoadPreferences();
 	NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
-	if (![[_preferences objectForKey:key] boolValue]) {
-		[_preferences setObject:[NSNumber numberWithBool:YES] forKey:key];
-		[self _savePreferences];
+	if (![[_preferences objectForKey:key] boolValue])
+		[self _setObject:(id)kCFBooleanTrue forPreference:key];
+}
+
+- (void)registerListener:(id<LAListener>)listener forName:(NSString *)name ignoreHasSeen:(BOOL)ignoreHasSeen
+{
+	[_cachedAndSortedListeners release];
+	_cachedAndSortedListeners = nil;
+	[_listeners setObject:listener forKey:name];
+	if (!ignoreHasSeen) {
+		LoadPreferences();
+		NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
+		if (![[_preferences objectForKey:key] boolValue])
+			[self _setObject:(id)kCFBooleanTrue forPreference:key];
 	}
 }
 
@@ -325,39 +332,30 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	if ([eventMode length]) {
 		if ([self listenerWithName:listenerName isCompatibleWithMode:eventMode])
 			if ([self eventWithName:eventName isCompatibleWithMode:eventMode])
-				[_preferences setObject:listenerName forKey:ListenerKeyForEventNameAndMode(eventName, eventMode)];
+				[self _setObject:listenerName forPreference:ListenerKeyForEventNameAndMode(eventName, eventMode)];
 	} else {
 		for (NSString *mode in [self compatibleEventModesForListenerWithName:listenerName])
 			if ([self eventWithName:eventName isCompatibleWithMode:mode])
-				[_preferences setObject:listenerName forKey:ListenerKeyForEventNameAndMode(eventName, mode)];
+				[self _setObject:listenerName forPreference:ListenerKeyForEventNameAndMode(eventName, mode)];
 	}
-	// Save Preferences
-	[self _savePreferences];
 }
 
 - (void)unassignEvent:(LAEvent *)event
 {
 	LoadPreferences();
-	BOOL shouldSave = NO;
 	NSString *eventName = [event name];
 	NSString *eventMode = [event mode];
 	if ([eventMode length]) {
 		NSString *prefName = ListenerKeyForEventNameAndMode(eventName, eventMode);
-		if ([_preferences objectForKey:prefName]) {
-			[_preferences removeObjectForKey:prefName];
-			shouldSave = YES;
-		}
+		if ([_preferences objectForKey:prefName])
+			[self _setObject:nil forPreference:prefName];
 	} else {
 		for (NSString *mode in [self availableEventModes]) {
 			NSString *prefName = ListenerKeyForEventNameAndMode(eventName, mode);
-			if ([_preferences objectForKey:prefName]) {
-				[_preferences removeObjectForKey:prefName];
-				shouldSave = YES;
-			}
+			if ([_preferences objectForKey:prefName])
+				[self _setObject:nil forPreference:prefName];
 		}
 	}
-	if (shouldSave)
-		[self _savePreferences];
 }
 
 // Getting Assignments
