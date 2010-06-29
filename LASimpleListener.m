@@ -24,6 +24,12 @@ static LASimpleListener *sharedSimpleListener;
 @property (nonatomic, readonly) SBSearchController *searchController;
 @end
 
+@interface SBUIController (OS40Switcher)
+- (BOOL)isSwitcherShowing;
+- (BOOL)activateSwitcher;
+- (void)dismissSwitcher;
+@end
+
 @implementation LASimpleListener
 
 - (BOOL)homeButton
@@ -101,6 +107,17 @@ static LASimpleListener *sharedSimpleListener;
 	SBVoiceControlAlert *alert = [CHAlloc(SBVoiceControlAlert) init];
 	[alert activate];
 	[alert release];
+	return YES;
+}
+
+- (BOOL)activateSwitcher
+{
+	SBUIController *sharedController = CHSharedInstance(SBUIController);
+	if ([sharedController isSwitcherShowing]) {
+		[sharedController dismissSwitcher];
+		return NO;
+	}
+	[sharedController activateSwitcher];
 	return YES;
 }
 
@@ -185,6 +202,8 @@ static LASimpleListener *sharedSimpleListener;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.spotlight"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.take-screenshot"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
+		if (GSSystemHasCapability(CFSTR("multitasking")))
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-switcher"];
 		// Lock Screen
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.dismiss"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.show"];
