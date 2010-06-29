@@ -192,6 +192,9 @@ CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString
 			if ([displayIdentifier isEqualToString:@"com.apple.DemoApp"] ||
 				[displayIdentifier isEqualToString:@"com.apple.fieldtest"] ||
 				[displayIdentifier isEqualToString:@"com.apple.springboard"] ||
+				[displayIdentifier isEqualToString:@"com.apple.AdSheet"] ||
+				[displayIdentifier isEqualToString:@"com.apple.iphoneos.iPodOut"] ||
+				[displayIdentifier isEqualToString:@"com.apple.TrustMe"] ||
 				[displayIdentifier isEqualToString:@"com.apple.WebSheet"]
 			) {
 				return self;
