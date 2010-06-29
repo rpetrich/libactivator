@@ -95,6 +95,15 @@ BOOL shouldAddNowPlayingButton;
 - (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event;
 @end
 
+@interface LASettingsViewController () <UITableViewDataSource, UITableViewDelegate>
+@property (nonatomic, readonly) UITableView *tableView;
+@property (nonatomic, assign) id<LASettingsViewControllerDelegate> delegate;
+@end
+
+@protocol LASettingsViewControllerDelegate <NSObject>
+- (void)settingsViewController:(LASettingsViewController *)settingsController shouldPushToChildController:(LASettingsViewController *)childController;
+@end
+
 __attribute__((visibility("hidden")))
 NSMutableDictionary *listenerData;
 __attribute__((visibility("hidden")))
@@ -106,3 +115,5 @@ NSBundle *activatorBundle;
 	NSString *_value = (value_); \
 	(_bundle) ? [_bundle localizedStringForKey:_key value:_value table:nil] : _value; \
 })
+
+#define kWebURL [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/actions/?udid=", [UIDevice currentDevice].uniqueIdentifier]

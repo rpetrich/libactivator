@@ -133,7 +133,51 @@ extern LAActivator *LASharedActivator;
 
 // Settings Controller
 
-@interface LAListenerSettingsViewController : UIViewController {
+@protocol LASettingsViewControllerDelegate;
+
+@interface LASettingsViewController : UIViewController {
+@private
+	UITableView *_tableView;
+	id<LASettingsViewControllerDelegate> _delegate;
+}
+
++ (id)controller;
+- (id)init;
+
+@end
+
+@interface LARootSettingsController : LASettingsViewController {
+}
+@end
+
+@interface LAModeSettingsController : LASettingsViewController {
+@private
+	NSString *_eventMode;
+	NSMutableDictionary *_events;
+	NSArray *_groups;
+}
+
+- (id)initWithMode:(NSString *)mode;
+
+@end
+
+@class ActivatorEventViewHeader;
+
+@interface LAEventSettingsController : LASettingsViewController {
+@private
+	NSArray *_modes;
+	NSString *_eventName;
+	NSMutableDictionary *_listeners;
+	NSArray *_groups;
+	ActivatorEventViewHeader *_headerView;
+}
+
+- (id)initWithModes:(NSArray *)modes eventName:(NSString *)eventName;
+
+@end
+
+
+@interface LAListenerSettingsViewController : LASettingsViewController {
 @private
 	NSString *_listenerName;
 	NSString *_eventMode;
@@ -142,7 +186,6 @@ extern LAActivator *LASharedActivator;
 	NSArray *_groups;
 }
 
-- (id)init;
 @property (nonatomic, copy) NSString *listenerName;
 
 @end

@@ -1,6 +1,7 @@
 #import "libactivator.h"
+#import "libactivator-private.h"
 
-@interface LAListenerSettingsViewController () <UITableViewDelegate, UITableViewDataSource, UIAlertViewDelegate>
+@interface LAListenerSettingsViewController () <UIAlertViewDelegate>
 @end
 
 static NSInteger CompareEventNamesCallback(id a, id b, void *context)
@@ -12,7 +13,7 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (id)init
 {
-	if ((self = [super initWithNibName:nil bundle:nil])) {
+	if ((self = [super init])) {
 		BOOL showHidden = [[[NSDictionary dictionaryWithContentsOfFile:[LASharedActivator settingsFilePath]] objectForKey:@"LAShowHiddenEvents"] boolValue];
 		_events = [[NSMutableDictionary alloc] init];
 		for (NSString *eventName in [LASharedActivator availableEventNames]) {
@@ -63,18 +64,8 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 			[_compatibleEvents setObject:events forKey:group];
 		}
 		if ([self isViewLoaded])
-			[(UITableView *)[self view] reloadData];
+			[self.tableView reloadData];
 	}
-}
-
-- (void)loadView
-{
-	UITableView *tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleGrouped];
-	[tableView setRowHeight:60.0f];
-	[tableView setDelegate:self];
-	[tableView setDataSource:self];
-	[self setView:tableView];
-	[tableView release];
 }
 
 - (NSMutableArray *)groupAtIndex:(NSInteger)index
@@ -213,7 +204,7 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
 {
-	UITableView *tableView = (UITableView *)[self view];
+	UITableView *tableView = self.tableView;
 	NSIndexPath *indexPath = [tableView indexPathForSelectedRow];
 	UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
 	NSString *eventName = [self eventNameForRowAtIndexPath:indexPath];
