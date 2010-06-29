@@ -50,13 +50,23 @@ static NSMutableArray *displayStacks;
 
 - (BOOL)activateApplication:(SBApplication *)application;
 {
-	SBApplication *springBoard = [CHSharedInstance(SBApplicationController) springBoard];
+	SBApplication *springBoard;
+	SBApplicationController *applicationController = CHSharedInstance(SBApplicationController);
+	if ([applicationController respondsToSelector:@selector(springBoard)])
+		springBoard = [applicationController springBoard];
+	else
+		springBoard = nil;
 	if (!application)
 		application = springBoard;
     SBApplication *oldApplication = [SBWActiveDisplayStack topApplication] ?: springBoard;
     if (oldApplication == application)
     	return NO;
-	SBIcon *icon = [CHSharedInstance(SBIconModel) iconForDisplayIdentifier:[application displayIdentifier]];
+	SBIcon *icon;
+    SBIconModel *iconModel = CHSharedInstance(SBIconModel);
+    if ([iconModel respondsToSelector:@selector(leafIconForIdentifier:)])
+		icon = [iconModel leafIconForIdentifier:[application displayIdentifier]];
+	else
+		icon = [iconModel iconForDisplayIdentifier:[application displayIdentifier]];
 	if (icon && [[LAActivator sharedInstance] currentEventMode] == LAEventModeSpringBoard)
 		[icon launch];
 	else {
@@ -166,9 +176,8 @@ static NSMutableArray *displayStacks;
 	}
 	CGSize size = [image size];
 	if (size.width > 29.0f || size.height > 29.0f) {
-		size.width = 29.0f;
-		size.height = 29.0f;
-		image = [image _imageScaledToSize:size interpolationQuality:kCGInterpolationDefault];
+		CGFloat larger = (size.width > size.height) ? size.width : size.height;
+		image = [image _imageScaledToProportion:(29.0f / larger) interpolationQuality:kCGInterpolationDefault];
 	}
 	return UIImagePNGRepresentation(image);
 }

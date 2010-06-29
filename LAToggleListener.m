@@ -152,9 +152,8 @@ static LAToggleListener *sharedInstance;
 	UIImage *image = [UIImage imageWithData:data];
 	CGSize size = [image size];
 	if (size.width > 29.0f || size.height > 29.0f) {
-		size.width = 29.0f;
-		size.height = 29.0f;
-		image = [image _imageScaledToSize:size interpolationQuality:kCGInterpolationDefault];
+		CGFloat larger = (size.width > size.height) ? size.width : size.height;
+		image = [image _imageScaledToProportion:(29.0f / larger) interpolationQuality:kCGInterpolationDefault];
 		return UIImagePNGRepresentation(image);
 	} else {
 		return data;
