@@ -20,6 +20,10 @@ CHDeclareClass(SBMediaController);
 
 static LASimpleListener *sharedSimpleListener;
 
+@interface SBIconController (OS40)
+@property (nonatomic, readonly) SBSearchController *searchController;
+@end
+
 @implementation LASimpleListener
 
 - (BOOL)homeButton
@@ -74,7 +78,12 @@ static LASimpleListener *sharedSimpleListener;
 {
 	[[LAApplicationListener sharedInstance] activateApplication:nil];
 	[CHSharedInstance(SBIconController) scrollToIconListAtIndex:-1 animate:NO];
-	[[CHSharedInstance(SBSearchController) searchView] setShowsKeyboard:YES animated:YES];
+	SBSearchController *searchController;
+	if ([CHClass(SBSearchController) respondsToSelector:@selector(sharedInstance)])
+		searchController = CHSharedInstance(SBSearchController);
+	else
+		searchController = [CHSharedInstance(SBIconController) searchController];
+	[[searchController searchView] setShowsKeyboard:YES animated:YES];
 	return YES;
 }
 
