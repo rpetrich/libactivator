@@ -40,6 +40,7 @@ typedef enum {
 	NSDictionary *_cachedAndSortedListeners;
 	NSMutableDictionary *_cachedListenerTitles;
 	NSMutableDictionary *_cachedListenerGroups;
+	NSMutableDictionary *_cachedListenerSmallIcons;
 }
 + (LAActivator *)sharedInstance;
 

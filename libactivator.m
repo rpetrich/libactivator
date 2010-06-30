@@ -84,6 +84,8 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 				[_eventData setObject:[NSBundle bundleWithPath:[eventsPath stringByAppendingPathComponent:fileName]] forKey:fileName];
 		_cachedListenerTitles = [[NSMutableDictionary alloc] init];
 		_cachedListenerGroups = [[NSMutableDictionary alloc] init];
+		_cachedListenerSmallIcons = [[NSMutableDictionary alloc] init];
+		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didReceiveMemoryWarning) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
 	}
 	return self;
 }
@@ -102,6 +104,13 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 - (LAActivatorVersion)version
 {
 	return LAActivatorVersion_1_3;
+}
+
+- (void)didReceiveMemoryWarning
+{
+	[_cachedListenerTitles removeAllObjects];
+	[_cachedListenerGroups removeAllObjects];
+	[_cachedListenerSmallIcons removeAllObjects];
 }
 
 // Preferences
@@ -448,7 +457,13 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName
 {
-	return [UIImage imageWithData:[[self listenerForName:listenerName] activator:self requiresSmallIconDataForListenerName:listenerName]];
+	UIImage *result = [_cachedListenerSmallIcons objectForKey:listenerName];
+	if (!result) {
+		result = [UIImage imageWithData:[[self listenerForName:listenerName] activator:self requiresSmallIconDataForListenerName:listenerName]];
+		if (result)
+			[_cachedListenerSmallIcons setObject:result forKey:listenerName];
+	}
+	return result;
 }
 
 // Event Modes
