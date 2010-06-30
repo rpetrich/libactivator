@@ -9,7 +9,6 @@ static LARemoteListener *sharedInstance;
 
 + (void)initialize
 {
-	CHAutoreleasePoolForScope();
 	springboardCenter = [[CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"] retain];
 	sharedInstance = [[self alloc] init];
 }
