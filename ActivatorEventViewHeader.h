@@ -2,6 +2,7 @@
 
 @protocol ActivatorEventViewHeaderDelegate;
 
+__attribute__((visibility("hidden")))
 @interface ActivatorEventViewHeader : UIView {
 @private
 	NSString *_listenerName;

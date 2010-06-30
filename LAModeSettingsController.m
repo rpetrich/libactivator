@@ -1,6 +1,6 @@
 #import "libactivator-private.h"
 
-NSInteger CompareEventNamesCallback(id a, id b, void *context)
+static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 {
 	return [[LASharedActivator localizedTitleForEventName:a] localizedCaseInsensitiveCompare:[LASharedActivator localizedTitleForEventName:b]];
 }
