@@ -190,7 +190,6 @@ static LASimpleListener *sharedSimpleListener;
 + (void)initialize
 {
 	if (!sharedSimpleListener) {
-		CHAutoreleasePoolForScope();
 		sharedSimpleListener = [[self alloc] init];
 		// System
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.homebutton"];
