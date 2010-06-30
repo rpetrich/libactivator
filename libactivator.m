@@ -10,7 +10,6 @@
 
 #include <objc/runtime.h>
 #include <sys/stat.h>
-#include <notify.h>
 
 NSString * const LAEventModeSpringBoard = @"springboard";
 NSString * const LAEventModeApplication = @"application";
@@ -25,23 +24,12 @@ CHDeclareClass(SBIconController);
 
 #define InSpringBoard (!!_listeners)
 
-static void PreferencesChangedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
-{
-	[LASharedActivator _reloadPreferences];
-}
-
 static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	return [[LASharedActivator localizedTitleForListenerName:a] localizedCaseInsensitiveCompare:[LASharedActivator localizedTitleForListenerName:b]];
 }
 
 @implementation LAActivator
-
-#define LoadPreferences() do { \
-	if (_preferences == nil) \
-		if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]])) \
-			_preferences = [[NSMutableDictionary alloc] init]; \
-} while(0)
 
 + (LAActivator *)sharedInstance
 {
@@ -80,9 +68,13 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			// Preferences
 			[messagingCenter registerForMessageName:@"setObjectForPreference" target:self selector:@selector(_setObjectForPreferenceFromMessageName:userInfo:)];
+			[messagingCenter registerForMessageName:@"getObjectForPreference" target:self selector:@selector(_getObjectForPreferenceFromMessageName:userInfo:)];
 			[messagingCenter registerForMessageName:@"resetPreferences" target:self selector:@selector(_resetPreferences)];
 			// Does not retain values!
 			_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
+			// Load preferences
+			if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]]))
+				_preferences = [[NSMutableDictionary alloc] init];
   		}
 		// Cache event data
 		_eventData = [[NSMutableDictionary alloc] init];
@@ -114,15 +106,6 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 // Preferences
 
-- (void)_reloadPreferences
-{
-#ifdef DEBUG
-	NSLog(@"Activator: Reloading Preferences");
-#endif
-	[_preferences release];
-	_preferences = nil;
-}
-
 - (void)_resetPreferences
 {
 	if (InSpringBoard) {
@@ -135,10 +118,25 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	}
 }
 
+- (NSDictionary *)_getObjectForPreferenceFromMessageName:(NSString *)messageName userInfo:(NSDictionary *)userInfo
+{
+	id result = [self _getObjectForPreference:[userInfo objectForKey:@"preference"]];
+	if (result)
+		return [NSDictionary dictionaryWithObject:result forKey:@"value"];
+	else
+		return [NSDictionary dictionary];
+}
+
 - (id)_getObjectForPreference:(NSString *)preference
 {
-	LoadPreferences();
-	id value = [_preferences objectForKey:preference];
+	id value;
+	if (InSpringBoard) {
+		value = [_preferences objectForKey:preference];
+	} else {
+		CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+		NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:@"getObjectForPreference" userInfo:[NSDictionary dictionaryWithObject:preference forKey:@"preference"]];
+		value = [response objectForKey:@"value"];
+	}
 #ifdef DEBUG
 	NSLog(@"Activator: Getting Preference %@ resulted in %@", preference, value);
 #endif
@@ -152,12 +150,11 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)_setObject:(id)value forPreference:(NSString *)preference
 {
-	LoadPreferences();
-	if (value)
-		[_preferences setObject:value forKey:preference];
-	else
-		[_preferences removeObjectForKey:preference];
 	if (InSpringBoard) {
+		if (value)
+			[_preferences setObject:value forKey:preference];
+		else
+			[_preferences removeObjectForKey:preference];
 #ifdef DEBUG
 		NSLog(@"Activator: Setting preference %@ to %@", preference, value);
 #endif
@@ -169,9 +166,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		CFWriteStreamClose(stream);
 		CFRelease(stream);
 		chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-		notify_post("libactivator.preferenceschanged");
 	} else {
-		// TODO: perform remote
 		CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
 		[messagingCenter sendMessageName:@"setObjectForPreference" userInfo:[NSDictionary dictionaryWithObjectsAndKeys:preference, @"preference", value, @"value", nil]];
 	}
@@ -582,7 +577,6 @@ CHConstructor
 		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:listenersPath error:NULL])
 			if (![fileName hasPrefix:@"."])
 				[listenerData setObject:[NSBundle bundleWithPath:[listenersPath stringByAppendingPathComponent:fileName]] forKey:fileName];
-		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, PreferencesChangedCallback, CFSTR("libactivator.preferenceschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 		[LASimpleListener sharedInstance];
 		[LAToggleListener sharedInstance];
 	}
