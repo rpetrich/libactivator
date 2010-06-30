@@ -195,6 +195,7 @@ CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString
 				[displayIdentifier isEqualToString:@"com.apple.AdSheet"] ||
 				[displayIdentifier isEqualToString:@"com.apple.iphoneos.iPodOut"] ||
 				[displayIdentifier isEqualToString:@"com.apple.TrustMe"] ||
+				[displayIdentifier isEqualToString:@"com.apple.DataActivation"] ||
 				[displayIdentifier isEqualToString:@"com.apple.WebSheet"]
 			) {
 				return self;
