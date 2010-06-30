@@ -604,7 +604,5 @@ CHConstructor
 		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:listenersPath error:NULL])
 			if (![fileName hasPrefix:@"."])
 				[listenerData setObject:[NSBundle bundleWithPath:[listenersPath stringByAppendingPathComponent:fileName]] forKey:fileName];
-		[LASimpleListener sharedInstance];
-		[LAToggleListener sharedInstance];
 	}
 }

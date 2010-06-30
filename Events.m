@@ -1,5 +1,6 @@
 #import "libactivator.h"
 #import "libactivator-private.h"
+#import "LAToggleListener.h"
 
 #import <CaptainHook/CaptainHook.h>
 #import <SpringBoard/SpringBoard.h>
@@ -518,6 +519,8 @@ CHOptimizedMethod(0, self, void, SBUIController, finishLaunching)
 		CHLoadLateClass(iHome);
 		CHHook(0, iHome, inject);
 	}
+	[LASimpleListener sharedInstance];
+	[LAToggleListener sharedInstance];
 	CHSuper(0, SBUIController, finishLaunching);
 	[LASlideGestureWindow updateVisibility];
 }
