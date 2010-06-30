@@ -99,7 +99,7 @@
 			break;
 		case 2: {
 			LAWebSettingsController *wsc = [[LAWebSettingsController alloc] init];
-			[wsc loadURL:[NSURL URLWithString:kWebURL]];
+			[wsc loadURL:[LASharedActivator moreActionsURL]];
 			wsc.navigationItem.title = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"];
 			vc = wsc;
 			break;

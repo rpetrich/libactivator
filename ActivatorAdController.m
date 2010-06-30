@@ -34,18 +34,7 @@ static ActivatorAdController *sharedAdController;
 	[super dealloc];
 }
 
-- (void)setURL:(NSString *)URL
-{
-	if (![_URL isEqualToString:URL]) {
-		[_URL release];
-		_URL = [URL copy];
-	}
-}
-
-- (NSString *)URL
-{
-	return _URL;
-}
+@synthesize URL = _URL;
 
 - (void)hideAnimationDidFinish
 {
@@ -117,17 +106,16 @@ static ActivatorAdController *sharedAdController;
 		[self tryShowAnimated];
 	else {
 		[_adView setDelegate:self];
-		[_adView loadRequest:[NSURLRequest requestWithURL:[NSURL URLWithString:_URL]]];
+		[_adView loadRequest:[NSURLRequest requestWithURL:_URL]];
 	}
 }
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType
 {
 	NSURL *url = [request URL];
-	NSString *urlString = [url absoluteString];
-	if ([urlString isEqualToString:@"about:Blank"])
+	if ([[url absoluteString] isEqualToString:@"about:Blank"])
 		return NO;
-	if ([urlString isEqualToString:_URL])
+	if ([url isEqual:_URL])
 		return YES;
 	[[UIApplication sharedApplication] openURL:url];
 	return NO;

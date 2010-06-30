@@ -128,7 +128,7 @@
 	[super viewDidBecomeVisible];
 	if (shouldShowAds) {
 		ActivatorAdController *aac = [ActivatorAdController sharedInstance];
-		[aac setURL:kWebURL];
+		[aac setURL:[LASharedActivator moreActionsURL]];
 		[aac displayOnTarget:[[self view] superview]];
 	}
 }

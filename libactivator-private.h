@@ -19,6 +19,8 @@
 - (NSDictionary *)_cachedAndSortedListeners;
 - (void)_eventModeChanged;
 
+@property (nonatomic, readonly) NSURL *moreActionsURL;
+
 @end
 
 __attribute__((visibility("hidden")))
@@ -139,5 +141,3 @@ NSBundle *activatorBundle;
 	NSString *_value = (value_); \
 	(_bundle) ? [_bundle localizedStringForKey:_key value:_value table:nil] : _value; \
 })
-
-#define kWebURL [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/actions/?udid=", [UIDevice currentDevice].uniqueIdentifier]

@@ -29,6 +29,10 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	return [[LASharedActivator localizedTitleForListenerName:a] localizedCaseInsensitiveCompare:[LASharedActivator localizedTitleForListenerName:b]];
 }
 
+@interface UIDevice (OS32)
+@property (nonatomic, readonly) NSInteger idiom;
+@end
+
 @implementation LAActivator
 
 + (LAActivator *)sharedInstance
@@ -491,6 +495,14 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 - (NSString *)description
 {
 	return [NSString stringWithFormat:@"<%s listeners=%@ events=%@ modes=%@ %p>", class_getName([self class]), _listeners, [self availableEventNames], [self availableEventModes], self];
+}
+
+- (NSURL *)moreActionsURL
+{
+	UIDevice *device = [UIDevice currentDevice];
+	NSInteger idiom = [device respondsToSelector:@selector(idiom)] ? [device idiom] : 0;
+	NSString *url = [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/actions/?udid=%@&idiom=%d&version=%@&activator=%d", device.uniqueIdentifier, idiom, device.systemVersion, [LASharedActivator version]];
+	return [NSURL URLWithString:url];
 }
 
 @end

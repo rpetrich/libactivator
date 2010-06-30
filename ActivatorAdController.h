@@ -5,7 +5,7 @@
 @private
 	UIWebView *_adView;
 	UIView *_target;
-	NSString *_URL;
+	NSURL *_URL;
 	BOOL isLoaded;
 }
 
@@ -13,6 +13,6 @@
 - (void)hideAnimated:(BOOL)animated;
 - (void)displayOnTarget:(UIView *)target;
 
-@property (nonatomic, copy) NSString *URL;
+@property (nonatomic, copy) NSURL *URL;
 
 @end
