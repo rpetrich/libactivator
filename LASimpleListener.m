@@ -104,10 +104,13 @@ static LASimpleListener *sharedSimpleListener;
 
 - (BOOL)voiceControl
 {
-	SBVoiceControlAlert *alert = [CHAlloc(SBVoiceControlAlert) init];
-	[alert activate];
-	[alert release];
-	return YES;
+	if ([CHClass(SBVoiceControlAlert) shouldEnterVoiceControl]) {
+		SBVoiceControlAlert *alert = [CHAlloc(SBVoiceControlAlert) init];
+		[alert activate];
+		[alert release];
+		return YES;
+	}
+	return NO;
 }
 
 - (BOOL)activateSwitcher
@@ -200,7 +203,8 @@ static LASimpleListener *sharedSimpleListener;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.powerdown"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.spotlight"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.take-screenshot"];
-		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
+		if ([CHClass(SBVoiceControlAlert) shouldEnterVoiceControl])
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
 		if (GSSystemHasCapability(CFSTR("multitasking")))
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-switcher"];
 		// Lock Screen
