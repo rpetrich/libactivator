@@ -13,6 +13,7 @@
 @interface ActivatorPSViewControllerHost : PSViewController<LASettingsViewControllerDelegate> {
 @private
 	LASettingsViewController *_settingsController;
+	CGSize _contentSize;
 }
 - (id)initForContentSize:(CGSize)size;
 @property (nonatomic, retain) LASettingsViewController *settingsController;
@@ -24,9 +25,13 @@
 - (id)initForContentSize:(CGSize)size
 {
 	if ([[PSViewController class] instancesRespondToSelector:@selector(initForContentSize:)])
-		return [super initForContentSize:size];
+		self = [super initForContentSize:size];
 	else
-		return [super init];
+		self = [super init];
+	if (self) {
+		_contentSize = size;
+	}
+	return self;
 }
 
 - (void)dealloc
@@ -47,6 +52,13 @@
 		_settingsController.delegate = nil;
 		[_settingsController release];
 		_settingsController = [settingsController retain];
+		CGRect frame;
+		frame.origin.x = 0.0f;
+		frame.origin.y = 0.0f;
+		frame.size = _contentSize;
+		UIView *view = _settingsController.view;
+		view.frame = frame;
+		view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 		_settingsController.delegate = self;
 	}
 }
