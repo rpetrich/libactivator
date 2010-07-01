@@ -66,7 +66,15 @@
 	}
 }
 
+- (void)didReceiveMemoryWarning
+{
+	// Do Nothing!
+}
+
+- (void)purgeMemoryForReason:(int)reason
+{
+	// Do Nothing
+}
+
+
 @end
-
-
-
