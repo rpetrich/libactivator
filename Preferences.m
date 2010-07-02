@@ -10,6 +10,7 @@
 @property (nonatomic, retain) PSSpecifier *specifier;
 @end
 
+__attribute__((visibility("hidden")))
 @interface ActivatorPSViewControllerHost : PSViewController<LASettingsViewControllerDelegate> {
 @private
 	LASettingsViewController *_settingsController;
@@ -106,6 +107,7 @@
 
 @end
 
+__attribute__((visibility("hidden")))
 @interface ActivatorSettingsController : ActivatorPSViewControllerHost {
 @private
 	BOOL shouldShowAds;
