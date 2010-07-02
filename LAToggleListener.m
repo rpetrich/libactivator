@@ -53,9 +53,13 @@ CHOptimizedMethod(2, super, void, ActivatorTogglesAlertItem, configure, BOOL, co
 {
 	NSString *toggleName = CHIvar(self, _toggleName, NSString *);
     UIModalView *alertSheet = [self alertSheet];
-    [alertSheet setTitle:toggleName];
+    [alertSheet setTitle:[LASharedActivator localizedStringForKey:[@"LISTENER_TITLE_toggle_" stringByAppendingString:toggleName] value:toggleName]];
 	void *toggle = (void *)CFDictionaryGetValue(toggles, toggleName);
-    [alertSheet setBodyText:getStateTryFast(toggle)?@"Enabled":@"Disabled"];
+	NSString *bodyText;
+	if (getStateTryFast(toggle))
+		bodyText = [LASharedActivator localizedStringForKey:@"ENABLED" value:@"Enabled"];
+	else
+		bodyText = [LASharedActivator localizedStringForKey:@"DISABLED" value:@"Disabled"];
 }
 
 @implementation LAToggleListener
