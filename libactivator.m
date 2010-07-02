@@ -270,12 +270,18 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		for (NSString *other in [self availableListenerNames])
 			if (![other isEqualToString:listenerName])
 				[[self listenerForName:other] activator:self otherListenerDidHandleEvent:event forListenerName:other];
+#ifdef DEBUG
+	NSLog(@"Activator: sendEventToListener:%@ (listener=%@)", event, listenerName);
+#endif
 }
 
 - (void)sendAbortToListener:(LAEvent *)event
 {
 	NSString *listenerName = [self assignedListenerNameForEvent:event];
 	[[self listenerForName:listenerName] activator:self abortEvent:event forListenerName:listenerName];
+#ifdef DEBUG
+	NSLog(@"Activator: sendAbortToListener:%@ (listener=%@)", event, listenerName);
+#endif
 }
 
 - (void)sendDeactivateEventToListeners:(LAEvent *)event
@@ -286,6 +292,9 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		handled |= [event isHandled];
 	}
 	[event setHandled:handled];
+#ifdef DEBUG
+	NSLog(@"Activator: sendDeactivateEventToListeners:%@", event);
+#endif
 }
 
 // Registration of listeners
