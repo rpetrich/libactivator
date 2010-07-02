@@ -236,11 +236,34 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 
 @end
 
+static LAVolumeTapWindow *volumeTapWindow;
+
+static void ShowVolumeTapWindow(UIWindow *window)
+{
+	if ([LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:LAEventNameVolumeDisplayTap]]) {
+		if (volumeTapWindow)
+			[volumeTapWindow setFrame:[window frame]];
+		else
+			volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:[window frame]];
+		[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
+		[volumeTapWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
+		[volumeTapWindow setHidden:NO];
+	}
+}
+
+static void HideVolumeTapWindow()
+{
+	[volumeTapWindow setHidden:YES];
+	[volumeTapWindow release];
+	volumeTapWindow = nil;
+}
+
 @implementation LAVolumeTapWindow
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	LASendEventWithName(LAEventNameVolumeDisplayTap);
+	HideVolumeTapWindow();
 }
 
 @end
@@ -843,28 +866,6 @@ CHOptimizedMethod(0, self, BOOL, SBAwayController, handleMenuButtonTap)
 	if ([event isHandled])
 		return YES;
 	return CHSuper(0, SBAwayController, handleMenuButtonTap);
-}
-
-static LAVolumeTapWindow *volumeTapWindow;
-
-static void ShowVolumeTapWindow(UIWindow *window)
-{
-	if ([LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:LAEventNameVolumeDisplayTap]]) {
-		if (volumeTapWindow)
-			[volumeTapWindow setFrame:[window frame]];
-		else
-			volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:[window frame]];
-		[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
-		[volumeTapWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
-		[volumeTapWindow setHidden:NO];
-	}
-}
-
-static void HideVolumeTapWindow()
-{
-	[volumeTapWindow setHidden:YES];
-	[volumeTapWindow release];
-	volumeTapWindow = nil;
 }
 
 CHOptimizedMethod(0, self, void, VolumeControl, _createUI)
