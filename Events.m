@@ -34,6 +34,8 @@ NSString * const LAEventNameSlideInFromBottomRight = @"libactivator.slide-in.bot
 
 NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake";
 
+NSString * const LAEventNameHeadsetButtonPressSingle = @"libactivator.headset-button.press.single";
+
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
 #define kButtonHoldDelay                   0.8f
@@ -267,6 +269,12 @@ static void HideVolumeTapWindow()
 }
 
 @end
+
+CHOptimizedMethod(0, self, void, SpringBoard, _performDelayedHeadsetAction)
+{
+	if (!LASendEventWithName(LAEventNameHeadsetButtonPressSingle))
+		CHSuper(0, SpringBoard, _performDelayedHeadsetAction);
+}
 
 CHOptimizedMethod(0, self, void, SpringBoard, _handleMenuButtonEvent)
 {
@@ -906,6 +914,7 @@ CHConstructor
 	}
 	
 	if (CHLoadLateClass(SpringBoard)) {
+		CHHook(0, SpringBoard, _performDelayedHeadsetAction);
 		CHHook(0, SpringBoard, _handleMenuButtonEvent);
 		CHHook(0, SpringBoard, allowMenuDoubleTap);
 		CHHook(0, SpringBoard, handleMenuDoubleTap);

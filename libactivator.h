@@ -222,6 +222,8 @@ extern NSString * const LAEventNameSlideInFromBottomRight;
 
 extern NSString * const LAEventNameMotionShake;
 
+extern NSString * const LAEventNameHeadsetButtonPressSingle;
+
 @interface LASimpleListener : NSObject<LAListener> {
 }
 + (LASimpleListener *)sharedInstance;

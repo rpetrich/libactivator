@@ -1,0 +1,5 @@
+{
+	title = "Single Press";
+	group = "Headset Button";
+	description = "Press headset button once";
+}
