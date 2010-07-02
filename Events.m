@@ -165,7 +165,7 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 	[super dealloc];
 }
 
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+/*- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	hasSentSlideEvent = NO;
 }
@@ -180,11 +180,17 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 			LASendEventWithName(_eventName);
 		}
 	}
-}
+}*/
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
-	hasSentSlideEvent = NO;
+	//hasSentSlideEvent = NO;
+	UITouch *touch = [touches anyObject];
+	CGPoint location = [touch locationInView:self];
+	if (location.y < -50.0f) {
+		hasSentSlideEvent = YES;
+		LASendEventWithName(_eventName);
+	}
 }
 
 @end
