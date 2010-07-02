@@ -100,6 +100,8 @@ static LAToggleListener *sharedInstance;
 				continue;
 			if ([subpath isEqualToString:@"Brightness"])
 				continue;
+			if ([subpath isEqualToString:@"Processes"])
+				continue;
 			NSString *togglePath = [[togglesPath stringByAppendingPathComponent:subpath] stringByAppendingPathComponent:@"Toggle.dylib"];
 			void *toggle = dlopen([togglePath UTF8String], RTLD_LAZY);
 			if (toggle && isCapable(toggle)) {
