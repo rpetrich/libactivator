@@ -264,12 +264,14 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 - (void)sendEventToListener:(LAEvent *)event
 {
 	NSString *listenerName = [self assignedListenerNameForEvent:event];
-	id<LAListener> listener = [self listenerForName:listenerName];
-	[listener activator:self receiveEvent:event forListenerName:listenerName];
-	if ([event isHandled])
-		for (NSString *other in [self availableListenerNames])
-			if (![other isEqualToString:listenerName])
-				[[self listenerForName:other] activator:self otherListenerDidHandleEvent:event forListenerName:other];
+	if ([self listenerWithName:listenerName isCompatibleWithEventName:[event name]]) {
+		id<LAListener> listener = [self listenerForName:listenerName];
+		[listener activator:self receiveEvent:event forListenerName:listenerName];
+		if ([event isHandled])
+			for (NSString *other in [self availableListenerNames])
+				if (![other isEqualToString:listenerName])
+					[[self listenerForName:other] activator:self otherListenerDidHandleEvent:event forListenerName:other];
+	}
 #ifdef DEBUG
 	NSLog(@"Activator: sendEventToListener:%@ (listener=%@)", event, listenerName);
 #endif
@@ -278,7 +280,8 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 - (void)sendAbortToListener:(LAEvent *)event
 {
 	NSString *listenerName = [self assignedListenerNameForEvent:event];
-	[[self listenerForName:listenerName] activator:self abortEvent:event forListenerName:listenerName];
+	if ([self listenerWithName:listenerName isCompatibleWithEventName:[event name]])
+		[[self listenerForName:listenerName] activator:self abortEvent:event forListenerName:listenerName];
 #ifdef DEBUG
 	NSLog(@"Activator: sendAbortToListener:%@ (listener=%@)", event, listenerName);
 #endif
