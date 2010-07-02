@@ -5,6 +5,8 @@
 #import <UIKit/UIKit.h>
 #import <CaptainHook/CaptainHook.h>
 #import <SpringBoard/SpringBoard.h>
+
+#include <notify.h>
 #include <dlfcn.h>
 
 CHDeclareClass(SBAlertItemsController);
@@ -175,6 +177,7 @@ static LAToggleListener *sharedInstance;
 		NSString *toggleName = [self activator:activator requiresLocalizedTitleForListenerName:listenerName];
 		void *toggle = (void *)CFDictionaryGetValue(toggles, toggleName);
 		setState(toggle, !isEnabled(toggle));
+		notify_post("com.sbsettings.refreshalltoggles");
 		ActivatorTogglesAlertItem *atai = [CHAlloc(ActivatorTogglesAlertItem) initWithToggleName:toggleName];
 		[aic activateAlertItem:atai];
 		[atai release];
