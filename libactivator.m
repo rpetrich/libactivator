@@ -107,7 +107,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (LAActivatorVersion)version
 {
-	return LAActivatorVersion_1_3;
+	return LAActivatorVersion_1_4;
 }
 
 - (void)didReceiveMemoryWarning
