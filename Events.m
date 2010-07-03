@@ -156,6 +156,11 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 	return self;
 }
 
+- (void)handleStatusBarChangeFromHeight:(CGFloat)fromHeight toHeight:(CGFloat)toHeight
+{
+	// Do Nothing
+}
+
 - (void)updateVisibility
 {
 	[self setHidden:[LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName]] == nil];
