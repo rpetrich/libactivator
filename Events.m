@@ -35,6 +35,7 @@ NSString * const LAEventNameSlideInFromBottomRight = @"libactivator.slide-in.bot
 NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake";
 
 NSString * const LAEventNameHeadsetButtonPressSingle = @"libactivator.headset-button.press.single";
+NSString * const LAEventNameHeadsetButtonHoldShort = @"libactivator.headset-button.hold.short";
 
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
@@ -275,10 +276,45 @@ static void HideVolumeTapWindow()
 
 @end
 
+static BOOL ignoreHeadsetButtonUp;
+
 CHOptimizedMethod(0, self, void, SpringBoard, _performDelayedHeadsetAction)
 {
-	if (!LASendEventWithName(LAEventNameHeadsetButtonPressSingle))
+	if (LASendEventWithName(LAEventNameHeadsetButtonHoldShort).handled)
+		ignoreHeadsetButtonUp = YES;
+	else
 		CHSuper(0, SpringBoard, _performDelayedHeadsetAction);
+}
+
+CHOptimizedMethod(1, self, void, SpringBoard, headsetButtonDown, GSEventRef, gsEvent)
+{
+	ignoreHeadsetButtonUp = NO;
+	if (LAListenerForEventWithName(LAEventNameHeadsetButtonHoldShort)) {
+		CHSuper(1, SpringBoard, headsetButtonDown, gsEvent);
+		// Require _performDelayedHeadsetAction timer, event when Voice Control isn't available
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_performDelayedHeadsetAction) object:nil];
+		[self performSelector:@selector(_performDelayedHeadsetAction) withObject:nil afterDelay:0.8];
+	} else {
+		CHSuper(1, SpringBoard, headsetButtonDown, gsEvent);
+	}
+}
+
+CHOptimizedMethod(1, self, void, SpringBoard, headsetButtonUp, GSEventRef, gsEvent)
+{
+	if (!ignoreHeadsetButtonUp) {
+		LAEvent *event = [LAEvent eventWithName:LAEventNameHeadsetButtonPressSingle mode:[LASharedActivator currentEventMode]];
+		[LASharedActivator sendDeactivateEventToListeners:event];
+		if (!event.handled) {
+			[LASharedActivator sendEventToListener:event];
+			if (!event.handled) {
+				CHSuper(1, SpringBoard, headsetButtonUp, gsEvent);
+				return;
+			}
+		}
+	}
+	// Cleanup hold events
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_performDelayedHeadsetAction) object:nil];
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_performDelayedHeadsetClickTimeout) object:nil];
 }
 
 CHOptimizedMethod(0, self, void, SpringBoard, _handleMenuButtonEvent)
@@ -920,6 +956,8 @@ CHConstructor
 	
 	if (CHLoadLateClass(SpringBoard)) {
 		CHHook(0, SpringBoard, _performDelayedHeadsetAction);
+		CHHook(1, SpringBoard, headsetButtonDown);
+		CHHook(1, SpringBoard, headsetButtonUp);
 		CHHook(0, SpringBoard, _handleMenuButtonEvent);
 		CHHook(0, SpringBoard, allowMenuDoubleTap);
 		CHHook(0, SpringBoard, handleMenuDoubleTap);

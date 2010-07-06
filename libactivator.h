@@ -223,6 +223,7 @@ extern NSString * const LAEventNameSlideInFromBottomRight;
 extern NSString * const LAEventNameMotionShake;
 
 extern NSString * const LAEventNameHeadsetButtonPressSingle;
+extern NSString * const LAEventNameHeadsetButtonHoldShort;
 
 @interface LASimpleListener : NSObject<LAListener> {
 }
