@@ -112,6 +112,8 @@
 	}
 	for (LAEvent *event in events)
 		[LASharedActivator unassignEvent:event];
+	for (UITableViewCell *cell in [[self tableView] visibleCells])
+		cell.accessoryType = UITableViewCellAccessoryNone;
 	eventViewHeader.listenerName = nil;
 }
 
