@@ -2,6 +2,7 @@
 #import "ActivatorEventViewHeader.h"
 
 @interface LAEventSettingsController () <ActivatorEventViewHeaderDelegate>
+- (void)_updateCurrentAssignments;
 @end
 
 @implementation LAEventSettingsController
@@ -24,6 +25,8 @@
 			if ([LASharedActivator eventWithName:eventName isCompatibleWithMode:mode])
 				[availableModes addObject:mode];
 		_modes = [availableModes copy];
+		_currentAssignments = [[NSMutableArray alloc] init];
+		[self _updateCurrentAssignments];
 		_listeners = [[LASharedActivator _cachedAndSortedListeners] mutableCopy];
 		for (NSString *key in [_listeners allKeys]) {
 			NSArray *group = [_listeners objectForKey:key];
@@ -66,8 +69,18 @@
 	[_groups release];
 	[_listeners release];
 	[_eventName release];
+	[_currentAssignments release];
 	[_modes release];
 	[super dealloc];
+}
+
+- (void)_updateCurrentAssignments
+{
+	[_currentAssignments removeAllObjects];
+	for (NSString *mode in _modes) {
+		NSString *assigned = [LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:mode]];
+		[_currentAssignments addObject:(id)assigned ?: (id)[NSNull null]];
+	}
 }
 
 - (void)viewDidLoad
@@ -115,6 +128,7 @@
 	for (UITableViewCell *cell in [[self tableView] visibleCells])
 		cell.accessoryType = UITableViewCellAccessoryNone;
 	eventViewHeader.listenerName = nil;
+	[self _updateCurrentAssignments];
 }
 
 - (NSMutableArray *)groupAtIndex:(NSInteger)index
@@ -157,10 +171,13 @@
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
 	NSString *listenerName = [self listenerNameForRowAtIndexPath:indexPath];
 	cell.textLabel.text = [LASharedActivator localizedTitleForListenerName:listenerName];
-	UITableViewCellAccessoryType accessory = 
-		[self countOfModesAssignedToListener:listenerName] ?
-		UITableViewCellAccessoryCheckmark :
-		UITableViewCellAccessoryNone;
+	UITableViewCellAccessoryType accessory = UITableViewCellAccessoryNone;
+	for (NSString *assignment in _currentAssignments) {
+		if ([assignment isEqual:listenerName]) {
+			accessory = UITableViewCellAccessoryCheckmark;
+			break;
+		}
+	}
 	cell.detailTextLabel.text = [LASharedActivator localizedDescriptionForListenerName:listenerName];
 	cell.imageView.image = [LASharedActivator smallIconForListenerName:listenerName];
 	cell.accessoryType = accessory;
@@ -206,6 +223,7 @@
 				[LASharedActivator unassignEvent:event];
 		}
 	}
+	[self _updateCurrentAssignments];
 	[self updateHeader];
 }
 
