@@ -17,6 +17,7 @@ CHDeclareClass(SBAwayController);
 CHDeclareClass(SBUIController);
 CHDeclareClass(SBStatusBarController);
 CHDeclareClass(SBMediaController);
+CHDeclareClass(SBApplicationController);
 
 static LASimpleListener *sharedSimpleListener;
 
@@ -28,6 +29,10 @@ static LASimpleListener *sharedSimpleListener;
 - (BOOL)isSwitcherShowing;
 - (BOOL)activateSwitcher;
 - (void)dismissSwitcher;
+@end
+
+@interface SBMediaController (OS4)
+- (id)mediaControlsDestinationApp;
 @end
 
 @implementation LASimpleListener
@@ -171,6 +176,12 @@ static LASimpleListener *sharedSimpleListener;
 		[controller deactivateAlertItemsOfClass:CHClass(SBNowPlayingAlertItem)];
 		return NO;
 	}
+	SBMediaController *mc = CHSharedInstance(SBMediaController);
+	if ([mc respondsToSelector:@selector(mediaControlsDestinationApp)] && ![mc mediaControlsDestinationApp]) {
+		SBApplication *application = [CHSharedInstance(SBApplicationController) applicationWithDisplayIdentifier:@"com.apple.mobileipod"];
+		[[LAApplicationListener sharedInstance] activateApplication:application];
+		return YES;
+	}
 	shouldAddNowPlayingButton = NO;
 	SBNowPlayingAlertItem *newAlert = [CHAlloc(SBNowPlayingAlertItem) init];
 	[controller activateAlertItem:newAlert];
@@ -226,6 +237,7 @@ static LASimpleListener *sharedSimpleListener;
 		CHLoadLateClass(SBUIController);
 		CHLoadLateClass(SBStatusBarController);
 		CHLoadLateClass(SBMediaController);
+		CHLoadLateClass(SBApplicationController);
 	}
 }
 
