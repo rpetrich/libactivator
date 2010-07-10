@@ -179,8 +179,7 @@ static LASimpleListener *sharedSimpleListener;
 	SBMediaController *mc = CHSharedInstance(SBMediaController);
 	if ([mc respondsToSelector:@selector(mediaControlsDestinationApp)] && ![mc mediaControlsDestinationApp]) {
 		SBApplication *application = [CHSharedInstance(SBApplicationController) applicationWithDisplayIdentifier:@"com.apple.mobileipod"];
-		[[LAApplicationListener sharedInstance] activateApplication:application];
-		return YES;
+		return [[LAApplicationListener sharedInstance] activateApplication:application];
 	}
 	shouldAddNowPlayingButton = NO;
 	SBNowPlayingAlertItem *newAlert = [CHAlloc(SBNowPlayingAlertItem) init];
