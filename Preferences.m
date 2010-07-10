@@ -105,16 +105,29 @@ __attribute__((visibility("hidden")))
 	[vch release];
 }
 
++ (void)popAllControllers
+{
+	UINavigationController *navigationController = [(id)[UIApplication sharedApplication] rootController];
+	while ([navigationController.topViewController isKindOfClass:self])
+		[navigationController popViewControllerAnimated:NO];
+}
+
 @end
 
 __attribute__((visibility("hidden")))
-@interface ActivatorSettingsController : ActivatorPSViewControllerHost {
+@interface ActivatorSettingsController : ActivatorPSViewControllerHost<ActivatorAdControllerDelegate> {
 @private
 	BOOL shouldShowAds;
 }
 @end
 
 @implementation ActivatorSettingsController
+
+- (void)dealloc
+{
+	[ActivatorAdController sharedInstance].delegate = nil;
+	[super dealloc];
+}
 
 - (void)loadFromSpecifier:(PSSpecifier *)specifier
 {
@@ -142,9 +155,35 @@ __attribute__((visibility("hidden")))
 	[super viewDidBecomeVisible];
 	if (shouldShowAds) {
 		ActivatorAdController *aac = [ActivatorAdController sharedInstance];
-		[aac setURL:[LASharedActivator moreActionsURL]];
-		[aac displayOnTarget:[[self view] superview]];
+		[aac setURL:[LASharedActivator adPaneURL]];
+		[aac setDelegate:self];
+		[aac display];
 	}
+}
+
+- (void)viewWillAppear:(BOOL)animated
+{
+	if (shouldShowAds) {
+		ActivatorAdController *aac = [ActivatorAdController sharedInstance];
+		[aac setURL:[LASharedActivator adPaneURL]];
+		[aac setDelegate:self];
+		[aac display];
+	}
+}
+
+- (void)viewWillDisappear:(BOOL)animated
+{
+	UIViewController *rootController = [[(UIViewController *)self navigationController].viewControllers objectAtIndex:0];
+	UIView *view = rootController.view;
+	view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+	view = [[view subviews] lastObject];
+	view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+}
+
+- (void)viewDidDisappear:(BOOL)animated
+{
+	if (![(UIViewController *)self navigationController])
+		[[ActivatorAdController sharedInstance] hideAnimated:YES];
 }
 
 - (BOOL)popControllerWithAnimation:(BOOL)animation
@@ -153,11 +192,20 @@ __attribute__((visibility("hidden")))
 	return [super popControllerWithAnimation:animation];
 }
 
+- (UIView *)activatorAdControllerRequiresTarget:(ActivatorAdController *)ac
+{
+	if ([self isKindOfClass:[UIViewController class]])
+		return [[[UIWindow keyWindow] subviews] objectAtIndex:0];
+	else
+		return [[self view] superview];
+}
+
 @end
 
 __attribute__((constructor))
 static void Init() {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	NSLog(@"Activator: Loaded in settings");
+	[[NSNotificationCenter defaultCenter] addObserver:[ActivatorPSViewControllerHost class] selector:@selector(popAllControllers) name:@"UIApplicationDidEnterBackgroundNotification" object:nil];
 	[pool release];
 }

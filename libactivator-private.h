@@ -20,6 +20,7 @@
 - (void)_eventModeChanged;
 
 @property (nonatomic, readonly) NSURL *moreActionsURL;
+@property (nonatomic, readonly) NSURL *adPaneURL;
 
 @end
 

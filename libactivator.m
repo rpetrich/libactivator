@@ -311,6 +311,9 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name
 {
+#ifdef DEBUG
+	NSLog(@"Activator: registerListener:%@ forName:%@", listener, name);
+#endif
 	[_cachedAndSortedListeners release];
 	_cachedAndSortedListeners = nil;
 	[_listeners setObject:listener forKey:name];
@@ -333,6 +336,9 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)unregisterListenerWithName:(NSString *)name
 {
+#ifdef DEBUG
+	NSLog(@"Activator: unregisterWithName:%@", name);
+#endif
 	[_cachedListenerTitles removeObjectForKey:name];
 	[_cachedListenerGroups removeObjectForKey:name];
 	[_cachedAndSortedListeners release];
@@ -514,6 +520,14 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	UIDevice *device = [UIDevice currentDevice];
 	NSInteger idiom = [device respondsToSelector:@selector(idiom)] ? [device idiom] : 0;
 	NSString *url = [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/actions/?udid=%@&idiom=%d&version=%@&activator=%d", device.uniqueIdentifier, idiom, device.systemVersion, [LASharedActivator version]];
+	return [NSURL URLWithString:url];
+}
+
+- (NSURL *)adPaneURL
+{
+	UIDevice *device = [UIDevice currentDevice];
+	NSInteger idiom = [device respondsToSelector:@selector(idiom)] ? [device idiom] : 0;
+	NSString *url = [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/ads/?udid=%@&idiom=%d&version=%@&activator=%d", device.uniqueIdentifier, idiom, device.systemVersion, [LASharedActivator version]];
 	return [NSURL URLWithString:url];
 }
 
