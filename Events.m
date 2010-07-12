@@ -826,13 +826,19 @@ CHOptimizedMethod(2, self, void, UIStatusBar, touchesEnded, NSSet *, touches, wi
 
 static NSInteger nowPlayingButtonIndex;
 
-CHOptimizedMethod(2, super, void, SBNowPlayingAlertItem, configure, BOOL, configure, requirePasscodeForActions, BOOL, requirePasscode)
+CHOptimizedMethod(0, super, UIAlertView *, SBNowPlayingAlertItem, createFrontAlertSheet)
 {
-	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
-	if (shouldAddNowPlayingButton) {
+	nowPlayingButtonIndex = -1000;
+	return CHSuper(0, SBNowPlayingAlertItem, createFrontAlertSheet);
+}
+
+CHOptimizedMethod(2, super, void, SBNowPlayingAlertItem, configure, BOOL, front, requirePasscodeForActions, BOOL, requirePasscode)
+{
+	if (shouldAddNowPlayingButton && nowPlayingButtonIndex == -1000) {
+		LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
 		NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
 		if (listenerName && ![listenerName isEqualToString:@"libactivator.ipod.music-controls"]) {
-			CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
+			CHSuper(2, SBNowPlayingAlertItem, configure, front, requirePasscodeForActions, requirePasscode);
 			NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
 			NSString *title = [LASharedActivator localizedTitleForListenerName:listenerName];
 			id alertSheet = [self alertSheet];
@@ -848,20 +854,20 @@ CHOptimizedMethod(2, super, void, SBNowPlayingAlertItem, configure, BOOL, config
 	}
 	nowPlayingButtonIndex = -1000;
 	if ([[LASharedActivator currentEventMode] isEqualToString:LAEventModeLockScreen]) {
-		CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
+		CHSuper(2, SBNowPlayingAlertItem, configure, front, requirePasscodeForActions, requirePasscode);
 		[[[[self alertSheet] buttons] objectAtIndex:1] setHidden:YES];
 	} else {
-		CHSuper(2, SBNowPlayingAlertItem, configure, configure, requirePasscodeForActions, requirePasscode);
+		CHSuper(2, SBNowPlayingAlertItem, configure, front, requirePasscodeForActions, requirePasscode);
 	}
 }
 
-CHOptimizedMethod(2, super, void, SBNowPlayingAlertItem, configureFront, BOOL, configure, requirePasscodeForActions, BOOL, requirePasscode)
+CHOptimizedMethod(2, super, void, SBNowPlayingAlertItem, configureFront, BOOL, front, requirePasscodeForActions, BOOL, requirePasscode)
 {
-	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
-	if (shouldAddNowPlayingButton) {
+	if (shouldAddNowPlayingButton && nowPlayingButtonIndex == -1000) {
+		LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
 		NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
 		if (listenerName && ![listenerName isEqualToString:@"libactivator.ipod.music-controls"]) {
-			CHSuper(2, SBNowPlayingAlertItem, configureFront, configure, requirePasscodeForActions, requirePasscode);
+			CHSuper(2, SBNowPlayingAlertItem, configureFront, front, requirePasscodeForActions, requirePasscode);
 			NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
 			NSString *title = [LASharedActivator localizedTitleForListenerName:listenerName];
 			id alertSheet = [self alertSheet];
@@ -877,18 +883,19 @@ CHOptimizedMethod(2, super, void, SBNowPlayingAlertItem, configureFront, BOOL, c
 	}
 	nowPlayingButtonIndex = -1000;
 	if ([[LASharedActivator currentEventMode] isEqualToString:LAEventModeLockScreen]) {
-		CHSuper(2, SBNowPlayingAlertItem, configureFront, configure, requirePasscodeForActions, requirePasscode);
+		CHSuper(2, SBNowPlayingAlertItem, configureFront, front, requirePasscodeForActions, requirePasscode);
 		[[[[self alertSheet] buttons] objectAtIndex:1] setHidden:YES];
 	} else {
-		CHSuper(2, SBNowPlayingAlertItem, configureFront, configure, requirePasscodeForActions, requirePasscode);
+		CHSuper(2, SBNowPlayingAlertItem, configureFront, front, requirePasscodeForActions, requirePasscode);
 	}
 }
 
 CHOptimizedMethod(2, self, void, SBNowPlayingAlertItem, alertSheet, id, sheet, buttonClicked, NSInteger, buttonIndex)
 {
-	CHSuper(2, SBNowPlayingAlertItem, alertSheet, sheet, buttonClicked, buttonIndex);
 	if (buttonIndex == nowPlayingButtonIndex + 1)
 		LASendEventWithName(LAEventNameMenuPressDouble);
+	else
+		CHSuper(2, SBNowPlayingAlertItem, alertSheet, sheet, buttonClicked, buttonIndex);
 }
 
 CHOptimizedMethod(0, self, id, SBVoiceControlAlert, initFromMenuButton)
@@ -1006,6 +1013,7 @@ CHConstructor
 		CHHook(2, SBStatusBar, touchesEnded, withEvent);
 		
 		CHLoadLateClass(SBNowPlayingAlertItem);
+		CHHook(0, SBNowPlayingAlertItem, createFrontAlertSheet);
 		CHHook(2, SBNowPlayingAlertItem, configure, requirePasscodeForActions);
 		CHHook(2, SBNowPlayingAlertItem, configureFront, requirePasscodeForActions);
 		CHHook(2, SBNowPlayingAlertItem, alertSheet, buttonClicked);
