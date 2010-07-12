@@ -62,6 +62,7 @@ CHOptimizedMethod(2, super, void, ActivatorTogglesAlertItem, configure, BOOL, co
 		bodyText = [LASharedActivator localizedStringForKey:@"ENABLED" value:@"Enabled"];
 	else
 		bodyText = [LASharedActivator localizedStringForKey:@"DISABLED" value:@"Disabled"];
+	[alertSheet setBodyText:bodyText];
 }
 
 @implementation LAToggleListener
