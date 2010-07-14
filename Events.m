@@ -173,7 +173,7 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 	[super dealloc];
 }
 
-/*- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	hasSentSlideEvent = NO;
 }
@@ -184,19 +184,26 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 		UITouch *touch = [touches anyObject];
 		CGPoint location = [touch locationInView:self];
 		if (location.y < -50.0f) {
-			hasSentSlideEvent = YES;
-			LASendEventWithName(_eventName);
+			// Workaround for FailSwitcher (which fails when a touch is on the screen)
+			LAEvent *event = [LAEvent eventWithName:_eventName mode:[LASharedActivator currentEventMode]];
+			if (![[LASharedActivator assignedListenerNameForEvent:event] isEqualToString:@"libactivator.system.activate-switcher"]) {
+				hasSentSlideEvent = YES;
+				[LASharedActivator sendEventToListener:event];
+			}
 		}
 	}
-}*/
+}
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
-	//hasSentSlideEvent = NO;
-	UITouch *touch = [touches anyObject];
-	CGPoint location = [touch locationInView:self];
-	if (location.y < -50.0f)
-		LASendEventWithName(_eventName);
+	if (hasSentSlideEvent)
+		hasSentSlideEvent = NO;
+	else {
+		UITouch *touch = [touches anyObject];
+		CGPoint location = [touch locationInView:self];
+		if (location.y < -50.0f)
+			LASendEventWithName(_eventName);
+	}
 }
 
 @end

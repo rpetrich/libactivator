@@ -37,7 +37,7 @@ __attribute__((visibility("hidden")))
 __attribute__((visibility("hidden")))
 @interface LASlideGestureWindow : UIWindow {
 @private
-	//BOOL hasSentSlideEvent;
+	BOOL hasSentSlideEvent;
 	NSString *_eventName;
 }
 
