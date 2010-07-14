@@ -9,6 +9,10 @@ static ActivatorAdController *sharedAdController;
 - (id)_scrollView;
 @end
 
+@interface UIDevice (OS32)
+- (BOOL)isWildcat;
+@end
+
 @implementation ActivatorAdController
 
 + (void)initialize
@@ -70,6 +74,8 @@ static ActivatorAdController *sharedAdController;
 
 - (void)display
 {
+	if ([UIDevice instancesRespondToSelector:@selector(isWildcat)] && [[UIDevice currentDevice] isWildcat])
+		return;
 	if (!isLoaded) {
 		_adView.delegate = self;
 		[_adView loadRequest:[NSURLRequest requestWithURL:_URL]];
