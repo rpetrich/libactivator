@@ -63,6 +63,8 @@ CHDeclareClass(VolumeControl);
 CHDeclareClass(SBVolumeHUDView);
 CHDeclareClass(SBStatusBarController);
 
+//static BOOL isInSleep;
+
 static BOOL shouldInterceptMenuPresses;
 static BOOL shouldSuppressMenuReleases;
 static BOOL shouldSuppressLockSound;
@@ -93,6 +95,10 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 {
 	return [LASharedActivator listenerForEvent:[LAEvent eventWithName:eventName mode:[LASharedActivator currentEventMode]]];
 }
+
+@interface SpringBoard (OS40)
+- (void)resetIdleTimerAndUndim;
+@end
 
 @implementation LASlideGestureWindow
 
@@ -283,6 +289,18 @@ static void HideVolumeTapWindow()
 
 @end
 
+/*CHOptimizedMethod(0, self, void, SpringBoard, systemWillSleep)
+{
+	isInSleep = YES;
+	CHSuper(0, SpringBoard, systemWillSleep);
+}
+
+CHOptimizedMethod(0, self, void, SpringBoard, undim)
+{
+	isInSleep = NO;
+	CHSuper(0, SpringBoard, undim);
+}*/
+
 static BOOL ignoreHeadsetButtonUp;
 
 CHOptimizedMethod(0, self, void, SpringBoard, _performDelayedHeadsetAction)
@@ -386,38 +404,48 @@ CHOptimizedMethod(0, new, void, SpringBoard, activatorFixStatusBar)
 	[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
 }
 
+static void DisableLockTimer(SpringBoard *springBoard)
+{
+	if ([springBoard respondsToSelector:@selector(_setLockButtonTimer:)])
+		[springBoard _setLockButtonTimer:nil];
+	else {
+		NSTimer **timer = CHIvarRef(springBoard, _lockButtonTimer, NSTimer *);
+		if (timer) {
+			[*timer invalidate];
+			[*timer release];
+			*timer = nil;
+		}
+	}
+}
+
 CHOptimizedMethod(1, self, void, SpringBoard, lockButtonUp, GSEventRef, event)
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonHoldCompleted) object:nil];
 	if (lockHoldEventToAbort) {
 		[lockHoldEventToAbort release];
 		lockHoldEventToAbort = nil;
-		NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _lockButtonTimer, NSTimer *);
-		if (timer) {
-			[*timer invalidate];
-			[*timer release];
-			*timer = nil;
-		}
+		DisableLockTimer(self);
 	} else if (isWaitingForLockDoubleTap) {
 		isWaitingForLockDoubleTap = NO;
 		if (!wasLockedBefore) {
 			BOOL oldAnimationsEnabled = [UIView areAnimationsEnabled];
 			[UIView setAnimationsEnabled:NO];
-			[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:NO];
+			SBAwayController *awayController = [CHClass(SBAwayController) sharedAwayController];
+			[awayController setDeviceLocked:NO];
+			[awayController _unlockWithSound:NO];
 			[UIView setAnimationsEnabled:oldAnimationsEnabled];
 		}
 		suppressIsLocked = YES;
-		if ([LASendEventWithName(LAEventNameLockPressDouble) isHandled]) {
-			suppressIsLocked = NO;
+		LAEvent *activatorEvent = LASendEventWithName(LAEventNameLockPressDouble);
+		suppressIsLocked = NO;
+		if ([activatorEvent isHandled]) {
 			[self performSelector:@selector(activatorFixStatusBar) withObject:nil afterDelay:0.0f];
-			NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _lockButtonTimer, NSTimer *);
-			if (timer) {
-				[*timer invalidate];
-				[*timer release];
-				*timer = nil;
-			}
+			DisableLockTimer(self);
+			if ([self respondsToSelector:@selector(resetIdleTimerAndUndim)])
+				[self resetIdleTimerAndUndim];
+			else
+				[self undim];
 		} else {
-			suppressIsLocked = NO;
 			shouldSuppressLockSound = YES;
 			[CHSharedInstance(SBUIController) lock];
 			shouldSuppressLockSound = NO;
@@ -972,6 +1000,8 @@ CHConstructor
 	}
 	
 	if (CHLoadLateClass(SpringBoard)) {
+		//CHHook(0, SpringBoard, systemWillSleep);
+		//CHHook(0, SpringBoard, undim);
 		CHHook(0, SpringBoard, _performDelayedHeadsetAction);
 		CHHook(1, SpringBoard, headsetButtonDown);
 		CHHook(1, SpringBoard, headsetButtonUp);
