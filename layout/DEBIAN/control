@@ -1,7 +1,8 @@
 Package: libactivator
-Depends: mobilesubstrate, preferenceloader (>= 1.2)
+Pre-Depends: firmware (<< 4.1)
+Depends: mobilesubstrate, preferenceloader (>= 2.0), firmware (>= 3.0)
 Name: Activator
-Version: 1.4.0
+Version: 1.4.1
 Priority: optional
 Architecture: iphoneos-arm
 Description: Activate apps via gestures, buttons and shortcuts
