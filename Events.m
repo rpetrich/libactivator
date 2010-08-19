@@ -100,6 +100,10 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 - (void)resetIdleTimerAndUndim;
 @end
 
+@interface SBAwayController (OS40)
+- (void)_unlockWithSound:(BOOL)sound isAutoUnlock:(BOOL)unlock;
+@end
+
 @implementation LASlideGestureWindow
 
 + (LASlideGestureWindow *)leftWindow
@@ -432,7 +436,10 @@ CHOptimizedMethod(1, self, void, SpringBoard, lockButtonUp, GSEventRef, event)
 			[UIView setAnimationsEnabled:NO];
 			SBAwayController *awayController = [CHClass(SBAwayController) sharedAwayController];
 			[awayController setDeviceLocked:NO];
-			[awayController _unlockWithSound:NO];
+			if ([awayController respondsToSelector:@selector(_unlockWithSound:isAutoUnlock:)])
+				[awayController _unlockWithSound:NO isAutoUnlock:YES];
+			else
+				[awayController _unlockWithSound:NO];
 			[UIView setAnimationsEnabled:oldAnimationsEnabled];
 		}
 		suppressIsLocked = YES;
