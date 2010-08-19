@@ -193,8 +193,10 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 	if (!hasSentSlideEvent) {
 		UITouch *touch = [touches anyObject];
 		CGPoint location = [touch locationInView:self];
-		if (location.y < -50.0f)
+		if (location.y < -50.0f) {
+			hasSentSlideEvent = YES;
 			LASendEventWithName(_eventName);
+		}
 	}
 }
 
