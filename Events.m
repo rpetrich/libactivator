@@ -491,8 +491,16 @@ CHOptimizedMethod(0, new, void, SpringBoard, activatorLockButtonDoubleTapAborted
 
 CHOptimizedMethod(0, self, void, SpringBoard, _showEditAlertView)
 {
+	// iOS3.x
 	if (![LASendEventWithName(LAEventNameMotionShake) isHandled])
 		CHSuper(0, SpringBoard, _showEditAlertView);
+}
+
+CHOptimizedMethod(1, super, void, SpringBoard, _sendMotionEnded, int, subtype)
+{
+	// iOS4.0+
+	if (![LASendEventWithName(LAEventNameMotionShake) isHandled])
+		CHSuper(1, SpringBoard, _sendMotionEnded, subtype);
 }
 
 static LAEvent *menuEventToAbort;
@@ -1029,6 +1037,7 @@ CHConstructor
 		CHHook(1, SpringBoard, volumeChanged);
 		CHHook(0, SpringBoard, activatorCancelVolumeChord);
 		CHHook(0, SpringBoard, _showEditAlertView);
+		CHHook(1, SpringBoard, _sendMotionEnded);
 		
 		CHLoadLateClass(SBUIController);
 		CHHook(0, SBUIController, clickedMenuButton);
