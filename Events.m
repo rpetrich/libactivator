@@ -985,6 +985,9 @@ CHOptimizedMethod(0, self, BOOL, SBAwayController, handleMenuButtonTap)
 	[LASharedActivator sendDeactivateEventToListeners:event];
 	if ([event isHandled])
 		return YES;
+	[LASharedActivator sendEventToListener:event];
+	if ([event isHandled])
+		return YES;
 	return CHSuper(0, SBAwayController, handleMenuButtonTap);
 }
 
