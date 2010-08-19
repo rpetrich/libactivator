@@ -509,7 +509,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	UIImage *result = [_cachedListenerSmallIcons objectForKey:listenerName];
 	if (!result) {
-		if ([UIImage respondsToSelector:@selector(imageWithData:scale)]) {
+		if ([UIImage respondsToSelector:@selector(imageWithData:scale:)]) {
 			CGFloat scale = [[UIScreen mainScreen] scale];
 			NSData *data = [[self listenerForName:listenerName] activator:self requiresSmallIconDataForListenerName:listenerName scale:&scale];
 			result = [UIImage imageWithData:data scale:scale];
