@@ -287,8 +287,8 @@ static void HideVolumeTapWindow()
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
-	LASendEventWithName(LAEventNameVolumeDisplayTap);
 	HideVolumeTapWindow();
+	LASendEventWithName(LAEventNameVolumeDisplayTap);
 }
 
 @end
