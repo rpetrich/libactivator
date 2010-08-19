@@ -62,11 +62,37 @@
 	return [NSData dataWithContentsOfFile:[bundle pathForResource:@"icon" ofType:@"png"]]
 		?: [NSData dataWithContentsOfFile:[bundle pathForResource:@"Icon" ofType:@"png"]];
 }
+- (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
+{
+	CGFloat scaleCopy = *scale;
+	if (scaleCopy != 1.0f) {
+		NSBundle *bundle = [listenerData objectForKey:listenerName];
+		NSData *result = [NSData dataWithContentsOfFile:[bundle pathForResource:[NSString stringWithFormat:@"icon@%.0fx", scaleCopy] ofType:@"png"]]
+		              ?: [NSData dataWithContentsOfFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon@%.0fx", scaleCopy] ofType:@"png"]];
+		if (result)
+			return result;
+		*scale = 1.0f;
+	}
+	return [self activator:activator requiresIconDataForListenerName:listenerName];
+}
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
 {
 	NSBundle *bundle = [listenerData objectForKey:listenerName];
 	return [NSData dataWithContentsOfFile:[bundle pathForResource:@"icon-small" ofType:@"png"]]
 		?: [NSData dataWithContentsOfFile:[bundle pathForResource:@"Icon-small" ofType:@"png"]];
+}
+- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
+{
+	CGFloat scaleCopy = *scale;
+	if (scaleCopy != 1.0f) {
+		NSBundle *bundle = [listenerData objectForKey:listenerName];
+		NSData *result = [NSData dataWithContentsOfFile:[bundle pathForResource:[NSString stringWithFormat:@"icon-small@%.0fx", scaleCopy] ofType:@"png"]]
+		              ?: [NSData dataWithContentsOfFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-small@%.0fx", scaleCopy] ofType:@"png"]];
+		if (result)
+			return result;
+		*scale = 1.0f;
+	}
+	return [self activator:activator requiresSmallIconDataForListenerName:listenerName];
 }
 - (NSNumber *)activator:(LAActivator *)activator requiresIsCompatibleWithEventName:(NSString *)eventName listenerName:(NSString *)listenerName
 {

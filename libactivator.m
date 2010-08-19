@@ -33,6 +33,14 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 @property (nonatomic, readonly) NSInteger idiom;
 @end
 
+@interface UIScreen (OS4)
+@property (nonatomic, readonly) CGFloat scale;
+@end
+
+@interface UIImage (OS4)
++ (UIImage *)imageWithData:(NSData *)data scale:(CGFloat)scale;
+@end
+
 @implementation LAActivator
 
 + (LAActivator *)sharedInstance
@@ -66,6 +74,9 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 			[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:requiresIsCompatibleWithEventName:listenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"activator:requiresInfoDictionaryValueOfKey:forListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+			// Remote messages to id<LAListener> (without event, with scale pointer)
+			[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];
+			[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];			
 			// Remote messages to LAActivator
 			[messagingCenter registerForMessageName:@"_cachedAndSortedListeners" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 			[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
@@ -201,6 +212,15 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	id<LAListener> listener = [self listenerForName:listenerName];
 	id result = objc_msgSend(listener, NSSelectorFromString(message), self, [userInfo objectForKey:@"object"], [userInfo objectForKey:@"object2"]);
 	return result ? [NSDictionary dictionaryWithObject:result forKey:@"result"] : [NSDictionary dictionary];
+}
+
+- (NSDictionary *)_handleRemoteListenerScalePtrMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
+{
+	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
+	CGFloat scale = [[userInfo objectForKey:@"scale"] floatValue];
+	id<LAListener> listener = [self listenerForName:listenerName];
+	id result = objc_msgSend(listener, NSSelectorFromString(message), self, [userInfo objectForKey:@"object"], &scale);
+	return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithFloat:scale], @"scale", result, @"result", nil];
 }
 
 - (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
@@ -489,7 +509,14 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	UIImage *result = [_cachedListenerSmallIcons objectForKey:listenerName];
 	if (!result) {
-		result = [UIImage imageWithData:[[self listenerForName:listenerName] activator:self requiresSmallIconDataForListenerName:listenerName]];
+		if ([UIScreen instancesRespondToSelector:@selector(scale)]) {
+			CGFloat scale = [[UIScreen mainScreen] scale];
+			NSData *data = [[self listenerForName:listenerName] activator:self requiresSmallIconDataForListenerName:listenerName scale:&scale];
+			result = [UIImage imageWithData:data scale:scale];
+		} else {
+			NSData *data = [[self listenerForName:listenerName] activator:self requiresSmallIconDataForListenerName:listenerName];
+			result = [UIImage imageWithData:data];
+		}
 		if (result)
 			[_cachedListenerSmallIcons setObject:result forKey:listenerName];
 	}

@@ -39,6 +39,9 @@ static NSMutableArray *displayStacks;
 - (SBIcon *)leafIconForIdentifier:(NSString *)displayIdentifier;
 - (NSArray *)leafIcons;
 @end
+@interface UIImage (OS40)
+@property (nonatomic, readonly) CGFloat scale;
+@end
 #endif
 
 @implementation LAApplicationListener
@@ -129,7 +132,7 @@ static NSMutableArray *displayStacks;
 	return [NSArray arrayWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil];
 }
 
-- (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName
+- (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
 	SBIcon *icon;
 	SBIconModel *iconModel = CHSharedInstance(SBIconModel);
@@ -142,14 +145,22 @@ static NSMutableArray *displayStacks;
 		image = [icon getIconImage:1];
 	else
 		image = [icon icon];	
-	if (image)
+	if (image) {
+		if ([image respondsToSelector:@selector(scale)])
+			*scale = [image scale];
 		return UIImagePNGRepresentation(image);
+	}
 	SBApplication *app = SBApp(listenerName);
 	if ([app respondsToSelector:@selector(pathForIcon)])
 		return [NSData dataWithContentsOfFile:[app pathForIcon]];
 	return nil;
 }
-- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
+- (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName
+{
+	CGFloat scale = 1.0f;
+	return [self activator:activator requiresIconDataForListenerName:listenerName scale:&scale];
+}
+- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
 	SBIcon *icon;
 	SBIconModel *iconModel = CHSharedInstance(SBIconModel);
@@ -184,7 +195,14 @@ static NSMutableArray *displayStacks;
 		CGFloat larger = (size.width > size.height) ? size.width : size.height;
 		image = [image _imageScaledToProportion:(29.0f / larger) interpolationQuality:kCGInterpolationDefault];
 	}
+	if ([image respondsToSelector:@selector(scale)])
+		*scale = [image scale];
 	return UIImagePNGRepresentation(image);
+}
+- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
+{
+	CGFloat scale = 1.0f;
+	return [self activator:activator requiresSmallIconDataForListenerName:listenerName scale:&scale];
 }
 
 @end

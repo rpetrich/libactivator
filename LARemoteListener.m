@@ -52,6 +52,14 @@ static LARemoteListener *sharedInstance;
 	return [[springboardCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo] objectForKey:@"result"];
 }
 
+- (id)_performRemoteSelector:(SEL)selector withObject:(id)object withScalePtr:(CGFloat *)scale forListenerName:(NSString *)listenerName
+{
+	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:listenerName, @"listenerName", [NSNumber numberWithFloat:*scale], @"scale", object, @"object", nil];
+	NSDictionary *result = [springboardCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
+	*scale = [[result objectForKey:@"scale"] floatValue];
+	return [result objectForKey:@"result"];
+}
+
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName
 {
 	return [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
@@ -78,11 +86,19 @@ static LARemoteListener *sharedInstance;
 	return [super activator:activator requiresIconDataForListenerName:listenerName]
 		?: [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
 }
+- (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
+{
+	return [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
+}
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
 {
 	// Read data without CPDistributedMessagingCenter if possible
 	return [super activator:activator requiresSmallIconDataForListenerName:listenerName]
 		?: [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
+}
+- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
+{
+	return [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
 }
 - (NSNumber *)activator:(LAActivator *)activator requiresIsCompatibleWithEventName:(NSString *)eventName listenerName:(NSString *)listenerName
 {
