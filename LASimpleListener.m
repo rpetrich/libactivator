@@ -29,6 +29,7 @@ static LASimpleListener *sharedSimpleListener;
 - (BOOL)isSwitcherShowing;
 - (BOOL)activateSwitcher;
 - (void)dismissSwitcher;
+- (void)_toggleSwitcher;
 @end
 
 @interface SBMediaController (OS4)
@@ -125,7 +126,7 @@ static LASimpleListener *sharedSimpleListener;
 		[sharedController dismissSwitcher];
 		return NO;
 	}
-	[sharedController activateSwitcher];
+	[sharedController _toggleSwitcher];
 	return YES;
 }
 
