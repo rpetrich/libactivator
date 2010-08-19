@@ -1,4 +1,5 @@
 #import "libactivator-private.h"
+#import "ActivatorAdController.h"
 
 @interface LARootSettingsController () <UIAlertViewDelegate>
 @end
@@ -26,7 +27,7 @@
 		case 1:
 			return [[LASharedActivator availableEventModes] count];
 		case 2:
-			return 1;
+			return 2;
 		case 3:
 			return 1;
 		default:
@@ -69,9 +70,15 @@
 			break;
 		}
 		case 2:
-			cell.textLabel.text = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"];
-			cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS_DETAIL" value:@"Get more actions via Cydia"];
-			cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+			if (indexPath.row == 0) {
+				cell.textLabel.text = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"];
+				cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS_DETAIL" value:@"Get more actions via Cydia"];
+				cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+			} else {
+				cell.textLabel.text = [LASharedActivator localizedStringForKey:@"DONATE" value:@"Donate"];
+				cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"DONATE_DETAIL" value:@"Contribute via PayPal"];
+				cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+			}
 			break;
 		case 3:
 			cell.textLabel.text = [LASharedActivator localizedStringForKey:@"RESET_SETTINGS" value:@"Reset Settings"];
@@ -98,6 +105,13 @@
 			vc = [[LAModeSettingsController alloc] initWithMode:[self eventModeForIndexPath:indexPath]];
 			break;
 		case 2: {
+			if (indexPath.row == 1) {
+				// Hide ads and show donation form
+				[LASharedActivator _setObject:(id)kCFBooleanTrue forPreference:@"LAHideAds"];
+				[[objc_getClass("ActivatorAdController") sharedInstance] hideAnimated:NO];
+				[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"http://rpetri.ch/cydia/activator/donate/"]];
+				return;
+			}
 			LAWebSettingsController *wsc = [[LAWebSettingsController alloc] init];
 			[wsc loadURL:[LASharedActivator moreActionsURL]];
 			wsc.navigationItem.title = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"];
