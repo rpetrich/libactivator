@@ -127,6 +127,10 @@ static LASimpleListener *sharedSimpleListener;
 		return NO;
 	}
 	[sharedController _toggleSwitcher];
+	// Repeatedly attempt to Activate switcher
+	// Apple bug--will not activate if taps are active
+	if (![sharedController isSwitcherShowing])
+		[self performSelector:@selector(activateSwitcher) withObject:nil afterDelay:0.05f];
 	return YES;
 }
 
