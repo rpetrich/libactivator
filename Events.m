@@ -404,6 +404,14 @@ CHOptimizedMethod(0, new, void, SpringBoard, activatorFixStatusBar)
 	[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
 }
 
+static BOOL ignoreResetIdleTimerAndUndim;
+
+CHOptimizedMethod(1, self, void, SpringBoard, resetIdleTimerAndUndim, BOOL, something)
+{
+	if (!ignoreResetIdleTimerAndUndim)
+		CHSuper(1, SpringBoard, resetIdleTimerAndUndim, something);
+}
+
 static void DisableLockTimer(SpringBoard *springBoard)
 {
 	if ([springBoard respondsToSelector:@selector(_setLockButtonTimer:)])
@@ -427,33 +435,40 @@ CHOptimizedMethod(1, self, void, SpringBoard, lockButtonUp, GSEventRef, event)
 		DisableLockTimer(self);
 	} else if (isWaitingForLockDoubleTap) {
 		isWaitingForLockDoubleTap = NO;
-		if (!wasLockedBefore) {
-			BOOL oldAnimationsEnabled = [UIView areAnimationsEnabled];
-			[UIView setAnimationsEnabled:NO];
-			SBAwayController *awayController = [CHClass(SBAwayController) sharedAwayController];
-			[awayController setDeviceLocked:NO];
-			if ([awayController respondsToSelector:@selector(_unlockWithSound:isAutoUnlock:)])
-				[awayController _unlockWithSound:NO isAutoUnlock:YES];
-			else
-				[awayController _unlockWithSound:NO];
-			[UIView setAnimationsEnabled:oldAnimationsEnabled];
-		}
-		suppressIsLocked = YES;
-		LAEvent *activatorEvent = LASendEventWithName(LAEventNameLockPressDouble);
-		suppressIsLocked = NO;
-		if ([activatorEvent isHandled]) {
-			[self performSelector:@selector(activatorFixStatusBar) withObject:nil afterDelay:0.0f];
-			DisableLockTimer(self);
-			if ([self respondsToSelector:@selector(resetIdleTimerAndUndim)])
-				[self resetIdleTimerAndUndim];
-			else
-				[self undim];
-		} else {
-			shouldSuppressLockSound = YES;
-			[CHSharedInstance(SBUIController) lock];
-			shouldSuppressLockSound = NO;
+		LAEvent *activatorEvent = [[[LAEvent alloc] initWithName:LAEventNameLockPressDouble mode:[LASharedActivator currentEventMode]] autorelease];
+		if ([LASharedActivator assignedListenerNameForEvent:activatorEvent] == nil)
 			CHSuper(1, SpringBoard, lockButtonUp, event);
-		}
+		else {
+			if (!wasLockedBefore) {
+				BOOL oldAnimationsEnabled = [UIView areAnimationsEnabled];
+				[UIView setAnimationsEnabled:NO];
+				SBAwayController *awayController = [CHClass(SBAwayController) sharedAwayController];
+				[awayController setDeviceLocked:NO];
+				ignoreResetIdleTimerAndUndim = YES;
+				if ([awayController respondsToSelector:@selector(_unlockWithSound:isAutoUnlock:)])
+					[awayController _unlockWithSound:NO isAutoUnlock:YES];
+				else
+					[awayController _unlockWithSound:NO];
+				ignoreResetIdleTimerAndUndim = NO;
+				[UIView setAnimationsEnabled:oldAnimationsEnabled];
+			}
+			suppressIsLocked = YES;
+			[LASharedActivator sendEventToListener:activatorEvent];
+			suppressIsLocked = NO;
+			if ([activatorEvent isHandled]) {
+				[self performSelector:@selector(activatorFixStatusBar) withObject:nil afterDelay:0.0f];
+				DisableLockTimer(self);
+				if ([self respondsToSelector:@selector(resetIdleTimerAndUndim)])
+					[self resetIdleTimerAndUndim];
+				else
+					[self undim];
+			} else {
+				shouldSuppressLockSound = YES;
+				[CHSharedInstance(SBUIController) lock];
+				shouldSuppressLockSound = NO;
+				CHSuper(1, SpringBoard, lockButtonUp, event);
+			}
+		} 
 	} else {
 		[self performSelector:@selector(activatorLockButtonDoubleTapAborted) withObject:nil afterDelay:kButtonHoldDelay];
 		isWaitingForLockDoubleTap = YES;
@@ -1022,6 +1037,7 @@ CHConstructor
 		CHHook(0, SpringBoard, isLocked);
 		CHHook(1, SpringBoard, lockButtonDown);
 		CHHook(0, SpringBoard, activatorFixStatusBar);
+		CHHook(1, SpringBoard, resetIdleTimerAndUndim);
 		CHHook(1, SpringBoard, lockButtonUp);
 		CHHook(0, SpringBoard, lockButtonWasHeld);
 		CHHook(0, SpringBoard, activatorLockButtonHoldCompleted);
