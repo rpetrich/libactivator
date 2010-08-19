@@ -537,7 +537,7 @@ CHOptimizedMethod(1, self, void, SpringBoard, menuButtonUp, GSEventRef, event)
 	} else if (menuEventToAbort || shouldSuppressMenuReleases) {
 		[menuEventToAbort release];
 		menuEventToAbort = nil;
-		NSTimer **timer = CHIvarRef([UIApplication sharedApplication], _menuButtonTimer, NSTimer *);
+		NSTimer **timer = CHIvarRef(self, _menuButtonTimer, NSTimer *);
 		if (timer) {
 			[*timer invalidate];
 			[*timer release];
