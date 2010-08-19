@@ -8,5 +8,6 @@ __attribute__((visibility("hidden")))
 
 + (id)sharedInstance;
 - (BOOL)activateApplication:(SBApplication *)application;
+- (SBApplication *)topApplication;
 
 @end

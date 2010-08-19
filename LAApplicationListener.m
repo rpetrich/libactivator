@@ -90,6 +90,11 @@ static NSMutableArray *displayStacks;
 	return YES;
 }
 
+- (SBApplication *)topApplication
+{
+	return [SBWActiveDisplayStack topApplication];
+}
+
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
 	SBApplication *application = SBApp(listenerName);

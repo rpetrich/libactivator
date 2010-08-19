@@ -256,6 +256,12 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 // Sending Events
 
+- (BOOL)isInProtectedApplication
+{
+	NSString *displayIdentifier = [[[LAApplicationListener sharedInstance] topApplication] displayIdentifier];
+	return [displayIdentifier isEqualToString:@"com.saurik.Cydia"];
+}
+
 - (id<LAListener>)listenerForEvent:(LAEvent *)event
 {
 	return [self listenerForName:[self assignedListenerNameForEvent:event]];
@@ -263,6 +269,8 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)sendEventToListener:(LAEvent *)event
 {
+	if ([self isInProtectedApplication])
+		return;
 	NSString *listenerName = [self assignedListenerNameForEvent:event];
 	if ([self listenerWithName:listenerName isCompatibleWithEventName:[event name]]) {
 		id<LAListener> listener = [self listenerForName:listenerName];
