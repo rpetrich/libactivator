@@ -662,7 +662,7 @@ CHOptimizedMethod(0, self, void, SBUIController, finishLaunching)
 	[LASimpleListener sharedInstance];
 	[LAToggleListener sharedInstance];
 	CHSuper(0, SBUIController, finishLaunching);
-	[LASlideGestureWindow updateVisibility];
+	[LASlideGestureWindow performSelector:@selector(updateVisibility) withObject:nil afterDelay:1.0];
 }
 
 CHOptimizedMethod(0, self, void, SBUIController, tearDownIconListAndBar)
