@@ -588,8 +588,11 @@ CHOptimizedMethod(0, self, BOOL, SBUIController, clickedMenuButton)
 	if (![CHSharedInstance(SBIconController) isEditing]) {
 		[LASharedActivator sendEventToListener:event];
 		if ([event isHandled]) {
-			if (mode == LAEventModeApplication)
-				CHSuper(0, SBUIController, clickedMenuButton);
+			if (mode == LAEventModeApplication) {
+				NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
+				if (![[LASharedActivator infoDictionaryValueOfKey:@"receives-raw-events" forListenerWithName:listenerName] boolValue])
+					CHSuper(0, SBUIController, clickedMenuButton);
+			}
 			return YES;
 		}
 	}
