@@ -2,20 +2,19 @@
 #import "ActivatorEventViewHeader.h"
 
 @interface LAEventSettingsController () <ActivatorEventViewHeaderDelegate>
-- (void)_updateCurrentAssignments;
 @end
 
 @implementation LAEventSettingsController
 
 - (void)updateHeader
 {
-	NSMutableSet *listenerNames = [NSMutableSet set];
+	[_currentAssignments removeAllObjects];
 	for (NSString *mode in _modes) {
-		NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:mode]];
-		if (listenerName)
-			[listenerNames addObject:listenerName];
+		NSString *assigned = [LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:mode]];
+		if (assigned)
+			[_currentAssignments addObject:assigned];
 	}
-	_headerView.listenerNames = listenerNames;
+	_headerView.listenerNames = _currentAssignments;
 	UITableView *tableView = self.tableView;
 	CGRect frame = _headerView.frame;
 	frame.size.width = tableView.bounds.size.width;
@@ -31,8 +30,7 @@
 			if ([LASharedActivator eventWithName:eventName isCompatibleWithMode:mode])
 				[availableModes addObject:mode];
 		_modes = [availableModes copy];
-		_currentAssignments = [[NSMutableArray alloc] init];
-		[self _updateCurrentAssignments];
+		_currentAssignments = [[NSMutableSet alloc] init];
 		_listeners = [[LASharedActivator _cachedAndSortedListeners] mutableCopy];
 		for (NSString *key in [_listeners allKeys]) {
 			NSArray *group = [_listeners objectForKey:key];
@@ -80,15 +78,6 @@
 	[super dealloc];
 }
 
-- (void)_updateCurrentAssignments
-{
-	[_currentAssignments removeAllObjects];
-	for (NSString *mode in _modes) {
-		NSString *assigned = [LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:mode]];
-		[_currentAssignments addObject:(id)assigned ?: (id)[NSNull null]];
-	}
-}
-
 - (void)viewDidLoad
 {
 	[self updateHeader];
@@ -134,7 +123,7 @@
 	for (UITableViewCell *cell in [[self tableView] visibleCells])
 		cell.accessoryType = UITableViewCellAccessoryNone;
 	eventViewHeader.listenerNames = nil;
-	[self _updateCurrentAssignments];
+	[self updateHeader];
 }
 
 - (NSMutableArray *)groupAtIndex:(NSInteger)index
@@ -177,16 +166,10 @@
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
 	NSString *listenerName = [self listenerNameForRowAtIndexPath:indexPath];
 	cell.textLabel.text = [LASharedActivator localizedTitleForListenerName:listenerName];
-	UITableViewCellAccessoryType accessory = UITableViewCellAccessoryNone;
-	for (NSString *assignment in _currentAssignments) {
-		if ([assignment isEqual:listenerName]) {
-			accessory = UITableViewCellAccessoryCheckmark;
-			break;
-		}
-	}
 	cell.detailTextLabel.text = [LASharedActivator localizedDescriptionForListenerName:listenerName];
 	cell.imageView.image = [LASharedActivator smallIconForListenerName:listenerName];
-	cell.accessoryType = accessory;
+	BOOL assigned = [_currentAssignments containsObject:listenerName];
+	cell.accessoryType = assigned ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
 	return cell;
 }
 
@@ -229,7 +212,6 @@
 				[LASharedActivator unassignEvent:event];
 		}
 	}
-	[self _updateCurrentAssignments];
 	[self updateHeader];
 }
 

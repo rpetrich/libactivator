@@ -169,7 +169,7 @@ extern LAActivator *LASharedActivator;
 @interface LAEventSettingsController : LASettingsViewController {
 @private
 	NSArray *_modes;
-	NSMutableArray *_currentAssignments;
+	NSMutableSet *_currentAssignments;
 	NSString *_eventName;
 	NSMutableDictionary *_listeners;
 	NSArray *_groups;
