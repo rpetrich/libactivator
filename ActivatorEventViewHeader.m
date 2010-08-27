@@ -7,6 +7,7 @@
 @implementation ActivatorEventViewHeader
 
 @synthesize delegate = _delegate;
+@synthesize listenerNames = _listenerNames;
 
 - (id)initWithFrame:(CGRect)frame
 {
@@ -17,16 +18,17 @@
 	return self;
 }
 
-- (NSString *)listenerName
+- (void)dealloc
 {
-	return _listenerName;
+	[_listenerNames release];
+	[super dealloc];
 }
 
-- (void)setListenerName:(NSString *)listenerName
+- (void)setListenerNames:(NSSet *)listenerNames
 {
-	if (![_listenerName isEqualToString:listenerName]) {
-		[_listenerName release];
-		_listenerName = [listenerName copy];
+	if (![_listenerNames isEqual:listenerNames]) {
+		[_listenerNames release];
+		_listenerNames = [listenerNames copy];
 		[self setNeedsDisplay];
 		CATransition *animation = [CATransition animation];
 		[animation setType:kCATransitionFade];
@@ -52,7 +54,7 @@
 	[[UIColor colorWithRed:0.3f green:0.34f blue:0.42f alpha:1.0f] setFill];
 	CGContextSetShadowWithColor(c, shadowOffset, 0.0f, [[UIColor whiteColor] CGColor]);
 	[[LASharedActivator localizedStringForKey:@"CURRENTLY_ASSIGNED_TO" value:@"Currently assigned to:"] drawAtPoint:CGPointMake(20.0f, 9.0f) withFont:[UIFont boldSystemFontOfSize:17.0f]];
-	if ([_listenerName length]) {
+	if ([_listenerNames anyObject]) {
 		// Draw Close Button
 		CGContextBeginPath(c);
 		CGRect closeRect;
@@ -84,17 +86,23 @@
 		CGContextClosePath(c);
 		CGContextEOFillPath(c);
 		// Draw Image
-		UIImage *image = [LASharedActivator smallIconForListenerName:_listenerName];
-		CGFloat x;
-		if (image) {
-			[image drawAtPoint:CGPointMake(20.0f, 35.0f)];
-			x = 30.0f + [image size].width;
-		} else {
-			x = 30.0f;
+		CGFloat x = 22.0f;
+		for (NSString *listenerName in _listenerNames) {
+			UIImage *image = [LASharedActivator smallIconForListenerName:listenerName];
+			if (image) {
+				[image drawAtPoint:CGPointMake(x, 35.0f)];
+				x += [image size].width + 2.0f;
+			}
 		}
+		x += 8.0f;
 		// Draw Text
 		[[UIColor blackColor] setFill];
-		[[LASharedActivator localizedTitleForListenerName:_listenerName] drawAtPoint:CGPointMake(x, 39.0f) withFont:[UIFont boldSystemFontOfSize:19.0f]];
+		NSString *title;
+		if ([_listenerNames count] == 1)
+			title = [LASharedActivator localizedTitleForListenerName:[_listenerNames anyObject]];
+		else
+			title = [LASharedActivator localizedStringForKey:@"MULTIPLE_ASSIGNMENTS" value:@"(multiple)"];
+		[title drawAtPoint:CGPointMake(x, 39.0f) withFont:[UIFont boldSystemFontOfSize:19.0f]];
 	} else {
 		[[LASharedActivator localizedStringForKey:@"UNASSIGNED" value:@"(unassigned)"] drawAtPoint:CGPointMake(30.0f, 40.0f) withFont:[UIFont boldSystemFontOfSize:17.0f]];
 	}

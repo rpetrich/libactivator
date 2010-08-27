@@ -9,7 +9,13 @@
 
 - (void)updateHeader
 {
-	_headerView.listenerName = [LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:[_modes objectAtIndex:0]]];
+	NSMutableSet *listenerNames = [NSMutableSet set];
+	for (NSString *mode in _modes) {
+		NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:_eventName mode:mode]];
+		if (listenerName)
+			[listenerNames addObject:listenerName];
+	}
+	_headerView.listenerNames = listenerNames;
 	UITableView *tableView = self.tableView;
 	CGRect frame = _headerView.frame;
 	frame.size.width = tableView.bounds.size.width;
@@ -127,7 +133,7 @@
 		[LASharedActivator unassignEvent:event];
 	for (UITableViewCell *cell in [[self tableView] visibleCells])
 		cell.accessoryType = UITableViewCellAccessoryNone;
-	eventViewHeader.listenerName = nil;
+	eventViewHeader.listenerNames = nil;
 	[self _updateCurrentAssignments];
 }
 

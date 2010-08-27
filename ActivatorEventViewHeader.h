@@ -5,11 +5,11 @@
 __attribute__((visibility("hidden")))
 @interface ActivatorEventViewHeader : UIView {
 @private
-	NSString *_listenerName;
+	NSSet *_listenerNames;
 	id<ActivatorEventViewHeaderDelegate> _delegate;
 }
 
-@property (nonatomic, copy) NSString *listenerName;
+@property (nonatomic, copy) NSSet *listenerNames;
 @property (nonatomic, assign) id<ActivatorEventViewHeaderDelegate> delegate;
 
 @end
