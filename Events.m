@@ -27,6 +27,7 @@ NSString * const LAEventNameStatusBarHold          = @"libactivator.statusbar.ho
 NSString * const LAEventNameVolumeDownUp           = @"libactivator.volume.down-up";
 NSString * const LAEventNameVolumeUpDown           = @"libactivator.volume.up-down";
 NSString * const LAEventNameVolumeDisplayTap       = @"libactivator.volume.display-tap";
+NSString * const LAEventNameVolumeToggleMuteTwice  = @"libactivator.volume.toggle-mute-twice";
 
 NSString * const LAEventNameSlideInFromBottom      = @"libactivator.slide-in.bottom";
 NSString * const LAEventNameSlideInFromBottomLeft  = @"libactivator.slide-in.bottom-left";
@@ -288,6 +289,21 @@ static void HideVolumeTapWindow()
 }
 
 @end
+
+static CFAbsoluteTime lastRingerChangedTime;
+
+CHOptimizedMethod(1, self, void, SpringBoard, ringerChanged, int, newState)
+{
+	CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
+	BOOL shouldSendEvent = (currentTime - lastRingerChangedTime) < 1.0;
+	lastRingerChangedTime = currentTime;
+	if (shouldSendEvent) {
+		CHSuper(1, SpringBoard, ringerChanged, newState);
+		LASendEventWithName(LAEventNameVolumeToggleMuteTwice);
+	} else {
+		CHSuper(1, SpringBoard, ringerChanged, newState);
+	}
+}
 
 /*CHOptimizedMethod(0, self, void, SpringBoard, systemWillSleep)
 {
@@ -1029,6 +1045,7 @@ CHConstructor
 	}
 	
 	if (CHLoadLateClass(SpringBoard)) {
+		CHHook(1, SpringBoard, ringerChanged);
 		//CHHook(0, SpringBoard, systemWillSleep);
 		//CHHook(0, SpringBoard, undim);
 		CHHook(0, SpringBoard, _performDelayedHeadsetAction);
