@@ -16,8 +16,10 @@ CHDeclareClass(SBVoiceControlAlert);
 CHDeclareClass(SBAwayController);
 CHDeclareClass(SBUIController);
 CHDeclareClass(SBStatusBarController);
+CHDeclareClass(SBStatusBarDataManager);
 CHDeclareClass(SBMediaController);
 CHDeclareClass(SBApplicationController);
+CHDeclareClass(SBSoundPreferences);
 
 static LASimpleListener *sharedSimpleListener;
 
@@ -34,6 +36,53 @@ static LASimpleListener *sharedSimpleListener;
 
 @interface SBMediaController (OS4)
 - (id)mediaControlsDestinationApp;
+@end
+
+@interface SBStatusBarDataManager : NSObject {
+	struct {
+		BOOL itemIsEnabled[20];
+		BOOL timeString[64];
+		int gsmSignalStrengthRaw;
+		int gsmSignalStrengthBars;
+		BOOL serviceString[100];
+		BOOL serviceImageBlack[100];
+		BOOL serviceImageSilver[100];
+		BOOL operatorDirectory[1024];
+		unsigned serviceContentType;
+		int wifiSignalStrengthRaw;
+		int wifiSignalStrengthBars;
+		unsigned dataNetworkType;
+		int batteryCapacity;
+		unsigned batteryState;
+		int bluetoothBatteryCapacity;
+		int thermalColor;
+		unsigned slowActivity : 1;
+		BOOL activityDisplayId[256];
+		unsigned bluetoothConnected : 1;
+		unsigned displayRawGSMSignal : 1;
+		unsigned displayRawWifiSignal : 1;
+	} _data;
+	int _actions;
+	BOOL _itemIsEnabled[20];
+	BOOL _itemIsCloaked[20];
+	int _updateBlockDepth;
+	BOOL _dataChangedSinceLastPost;
+	NSDateFormatter *_timeItemDateFormatter;
+	NSTimer *_timeItemTimer;
+	NSString *_timeItemTimeString;
+	BOOL _cellRadio;
+	BOOL _registered;
+	BOOL _simError;
+	BOOL _simulateInCallStatusBar;
+	NSString *_serviceString;
+	NSString *_serviceImageBlack;
+	NSString *_serviceImageSilver;
+	NSString *_operatorDirectory;
+	BOOL _showsActivityIndicatorOnHomeScreen;
+	int _thermalColor;
+}
++ (SBStatusBarDataManager *)sharedDataManager;
+- (void)enableLock:(BOOL)showLock time:(BOOL)showTime;
 @end
 
 @implementation LASimpleListener
@@ -144,8 +193,11 @@ static LASimpleListener *sharedSimpleListener;
 
 - (BOOL)dismissLockScreen
 {
-	[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:YES];
-	[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
+	[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:objc_msgSend(CHClass(SBSoundPreferences), @selector(playLockSound)) != nil];
+	if (CHClass(SBStatusBarController))
+		[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
+	else if (CHClass(SBStatusBarDataManager))
+		[[CHClass(SBStatusBarDataManager) sharedDataManager] enableLock:NO time:YES];
 	return YES;
 }
 
@@ -240,8 +292,10 @@ static LASimpleListener *sharedSimpleListener;
 		CHLoadLateClass(SBAwayController);
 		CHLoadLateClass(SBUIController);
 		CHLoadLateClass(SBStatusBarController);
+		CHLoadLateClass(SBStatusBarDataManager);
 		CHLoadLateClass(SBMediaController);
 		CHLoadLateClass(SBApplicationController);
+		CHLoadLateClass(SBSoundPreferences);
 	}
 }
 
