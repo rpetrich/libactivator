@@ -580,46 +580,42 @@ CHOptimizedMethod(0, new, void, SpringBoard, activatorMenuButtonTimerCompleted)
 	menuEventToAbort = [LASendEventWithName(LAEventNameMenuHoldShort) retain];
 }
 
-static NSUInteger previousToLastVolumeEvent;
 static NSUInteger lastVolumeEvent;
+static CFAbsoluteTime volumeChordBeganTime;
 
 CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
 {
 	CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 	switch (GSEventGetType(gsEvent)) {
-		case kGSEventVolumeUpButtonUp:
-			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorCancelVolumeChord) object:nil];
-			if (lastVolumeEvent == kGSEventVolumeDownButtonUp && previousToLastVolumeEvent == 0) {
-				previousToLastVolumeEvent = 0;
+		case kGSEventVolumeUpButtonUp: {
+			CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
+			if ((currentTime - volumeChordBeganTime) > kButtonHoldDelay) {
+				lastVolumeEvent = kGSEventVolumeUpButtonUp;
+				volumeChordBeganTime = currentTime;
+			} else if (lastVolumeEvent == kGSEventVolumeDownButtonUp) {
 				lastVolumeEvent = 0;
 				LASendEventWithName(LAEventNameVolumeDownUp);
 			} else {
-				previousToLastVolumeEvent = lastVolumeEvent;
-				lastVolumeEvent = kGSEventVolumeUpButtonUp;
-				[self performSelector:@selector(activatorCancelVolumeChord) withObject:nil afterDelay:kButtonHoldDelay];
+				lastVolumeEvent = 0;
 			}
 			break;
-		case kGSEventVolumeDownButtonUp:
-			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorCancelVolumeChord) object:nil];
-			if (lastVolumeEvent == kGSEventVolumeUpButtonUp && previousToLastVolumeEvent == 0) {
-				previousToLastVolumeEvent = 0;
+		}
+		case kGSEventVolumeDownButtonUp: {
+			CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
+			if ((currentTime - volumeChordBeganTime) > kButtonHoldDelay) {
+				lastVolumeEvent = kGSEventVolumeDownButtonUp;
+				volumeChordBeganTime = currentTime;
+			} else if (lastVolumeEvent == kGSEventVolumeUpButtonUp) {
 				lastVolumeEvent = 0;
 				LASendEventWithName(LAEventNameVolumeUpDown);
 			} else {
-				previousToLastVolumeEvent = lastVolumeEvent;
-				lastVolumeEvent = kGSEventVolumeDownButtonUp;
-				[self performSelector:@selector(activatorCancelVolumeChord) withObject:nil afterDelay:kButtonHoldDelay];
+				lastVolumeEvent = 0;
 			}
 			break;
+		}
 		default:
 			break;
 	}
-}
-
-CHOptimizedMethod(0, new, void, SpringBoard, activatorCancelVolumeChord)
-{
-	previousToLastVolumeEvent = 0;
-	lastVolumeEvent = 0;
 }
 
 CHOptimizedMethod(0, self, void, iHome, inject)
@@ -1067,7 +1063,6 @@ CHConstructor
 		CHHook(0, SpringBoard, menuButtonWasHeld);
 		CHHook(0, SpringBoard, activatorMenuButtonTimerCompleted);
 		CHHook(1, SpringBoard, volumeChanged);
-		CHHook(0, SpringBoard, activatorCancelVolumeChord);
 		CHHook(0, SpringBoard, _showEditAlertView);
 		CHHook(1, SpringBoard, _sendMotionEnded);
 		
