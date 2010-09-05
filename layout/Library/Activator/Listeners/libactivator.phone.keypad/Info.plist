@@ -1,0 +1,7 @@
+{
+	title = "Show Keypad";
+	description = "Launch Phone to the Keypad tab";
+	group = "Phone";
+	"compatible-modes" = ("springboard", "application");
+	selector = "showPhoneKeypad";
+}

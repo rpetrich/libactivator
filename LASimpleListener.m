@@ -245,6 +245,36 @@ static LASimpleListener *sharedSimpleListener;
 	return YES;
 }
 
+- (BOOL)showPhoneFavorites
+{
+	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=FAVORITES"] publicURLsOnly:NO];
+	return YES;
+}
+
+- (BOOL)showPhoneRecents
+{
+	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=RECENTS"] publicURLsOnly:NO];
+	return YES;
+}
+
+- (BOOL)showPhoneContacts
+{
+	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=CONTACTS"] publicURLsOnly:NO];
+	return YES;
+}
+
+- (BOOL)showPhoneKeypad
+{
+	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=KEYPAD"] publicURLsOnly:NO];
+	return YES;
+}
+
+- (BOOL)showPhoneVoicemail
+{
+	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=VOICEMAIL"] publicURLsOnly:NO];
+	return YES;
+}
+
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
 	NSString *selector = [activator infoDictionaryValueOfKey:@"selector" forListenerWithName:listenerName];
@@ -283,6 +313,14 @@ static LASimpleListener *sharedSimpleListener;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.previous-track"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.next-track"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.music-controls"];
+		// Phone
+		if (GSSystemHasCapability(CFSTR("telephony"))) {
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.favorites"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.recents"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.contacts"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.keypad"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.voicemail"];
+		}
 		CHLoadLateClass(SBIconController);
 		CHLoadLateClass(SBSearchController);
 		CHLoadLateClass(SBAlertItemsController);

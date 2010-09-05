@@ -1,0 +1,7 @@
+{
+	title = "Show Contacts";
+	description = "Launch Phone to the Contacts tab";
+	group = "Phone";
+	"compatible-modes" = ("springboard", "application");
+	selector = "showPhoneContacts";
+}
