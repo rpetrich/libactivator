@@ -1,0 +1,5 @@
+{
+	title = "Both Press";
+	group = "Volume Buttons";
+	description = "Press both buttons simultaneously";
+}

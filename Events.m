@@ -30,6 +30,7 @@ NSString * const LAEventNameVolumeDisplayTap       = @"libactivator.volume.displ
 NSString * const LAEventNameVolumeToggleMuteTwice  = @"libactivator.volume.toggle-mute-twice";
 NSString * const LAEventNameVolumeDownHoldShort    = @"libactivator.volume.down.hold.short";
 NSString * const LAEventNameVolumeUpHoldShort      = @"libactivator.volume.up.hold.short";
+NSString * const LAEventNameVolumeBothPress        = @"libactivator.volume.both.press";
 
 NSString * const LAEventNameSlideInFromBottom      = @"libactivator.slide-in.bottom";
 NSString * const LAEventNameSlideInFromBottomLeft  = @"libactivator.slide-in.bottom-left";
@@ -586,6 +587,7 @@ static NSUInteger lastVolumeEvent;
 static CFAbsoluteTime volumeChordBeganTime;
 static BOOL suppressVolumeButtonUp;
 static CFRunLoopTimerRef volumeButtonUpTimer;
+static BOOL isVolumeButtonDown;
 
 static void DestroyCurrentVolumeButtonUpTimer()
 {
@@ -614,25 +616,33 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 {
 	switch (GSEventGetType(gsEvent)) {
 		case kGSEventVolumeUpButtonDown:
+			if (isVolumeButtonDown) {
+				DestroyCurrentVolumeButtonUpTimer();
+				suppressVolumeButtonUp = YES;
+				LASendEventWithName(LAEventNameVolumeBothPress);
+				break;
+			}
+			isVolumeButtonDown = YES;
 			suppressVolumeButtonUp = NO;
 			if (LAListenerForEventWithName(LAEventNameVolumeUpHoldShort)) {
 				CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
 				volumeButtonUpTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, currentTime + kButtonHoldDelay, 0.0, 0, 0, VolumeUpButtonHeldCallback, NULL);
 				CFRunLoopAddTimer(CFRunLoopGetCurrent(), volumeButtonUpTimer, kCFRunLoopCommonModes);
-			} else {
+			} else if (!LAListenerForEventWithName(LAEventNameVolumeBothPress)) {
 				CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 			}
 			break;
 		case kGSEventVolumeUpButtonUp: {
-			id holdListener = LAListenerForEventWithName(LAEventNameVolumeUpHoldShort);
-			if (!holdListener)
+			isVolumeButtonDown = NO;
+			BOOL hasListener = LAListenerForEventWithName(LAEventNameVolumeUpHoldShort) != nil || LAListenerForEventWithName(LAEventNameVolumeBothPress) != nil;
+			if (!hasListener)
 				CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 			DestroyCurrentVolumeButtonUpTimer();
 			if (suppressVolumeButtonUp) {
 				volumeChordBeganTime = 0.0;
 				break;
 			}
-			if (holdListener) {
+			if (hasListener) {
 				VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
 				[volumeControl increaseVolume];
 				[volumeControl cancelVolumeEvent];
@@ -650,25 +660,33 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			break;
 		}
 		case kGSEventVolumeDownButtonDown:
+			if (isVolumeButtonDown) {
+				DestroyCurrentVolumeButtonUpTimer();
+				suppressVolumeButtonUp = YES;
+				LASendEventWithName(LAEventNameVolumeBothPress);
+				break;
+			}
+			isVolumeButtonDown = YES;
 			suppressVolumeButtonUp = NO;
 			if (LAListenerForEventWithName(LAEventNameVolumeDownHoldShort)) {
 				CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
 				volumeButtonUpTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, currentTime + kButtonHoldDelay, 0.0, 0, 0, VolumeDownButtonHeldCallback, NULL);
 				CFRunLoopAddTimer(CFRunLoopGetCurrent(), volumeButtonUpTimer, kCFRunLoopCommonModes);
-			} else {
+			} else if (!LAListenerForEventWithName(LAEventNameVolumeBothPress)) {
 				CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 			}
 			break;
 		case kGSEventVolumeDownButtonUp: {
-			id holdListener = LAListenerForEventWithName(LAEventNameVolumeDownHoldShort);
-			if (!holdListener)
+			isVolumeButtonDown = NO;
+			BOOL hasListener = LAListenerForEventWithName(LAEventNameVolumeUpHoldShort) != nil || LAListenerForEventWithName(LAEventNameVolumeBothPress) != nil;
+			if (!hasListener)
 				CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 			DestroyCurrentVolumeButtonUpTimer();
 			if (suppressVolumeButtonUp) {
 				volumeChordBeganTime = 0.0;
 				break;
 			}
-			if (holdListener) {
+			if (hasListener) {
 				VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
 				[volumeControl decreaseVolume];
 				[volumeControl cancelVolumeEvent];
