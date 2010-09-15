@@ -108,6 +108,112 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 - (void)_unlockWithSound:(BOOL)sound isAutoUnlock:(BOOL)unlock;
 @end
 
+__attribute__((visibility("hidden")))
+@interface LAVersionChecker : NSObject<UIAlertViewDelegate> {
+}
+@end
+
+typedef enum {
+	LASystemVersionStatusJustRight,
+	LASystemVersionStatusTooCold,
+	LASystemVersionStatusTooHot,
+} LAVersionStatus;
+
+@implementation LAVersionChecker
+
++ (LAVersionStatus)systemVersionStatus
+{
+	NSArray *components = [[UIDevice currentDevice].systemVersion componentsSeparatedByString:@"."];
+	switch ([[components objectAtIndex:0] integerValue]) {
+		case 0:
+		case 1:
+		case 2:
+			return LASystemVersionStatusTooCold;
+		case 3:
+			return [[components objectAtIndex:1] integerValue] == 0 ? LASystemVersionStatusTooCold : LASystemVersionStatusJustRight;
+		case 4:
+			return [[components objectAtIndex:1] integerValue] == 0 ? LASystemVersionStatusJustRight : LASystemVersionStatusTooHot;
+		default:
+			return LASystemVersionStatusTooHot;
+	}
+}
+
++ (NSString *)versionKey
+{
+	return [@"LASystemVersionPrompt-" stringByAppendingString:[UIDevice currentDevice].systemVersion];
+}
+
++ (void)checkVersion
+{
+	NSString *title;
+	NSString *message;
+	switch ([self systemVersionStatus]) {
+		case LASystemVersionStatusTooCold:
+			title = [LASharedActivator localizedStringForKey:@"OUT_OF_DATE_TITLE" value:@"System Version Out Of Date"];
+			message = [LASharedActivator localizedStringForKey:@"OUT_OF_DATE_MESSAGE" value:@"Activator performs best on a modern version of iOS.\nPlease consider upgrading."];
+			break;
+		case LASystemVersionStatusTooHot:
+			title = [LASharedActivator localizedStringForKey:@"OUT_OF_DATE_TITLE" value:@"System Version Too New"];
+			message = [LASharedActivator localizedStringForKey:@"OUT_OF_DATE_MESSAGE" value:@"Activator has not been tested with this version of iOS.\nSome features may not work as intended."];
+			break;
+		default:
+			return;
+	}
+	// Try to determine if we're locked, but be very careful not to call private APIs if they don't exist
+	BOOL showMoreInfo = NO;
+	if ([CHClass(SBAwayController) respondsToSelector:@selector(sharedAwayController)]) {
+		SBAwayController *awayController = [CHClass(SBAwayController) sharedAwayController];
+		if ([awayController respondsToSelector:@selector(isLocked)]) {
+			if ([awayController isLocked]) {
+				[self performSelector:@selector(checkVersion) withObject:nil afterDelay:0.1];
+				return;
+			} else {
+				showMoreInfo = YES;
+			}
+		}
+	}
+	NSString *cancelButton;
+	switch ([[LASharedActivator _getObjectForPreference:[self versionKey]] integerValue]) {
+		default:
+		case 0:
+			cancelButton = [LASharedActivator localizedStringForKey:@"VERSION_PROMPT_CONTINUE" value:@"Continue"];
+			break;
+		case 1:
+			cancelButton = [LASharedActivator localizedStringForKey:@"VERSION_PROMPT_IGNORE" value:@"Ignore"];
+			break;
+		case 2:
+			return;
+	}
+	UIAlertView *av = [[UIAlertView alloc] init];
+	av.title = title;
+	av.message = message;
+	av.delegate = self;
+	if (showMoreInfo)
+		[av addButtonWithTitle:[LASharedActivator localizedStringForKey:@"VERSION_PROMPT_MORE_INFO" value:@"More Info"]];
+	[av setCancelButtonIndex:[av addButtonWithTitle:cancelButton]];
+	[av show];
+	[av release];
+}
+
++ (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+	if (buttonIndex == alertView.cancelButtonIndex) {
+		NSString *versionKey = [self versionKey];
+		NSNumber *value = [LASharedActivator _getObjectForPreference:versionKey];
+		value = [NSNumber numberWithInteger:[value integerValue]+1];
+		[LASharedActivator _setObject:value forPreference:versionKey];
+	} else {
+		NSURL *url = [NSURL URLWithString:@"http://rpetri.ch/cydia/activator/systemversionfail/"];
+		SpringBoard *app = (SpringBoard *)[UIApplication sharedApplication];
+		if ([app respondsToSelector:@selector(applicationOpenURL:)])
+			[app applicationOpenURL:url];
+		else
+			[app openURL:url];
+	}
+}
+
+@end
+
 @implementation LASlideGestureWindow
 
 + (LASlideGestureWindow *)leftWindow
@@ -1212,5 +1318,6 @@ CHConstructor
 			CHHook(0, iHome, inject);
 		
 		CHLoadLateClass(SBStatusBarController);
+		[[LAVersionChecker class] performSelector:@selector(checkVersion) withObject:nil afterDelay:0.1];
 	}
 }

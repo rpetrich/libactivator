@@ -1,5 +1,4 @@
 Package: libactivator
-Pre-Depends: firmware (<< 4.1)
 Depends: mobilesubstrate, preferenceloader (>= 2.0), firmware (>= 3.0)
 Name: Activator
 Version: 1.4.2
