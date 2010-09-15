@@ -1,0 +1,6 @@
+{
+	title = "Show Now Playing Bar";
+	description = "Show the standard media controls";
+	group = "System Actions";
+	selector = "showNowPlayingBar";
+}

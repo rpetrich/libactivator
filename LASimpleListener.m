@@ -20,6 +20,7 @@ CHDeclareClass(SBStatusBarDataManager);
 CHDeclareClass(SBMediaController);
 CHDeclareClass(SBApplicationController);
 CHDeclareClass(SBSoundPreferences);
+CHDeclareClass(SBAppSwitcherController);
 
 static LASimpleListener *sharedSimpleListener;
 
@@ -183,6 +184,28 @@ static LASimpleListener *sharedSimpleListener;
 	return YES;
 }
 
+- (BOOL)showNowPlayingBar
+{
+	SBUIController *sharedController = CHSharedInstance(SBUIController);
+	if (![sharedController isSwitcherShowing]) {
+		[sharedController _toggleSwitcher];
+		// Repeatedly attempt to Activate switcher
+		// Apple bug--will not activate if taps are active
+		[self performSelector:@selector(showNowPlayingBar) withObject:nil afterDelay:0.05f];
+	} else {
+		UIScrollView *scrollView = CHIvar(CHIvar(CHSharedInstance(SBAppSwitcherController), _bottomBar, id), _scrollView, UIScrollView *);
+		CGPoint contentOffset = scrollView.contentOffset;
+		if (contentOffset.x == 0.0f) {
+			[sharedController dismissSwitcher];
+			return NO;
+		} else {
+			contentOffset.x = 0.0f;
+			[scrollView setContentOffset:contentOffset animated:YES];
+		}
+	}
+	return YES;
+}
+
 - (BOOL)showLockScreen
 {
 	SBUIController *controller = CHSharedInstance(SBUIController);
@@ -302,8 +325,10 @@ static LASimpleListener *sharedSimpleListener;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.take-screenshot"];
 		if ([CHClass(SBVoiceControlAlert) shouldEnterVoiceControl])
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
-		if (GSSystemHasCapability(CFSTR("multitasking")))
+		if (GSSystemHasCapability(CFSTR("multitasking"))) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-switcher"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.show-now-playing-bar"];
+		}
 		// Lock Screen
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.dismiss"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.show"];
@@ -334,6 +359,7 @@ static LASimpleListener *sharedSimpleListener;
 		CHLoadLateClass(SBMediaController);
 		CHLoadLateClass(SBApplicationController);
 		CHLoadLateClass(SBSoundPreferences);
+		CHLoadLateClass(SBAppSwitcherController);
 	}
 }
 
