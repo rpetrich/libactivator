@@ -279,7 +279,11 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 - (BOOL)isInProtectedApplication
 {
 	NSString *displayIdentifier = [[[LAApplicationListener sharedInstance] topApplication] displayIdentifier];
-	return [displayIdentifier isEqualToString:@"com.saurik.Cydia"];
+	if ([displayIdentifier isEqualToString:@"com.saurik.Cydia"]) {
+		if (![[self _getObjectForPreference:@"LAIgnoreProtectedApplications"] boolValue])
+			return YES;
+	}
+	return NO;
 }
 
 - (id<LAListener>)listenerForEvent:(LAEvent *)event
