@@ -2,5 +2,6 @@
 	title = "Activate Switcher";
 	description = "Show application switcher";
 	group = "System Actions";
+	"compatible-modes" = ("springboard", "application");
 	selector = "activateSwitcher";
 }
