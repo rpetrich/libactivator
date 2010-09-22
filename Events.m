@@ -785,7 +785,7 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			break;
 		case kGSEventVolumeDownButtonUp: {
 			isVolumeButtonDown = NO;
-			BOOL hasListener = LAListenerForEventWithName(LAEventNameVolumeUpHoldShort) != nil || LAListenerForEventWithName(LAEventNameVolumeBothPress) != nil;
+			BOOL hasListener = LAListenerForEventWithName(LAEventNameVolumeDownHoldShort) != nil || LAListenerForEventWithName(LAEventNameVolumeBothPress) != nil;
 			if (!hasListener)
 				CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 			DestroyCurrentVolumeButtonUpTimer();
