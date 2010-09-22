@@ -708,15 +708,17 @@ static void DestroyCurrentVolumeButtonUpTimer()
 static void VolumeUpButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
 {
 	DestroyCurrentVolumeButtonUpTimer();
-	if ([LASendEventWithName(LAEventNameVolumeUpHoldShort) isHandled])
-		suppressVolumeButtonUp = YES;
+	suppressVolumeButtonUp = YES;
+	if (![LASendEventWithName(LAEventNameVolumeUpHoldShort) isHandled])
+		[[CHClass(VolumeControl) sharedVolumeControl] increaseVolume];
 }
 
 static void VolumeDownButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
 {
 	DestroyCurrentVolumeButtonUpTimer();
-	if ([LASendEventWithName(LAEventNameVolumeDownHoldShort) isHandled])
-		suppressVolumeButtonUp = YES;
+	suppressVolumeButtonUp = YES;
+	if (![LASendEventWithName(LAEventNameVolumeDownHoldShort) isHandled])
+		[[CHClass(VolumeControl) sharedVolumeControl] decreaseVolume];
 }
 
 CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
@@ -740,6 +742,8 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			}
 			break;
 		case kGSEventVolumeUpButtonUp: {
+			VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
+			[volumeControl cancelVolumeEvent];
 			isVolumeButtonDown = NO;
 			BOOL hasListener = LAListenerForEventWithName(LAEventNameVolumeUpHoldShort) != nil || LAListenerForEventWithName(LAEventNameVolumeBothPress) != nil;
 			if (!hasListener)
@@ -750,7 +754,6 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 				break;
 			}
 			if (hasListener) {
-				VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
 				[volumeControl increaseVolume];
 				[volumeControl cancelVolumeEvent];
 			}
@@ -784,6 +787,8 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			}
 			break;
 		case kGSEventVolumeDownButtonUp: {
+			VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
+			[volumeControl cancelVolumeEvent];
 			isVolumeButtonDown = NO;
 			BOOL hasListener = LAListenerForEventWithName(LAEventNameVolumeDownHoldShort) != nil || LAListenerForEventWithName(LAEventNameVolumeBothPress) != nil;
 			if (!hasListener)
@@ -794,7 +799,6 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 				break;
 			}
 			if (hasListener) {
-				VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
 				[volumeControl decreaseVolume];
 				[volumeControl cancelVolumeEvent];
 			}
