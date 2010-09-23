@@ -154,8 +154,8 @@ typedef enum {
 			message = [LASharedActivator localizedStringForKey:@"OUT_OF_DATE_MESSAGE" value:@"Activator performs best on a modern version of iOS.\nPlease consider upgrading."];
 			break;
 		case LASystemVersionStatusTooHot:
-			title = [LASharedActivator localizedStringForKey:@"OUT_OF_DATE_TITLE" value:@"System Version Too New"];
-			message = [LASharedActivator localizedStringForKey:@"OUT_OF_DATE_MESSAGE" value:@"Activator has not been tested with this version of iOS.\nSome features may not work as intended."];
+			title = [LASharedActivator localizedStringForKey:@"TOO_NEW_TITLE" value:@"System Version Too New"];
+			message = [LASharedActivator localizedStringForKey:@"TOO_NEW_MESSAGE" value:@"Activator has not been tested with this version of iOS.\nSome features may not work as intended."];
 			break;
 		default:
 			return;
