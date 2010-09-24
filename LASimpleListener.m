@@ -84,6 +84,7 @@ static LASimpleListener *sharedSimpleListener;
 }
 + (SBStatusBarDataManager *)sharedDataManager;
 - (void)enableLock:(BOOL)showLock time:(BOOL)showTime;
+- (void)_postData;
 @end
 
 @implementation LASimpleListener
@@ -214,13 +215,20 @@ static LASimpleListener *sharedSimpleListener;
 	return YES;
 }
 
+- (void)fixStatusBarTime
+{
+	[[CHClass(SBStatusBarDataManager) sharedDataManager] enableLock:NO time:YES];
+}
+
 - (BOOL)dismissLockScreen
 {
 	[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:objc_msgSend(CHClass(SBSoundPreferences), @selector(playLockSound)) != nil];
 	if (CHClass(SBStatusBarController))
 		[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
-	else if (CHClass(SBStatusBarDataManager))
+	else if (CHClass(SBStatusBarDataManager)) {
 		[[CHClass(SBStatusBarDataManager) sharedDataManager] enableLock:NO time:YES];
+		[self performSelector:@selector(fixStatusBarTime) withObject:nil afterDelay:0.3];
+	}
 	return YES;
 }
 
