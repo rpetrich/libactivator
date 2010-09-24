@@ -506,7 +506,7 @@ CHOptimizedMethod(0, self, void, SpringBoard, handleMenuDoubleTap)
 
 static LAEvent *lockHoldEventToAbort;
 static BOOL isWaitingForLockDoubleTap;
-static BOOL wasLockedBefore;
+static NSString *formerLockEventMode;
 static BOOL suppressIsLocked;
 
 CHOptimizedMethod(0, self, BOOL, SpringBoard, isLocked)
@@ -523,8 +523,10 @@ CHOptimizedMethod(1, self, void, SpringBoard, lockButtonDown, GSEventRef, event)
 {
 	[self performSelector:@selector(activatorLockButtonHoldCompleted) withObject:nil afterDelay:kButtonHoldDelay];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonDoubleTapAborted) object:nil];
-	if (!isWaitingForLockDoubleTap)
-		wasLockedBefore = [self isLocked];
+	if (!isWaitingForLockDoubleTap) {
+		[formerLockEventMode release];
+		formerLockEventMode = [[LASharedActivator currentEventMode] copy];
+	}
 	CHSuper(1, SpringBoard, lockButtonDown, event);
 }
 
@@ -564,11 +566,11 @@ CHOptimizedMethod(1, self, void, SpringBoard, lockButtonUp, GSEventRef, event)
 		DisableLockTimer(self);
 	} else if (isWaitingForLockDoubleTap) {
 		isWaitingForLockDoubleTap = NO;
-		LAEvent *activatorEvent = [[[LAEvent alloc] initWithName:LAEventNameLockPressDouble mode:[LASharedActivator currentEventMode]] autorelease];
+		LAEvent *activatorEvent = [[[LAEvent alloc] initWithName:LAEventNameLockPressDouble mode:formerLockEventMode] autorelease];
 		if ([LASharedActivator assignedListenerNameForEvent:activatorEvent] == nil)
 			CHSuper(1, SpringBoard, lockButtonUp, event);
 		else {
-			if (!wasLockedBefore) {
+			if (![formerLockEventMode isEqualToString:LAEventModeLockScreen]) {
 				BOOL oldAnimationsEnabled = [UIView areAnimationsEnabled];
 				[UIView setAnimationsEnabled:NO];
 				SBAwayController *awayController = [CHClass(SBAwayController) sharedAwayController];
