@@ -499,8 +499,22 @@ CHOptimizedMethod(0, self, void, SpringBoard, _handleMenuButtonEvent)
 	}
 }
 
+CHOptimizedMethod(1, self, BOOL, SpringBoard, respondImmediatelyToMenuSingleTapAllowingDoubleTap, BOOL *, allowDoubleTap)
+{
+	// 3.2
+	if (LAListenerForEventWithName(LAEventNameMenuPressDouble)) {
+		CHSuper(1, SpringBoard, respondImmediatelyToMenuSingleTapAllowingDoubleTap, allowDoubleTap);
+		if (allowDoubleTap)
+			*allowDoubleTap = YES;
+		return NO;
+	} else {
+		return CHSuper(1, SpringBoard, respondImmediatelyToMenuSingleTapAllowingDoubleTap, allowDoubleTap);
+	}
+}
+
 CHOptimizedMethod(0, self, BOOL, SpringBoard, allowMenuDoubleTap)
 {
+	// 3.0/3.1
 	if (LAListenerForEventWithName(LAEventNameMenuPressDouble)) {
 		CHSuper(0, SpringBoard, allowMenuDoubleTap);
 		return YES;
@@ -1335,6 +1349,7 @@ CHConstructor
 		CHHook(1, SpringBoard, headsetButtonDown);
 		CHHook(1, SpringBoard, headsetButtonUp);
 		CHHook(0, SpringBoard, _handleMenuButtonEvent);
+		CHHook(1, SpringBoard, respondImmediatelyToMenuSingleTapAllowingDoubleTap);
 		CHHook(0, SpringBoard, allowMenuDoubleTap);
 		CHHook(0, SpringBoard, handleMenuDoubleTap);
 		CHHook(0, SpringBoard, isLocked);
