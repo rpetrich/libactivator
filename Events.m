@@ -41,6 +41,8 @@ NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake
 NSString * const LAEventNameHeadsetButtonPressSingle = @"libactivator.headset-button.press.single";
 NSString * const LAEventNameHeadsetButtonHoldShort = @"libactivator.headset-button.hold.short";
 
+NSString * const LAEventNameLockScreenClockDoubleTap = @"libactivator.lockscreen.clock.double-tap";
+
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
 #define kButtonHoldDelay                   0.8f
@@ -63,6 +65,7 @@ CHDeclareClass(UIStatusBar);
 CHDeclareClass(SBNowPlayingAlertItem);
 CHDeclareClass(SBVoiceControlAlert);
 CHDeclareClass(SBAwayController);
+CHDeclareClass(SBAwayDateView);
 CHDeclareClass(VolumeControl);
 CHDeclareClass(SBVolumeHUDView);
 CHDeclareClass(SBStatusBarController);
@@ -1205,6 +1208,47 @@ CHOptimizedMethod(0, self, BOOL, SBAwayController, handleMenuButtonTap)
 	return CHSuper(0, SBAwayController, handleMenuButtonTap);
 }
 
+static CFAbsoluteTime lastAwayDateLastTime;
+static NSInteger lastAwayDateTapCount;
+
+CHOptimizedMethod(2, super, void, SBAwayDateView, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
+{
+	CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
+	if (lastAwayDateLastTime + 0.333 < currentTime)
+		lastAwayDateTapCount = 0;
+	lastAwayDateTapCount++;
+	lastAwayDateLastTime = currentTime;
+	CHSuper(2, SBAwayDateView, touchesBegan, touches, withEvent, event);
+}
+
+CHOptimizedMethod(2, super, void, SBAwayDateView, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
+{
+	lastAwayDateTapCount = 0;
+	lastAwayDateLastTime = 0.0;
+	CHSuper(2, SBAwayDateView, touchesMoved, touches, withEvent, event);
+}
+
+CHOptimizedMethod(2, super, void, SBAwayDateView, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
+{
+	CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
+	if (lastAwayDateLastTime + 0.333 < currentTime) {
+		lastAwayDateTapCount = 0;
+		lastAwayDateLastTime = 0.0;
+	} else {
+		lastAwayDateLastTime = currentTime;
+		if (lastAwayDateTapCount == 2)
+			LASendEventWithName(LAEventNameLockScreenClockDoubleTap);
+	}
+	CHSuper(2, SBAwayDateView, touchesEnded, touches, withEvent, event);
+}
+
+CHOptimizedMethod(2, super, void, SBAwayDateView, touchesCancelled, NSSet *, touches, withEvent, UIEvent *, event)
+{
+	lastAwayDateTapCount = 0;
+	lastAwayDateLastTime = 0.0;
+	CHSuper(2, SBAwayDateView, touchesCancelled, touches, withEvent, event);
+}
+
 CHOptimizedMethod(0, self, void, VolumeControl, _createUI)
 {
 	if (LAListenerForEventWithName(LAEventNameVolumeDisplayTap)) {
@@ -1309,7 +1353,13 @@ CHConstructor
 		CHLoadLateClass(SBAwayController);
 		CHHook(0, SBAwayController, playLockSound);
 		CHHook(0, SBAwayController, handleMenuButtonTap);
-	
+
+		CHLoadLateClass(SBAwayDateView);	
+		CHHook(2, SBAwayDateView, touchesBegan, withEvent);
+		CHHook(2, SBAwayDateView, touchesMoved, withEvent);
+		CHHook(2, SBAwayDateView, touchesEnded, withEvent);
+		CHHook(2, SBAwayDateView, touchesCancelled, withEvent);
+
 		CHLoadLateClass(VolumeControl);
 		CHHook(0, VolumeControl, _createUI);
 		CHHook(0, VolumeControl, _tearDown);

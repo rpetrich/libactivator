@@ -232,6 +232,8 @@ extern NSString * const LAEventNameMotionShake;
 extern NSString * const LAEventNameHeadsetButtonPressSingle;
 extern NSString * const LAEventNameHeadsetButtonHoldShort;
 
+extern NSString * const LAEventNameLockScreenClockDoubleTap;
+
 @interface LASimpleListener : NSObject<LAListener> {
 }
 + (LASimpleListener *)sharedInstance;

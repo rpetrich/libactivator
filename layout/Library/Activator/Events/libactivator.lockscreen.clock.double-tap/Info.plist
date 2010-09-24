@@ -1,0 +1,6 @@
+{
+	title = "Double Tap Clock";
+	group = "Lock Screen";
+	description = "Double-tap clock/date area";
+	"compatible-modes" = ("lockscreen");
+}
