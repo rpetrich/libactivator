@@ -954,7 +954,7 @@ CHOptimizedMethod(2, self, void, SBIconController, scrollToIconListAtIndex, NSIn
 {
 	if (shouldInterceptMenuPresses) {
 		shouldInterceptMenuPresses = NO;
-		if ([LASendEventWithName(LAEventNameMenuPressAtSpringBoard) isHandled])
+		if ([LASendEventWithName(LAEventNameMenuPressSingle) isHandled])
 			return;
 	}
 	CHSuper(2, SBIconController, scrollToIconListAtIndex, index, animate, animate);
