@@ -69,6 +69,7 @@ CHDeclareClass(SBAwayDateView);
 CHDeclareClass(VolumeControl);
 CHDeclareClass(SBVolumeHUDView);
 CHDeclareClass(SBStatusBarController);
+CHDeclareClass(SBAppSwitcherController);
 
 //static BOOL isInSleep;
 
@@ -114,6 +115,12 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 @interface VolumeControl (OS40)
 - (void)hideVolumeHUDIfVisible;
 @end
+
+@interface SBAppSwitcherController : NSObject {
+}
+- (NSDictionary *)_currentIcons;
+@end
+
 
 __attribute__((visibility("hidden")))
 @interface LAVersionChecker : NSObject<UIAlertViewDelegate> {
@@ -990,7 +997,8 @@ static CGFloat startingDistanceSquared;
 CHOptimizedMethod(2, self, void, SBIcon, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	lastTouchesCount = 1;
-	hasSentPinchSpread = NO;
+	NSArray *switcherIcons = [[CHSharedInstance(SBAppSwitcherController) _currentIcons] allValues];
+	hasSentPinchSpread = switcherIcons && ([switcherIcons indexOfObjectIdenticalTo:self] != NSNotFound);
 	CHSuper(2, SBIcon, touchesBegan, touches, withEvent, event);
 }
 
@@ -1393,6 +1401,8 @@ CHConstructor
 		CHLoadLateClass(iHome);
 		if (CHClass(iHome))
 			CHHook(0, iHome, inject);
+			
+		CHLoadLateClass(SBAppSwitcherController);
 		
 		CHLoadLateClass(SBStatusBarController);
 		[[LAVersionChecker class] performSelector:@selector(checkVersion) withObject:nil afterDelay:0.1];
