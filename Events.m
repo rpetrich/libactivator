@@ -116,6 +116,14 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 - (void)hideVolumeHUDIfVisible;
 @end
 
+@interface SBIconController (OS40)
+- (id)currentFolderIconList;
+@end
+
+@interface SBUIController (OS40)
+- (BOOL)isSwitcherShowing;
+@end
+
 @interface SBAppSwitcherController : NSObject {
 }
 - (NSDictionary *)_currentIcons;
@@ -885,18 +893,22 @@ CHOptimizedMethod(0, self, BOOL, SBUIController, clickedMenuButton)
 	[LASharedActivator sendDeactivateEventToListeners:event];
 	if ([event isHandled])
 		return YES;
-	if (![CHSharedInstance(SBIconController) isEditing]) {
-		[LASharedActivator sendEventToListener:event];
-		if ([event isHandled]) {
-			if (mode == LAEventModeApplication) {
-				NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
-				if (![[LASharedActivator infoDictionaryValueOfKey:@"receives-raw-events" forListenerWithName:listenerName] boolValue])
-					CHSuper(0, SBUIController, clickedMenuButton);
-			}
-			return YES;
-		}
+	SBIconController *iconController = CHSharedInstance(SBIconController);
+	if (([iconController isEditing]) || 
+		([iconController respondsToSelector:@selector(currentFolderIconList)] && [iconController currentFolderIconList]) ||
+		([CHClass(SBUIController) instancesRespondToSelector:@selector(isSwitcherShowing)] && [CHSharedInstance(SBUIController) isSwitcherShowing]))
+	{
+		return CHSuper(0, SBUIController, clickedMenuButton);
 	}
-	return CHSuper(0, SBUIController, clickedMenuButton);
+	[LASharedActivator sendEventToListener:event];
+	if (![event isHandled])
+		return CHSuper(0, SBUIController, clickedMenuButton);
+	if ([mode isEqualToString:LAEventModeApplication]) {
+		NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
+		if (![[LASharedActivator infoDictionaryValueOfKey:@"receives-raw-events" forListenerWithName:listenerName] boolValue])
+			CHSuper(0, SBUIController, clickedMenuButton);
+	}
+	return YES;
 }
 
 CHOptimizedMethod(0, self, void, SBUIController, finishLaunching)
