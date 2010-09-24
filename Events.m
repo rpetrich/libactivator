@@ -155,7 +155,7 @@ typedef enum {
 			return LASystemVersionStatusJustRight;
 			//return [[components objectAtIndex:1] integerValue] == 0 ? LASystemVersionStatusTooCold : LASystemVersionStatusJustRight;
 		case 4:
-			return [[components objectAtIndex:1] integerValue] == 0 ? LASystemVersionStatusJustRight : LASystemVersionStatusTooHot;
+			return [[components objectAtIndex:1] integerValue] <= 1 ? LASystemVersionStatusJustRight : LASystemVersionStatusTooHot;
 		default:
 			return LASystemVersionStatusTooHot;
 	}
@@ -197,14 +197,13 @@ typedef enum {
 	}
 	NSString *cancelButton;
 	switch ([[LASharedActivator _getObjectForPreference:[self versionKey]] integerValue]) {
-		default:
 		case 0:
 			cancelButton = [LASharedActivator localizedStringForKey:@"VERSION_PROMPT_CONTINUE" value:@"Continue"];
 			break;
 		case 1:
 			cancelButton = [LASharedActivator localizedStringForKey:@"VERSION_PROMPT_IGNORE" value:@"Ignore"];
 			break;
-		case 2:
+		default:
 			return;
 	}
 	UIAlertView *av = [[UIAlertView alloc] init];
