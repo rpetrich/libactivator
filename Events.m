@@ -775,13 +775,12 @@ static void VolumeDownButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
 CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
 {
 	VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
-	[volumeControl cancelVolumeEvent];
 	switch (GSEventGetType(gsEvent)) {
 		case kGSEventVolumeUpButtonDown:
 			if (isVolumeButtonDown) {
 				DestroyCurrentVolumeButtonUpTimer();
 				suppressVolumeButtonUp = YES;
-				if([LASendEventWithName(LAEventNameVolumeBothPress) isHandled])
+				if ([LASendEventWithName(LAEventNameVolumeBothPress) isHandled])
 					HideVolumeHUD(volumeControl);
 				break;
 			}
@@ -797,17 +796,18 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			break;
 		case kGSEventVolumeUpButtonUp: {
 			isVolumeButtonDown = NO;
-			BOOL hasListener = LAListenerForEventWithName(LAEventNameVolumeUpHoldShort) != nil || LAListenerForEventWithName(LAEventNameVolumeBothPress) != nil;
-			if (!hasListener)
-				CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 			DestroyCurrentVolumeButtonUpTimer();
 			if (suppressVolumeButtonUp) {
 				volumeChordBeganTime = 0.0;
+				[volumeControl cancelVolumeEvent];
+				HideVolumeHUD(volumeControl);
 				break;
 			}
-			if (hasListener) {
+			if (LAListenerForEventWithName(LAEventNameVolumeUpHoldShort) != nil || LAListenerForEventWithName(LAEventNameVolumeBothPress) != nil) {
 				[volumeControl increaseVolume];
 				[volumeControl cancelVolumeEvent];
+			} else {
+				CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 			}
 			CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
 			if ((currentTime - volumeChordBeganTime) > kButtonHoldDelay) {
@@ -815,8 +815,7 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 				volumeChordBeganTime = currentTime;
 			} else if (lastVolumeEvent == kGSEventVolumeDownButtonUp) {
 				lastVolumeEvent = 0;
-				if ([LASendEventWithName(LAEventNameVolumeDownUp) isHandled])
-					HideVolumeHUD(volumeControl);
+				LASendEventWithName(LAEventNameVolumeDownUp);
 			} else {
 				lastVolumeEvent = 0;
 			}
@@ -826,7 +825,7 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			if (isVolumeButtonDown) {
 				DestroyCurrentVolumeButtonUpTimer();
 				suppressVolumeButtonUp = YES;
-				if([LASendEventWithName(LAEventNameVolumeBothPress) isHandled])
+				if ([LASendEventWithName(LAEventNameVolumeBothPress) isHandled])
 					HideVolumeHUD(volumeControl);
 				break;
 			}
@@ -842,17 +841,18 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			break;
 		case kGSEventVolumeDownButtonUp: {
 			isVolumeButtonDown = NO;
-			BOOL hasListener = LAListenerForEventWithName(LAEventNameVolumeDownHoldShort) != nil || LAListenerForEventWithName(LAEventNameVolumeBothPress) != nil;
-			if (!hasListener)
-				CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 			DestroyCurrentVolumeButtonUpTimer();
 			if (suppressVolumeButtonUp) {
 				volumeChordBeganTime = 0.0;
+				[volumeControl cancelVolumeEvent];
+				HideVolumeHUD(volumeControl);
 				break;
 			}
-			if (hasListener) {
+			if (LAListenerForEventWithName(LAEventNameVolumeDownHoldShort) != nil || LAListenerForEventWithName(LAEventNameVolumeBothPress) != nil) {
 				[volumeControl decreaseVolume];
 				[volumeControl cancelVolumeEvent];
+			} else {
+				CHSuper(1, SpringBoard, volumeChanged, gsEvent);
 			}
 			CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
 			if ((currentTime - volumeChordBeganTime) > kButtonHoldDelay) {
@@ -860,8 +860,7 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 				volumeChordBeganTime = currentTime;
 			} else if (lastVolumeEvent == kGSEventVolumeUpButtonUp) {
 				lastVolumeEvent = 0;
-				if ([LASendEventWithName(LAEventNameVolumeUpDown) isHandled])
-					HideVolumeHUD(volumeControl);
+				LASendEventWithName(LAEventNameVolumeUpDown);
 			} else {
 				lastVolumeEvent = 0;
 			}
