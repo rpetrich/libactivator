@@ -255,6 +255,7 @@ CHOptimizedMethod(0, self, void, SBDisplayStack, dealloc)
 }
 
 CHConstructor {
+	CHAutoreleasePoolForScope();
 	if (CHLoadLateClass(SBApplicationController)) {
 		sharedApplicationListener = [[LAApplicationListener alloc] init];
 		displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);

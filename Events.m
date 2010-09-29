@@ -1333,6 +1333,7 @@ CHOptimizedMethod(0, super, void, SBVolumeHUDView, didMoveToWindow)
 
 CHConstructor
 {
+	CHAutoreleasePoolForScope();
 	if (CHLoadLateClass(UIStatusBar)) {
 		CHHook(0, UIStatusBar, activatorHoldEventCompleted);
 		CHHook(2, UIStatusBar, touchesBegan, withEvent);
