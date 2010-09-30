@@ -540,9 +540,10 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		// In SpringBoard
 		if ([(SpringBoard *)[UIApplication sharedApplication] isLocked])
 			return LAEventModeLockScreen;
-		if ([[CHSharedInstance(SBIconController) contentView] window])
+		/*if ([[CHSharedInstance(SBIconController) contentView] window])
 			return LAEventModeSpringBoard;
-		return LAEventModeApplication;
+		return LAEventModeApplication;*/
+		return [[LAApplicationListener sharedInstance] topApplication] ? LAEventModeApplication : LAEventModeSpringBoard;
 	} else {
 		// Outside SpringBoard
 		return [self _performRemoteMessage:_cmd withObject:nil];
