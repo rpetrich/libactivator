@@ -1269,6 +1269,12 @@ CHOptimizedMethod(0, self, BOOL, SBAwayController, handleMenuButtonTap)
 	return CHSuper(0, SBAwayController, handleMenuButtonTap);
 }
 
+CHOptimizedMethod(0, self, void, SBAwayController, _sendLockStateChangedNotification)
+{
+	[LASlideGestureWindow updateVisibility];
+	CHSuper(0, SBAwayController, _sendLockStateChangedNotification);
+}
+
 static CFAbsoluteTime lastAwayDateLastTime;
 static NSInteger lastAwayDateTapCount;
 
@@ -1416,6 +1422,7 @@ CHConstructor
 		CHLoadLateClass(SBAwayController);
 		CHHook(0, SBAwayController, playLockSound);
 		CHHook(0, SBAwayController, handleMenuButtonTap);
+		CHHook(0, SBAwayController, _sendLockStateChangedNotification);
 
 		CHLoadLateClass(SBAwayDateView);	
 		CHHook(2, SBAwayDateView, touchesBegan, withEvent);
