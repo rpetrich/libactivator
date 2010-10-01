@@ -9,14 +9,6 @@
 #include <notify.h>
 #include <dlfcn.h>
 
-CHDeclareClass(SBAlertItemsController);
-CHDeclareClass(SBAlertItem);
-CHDeclareClass(ActivatorTogglesAlertItem);
-
-@interface ActivatorMenuAlertItem : SBAlertItem { }
-- (id)initWithToggleName:(NSString *)toggleName state:(BOOL)state;
-@end
-
 @interface NSObject(LAActivator)
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName;
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName;
@@ -37,42 +29,19 @@ CHDeclareClass(ActivatorTogglesAlertItem);
 
 static CFMutableDictionaryRef toggles;
 
-CHOptimizedMethod(2, new, id, ActivatorTogglesAlertItem, initWithToggleName, NSString *, toggleName, state, BOOL, state)
-{
-	if ((self = [self init])) {
-		CHIvar(self, _toggleName, NSString *) = [toggleName copy];
-		CHIvar(self, _state, BOOL) = state;
-	}
-	return self;
-}
-
-CHOptimizedMethod(0, super, void, ActivatorTogglesAlertItem, dealloc)
-{
-	[CHIvar(self, _toggleName, NSString *) release];
-	CHSuper(0, ActivatorTogglesAlertItem, dealloc);
-}
-
-CHOptimizedMethod(2, super, void, ActivatorTogglesAlertItem, configure, BOOL, configure, requirePasscodeForActions, BOOL, require)
-{
-	NSString *toggleName = CHIvar(self, _toggleName, NSString *);
-    UIModalView *alertSheet = [self alertSheet];
-    [alertSheet setTitle:[LASharedActivator localizedStringForKey:[@"LISTENER_TITLE_toggle_" stringByAppendingString:toggleName] value:toggleName]];
-	NSString *bodyText;
-	if (CHIvar(self, _state, BOOL))
-		bodyText = [LASharedActivator localizedStringForKey:@"ENABLED" value:@"Enabled"];
-	else
-		bodyText = [LASharedActivator localizedStringForKey:@"DISABLED" value:@"Disabled"];
-	[alertSheet setBodyText:bodyText];
-}
-
 @implementation LAToggleListener
 
 static LAToggleListener *sharedInstance;
+static UIAlertView *alertView;
+
++ (void)initialize
+{
+	CHAutoreleasePoolForScope();
+	sharedInstance = [[self alloc] init];
+}
 
 + (id)sharedInstance
 {
-	if (!sharedInstance)
-		sharedInstance = [[self alloc] init];
 	return sharedInstance;
 }
 
@@ -89,15 +58,6 @@ static LAToggleListener *sharedInstance;
 - (id)init
 {
 	if ((self = [super init])) {
-		CHLoadLateClass(SBAlertItemsController);
-		CHLoadLateClass(SBAlertItem);
-		CHRegisterClass(ActivatorTogglesAlertItem, SBAlertItem) {
-			CHAddIvar(CHClass(ActivatorTogglesAlertItem), _toggleName, NSString *);
-			CHAddIvar(CHClass(ActivatorTogglesAlertItem), _state, BOOL);
-			CHHook(2, ActivatorTogglesAlertItem, initWithToggleName, state);
-			CHHook(0, ActivatorTogglesAlertItem, dealloc);
-			CHHook(2, ActivatorTogglesAlertItem, configure, requirePasscodeForActions);
-		}
 		toggles = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);	
 		NSFileManager *fileManager = [NSFileManager defaultManager];
 		NSString *togglesPath = [LAToggleListener togglesPath];
@@ -125,7 +85,9 @@ static LAToggleListener *sharedInstance;
 
 - (void)dismiss
 {
-	[CHSharedInstance(SBAlertItemsController) deactivateAlertItemsOfClass:CHClass(ActivatorTogglesAlertItem)];
+	[alertView dismissWithClickedButtonIndex:0 animated:YES];
+	[alertView release];
+	alertView = nil;
 }
 
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName
@@ -172,20 +134,35 @@ static LAToggleListener *sharedInstance;
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
-	SBAlertItemsController *aic = CHSharedInstance(SBAlertItemsController);
-	if ([aic isShowingAlertOfClass:CHClass(ActivatorTogglesAlertItem)])
-		[aic deactivateAlertItemsOfClass:CHClass(ActivatorTogglesAlertItem)];
-	else {
+	if (alertView) {
+		[alertView dismissWithClickedButtonIndex:0 animated:YES];
+		[alertView release];
+		alertView = nil;
+	} else {
 		NSString *toggleName = [self activator:activator requiresLocalizedTitleForListenerName:listenerName];
 		void *toggle = (void *)CFDictionaryGetValue(toggles, toggleName);
 		BOOL newState = !isEnabled(toggle);
 		setState(toggle, newState);
 		notify_post("com.sbsettings.refreshalltoggles");
-		ActivatorTogglesAlertItem *atai = [CHAlloc(ActivatorTogglesAlertItem) initWithToggleName:toggleName state:newState];
-		[aic activateAlertItem:atai];
-		[atai release];
+		alertView = [[UIAlertView alloc] init];
+	    alertView.title = [LASharedActivator localizedStringForKey:[@"LISTENER_TITLE_toggle_" stringByAppendingString:toggleName] value:toggleName];
+		CGRect frame = alertView.bounds;
+		frame.origin.y += frame.size.height - 95.0f;
+		frame.size.height = 95.0f;
+		UILabel *label = [[UILabel alloc] initWithFrame:frame];
+		label.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleTopMargin;
+		if (newState)
+			label.text = [LASharedActivator localizedStringForKey:@"ENABLED" value:@"Enabled"];
+		else
+			label.text = [LASharedActivator localizedStringForKey:@"DISABLED" value:@"Disabled"];
+		label.backgroundColor = [UIColor clearColor];
+		label.textColor = [UIColor whiteColor];
+		label.textAlignment = UITextAlignmentCenter;
+		[alertView addSubview:label];
+		[label release];
+		[alertView show];
 		[event setHandled:YES];
-		[self performSelector:@selector(dismiss) withObject:nil afterDelay:1.5f];
+		[self performSelector:@selector(dismiss) withObject:nil afterDelay:1.5];
 	}
 }
 
