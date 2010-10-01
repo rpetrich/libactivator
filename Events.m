@@ -133,6 +133,14 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 }
 @end
 
+static void HideVolumeHUD(VolumeControl *volumeControl)
+{
+	if ([volumeControl respondsToSelector:@selector(hideVolumeHUDIfVisible)])
+		[volumeControl hideVolumeHUDIfVisible];
+	else
+		[volumeControl hideHUD];
+}
+
 __attribute__((visibility("hidden")))
 @interface LAVersionChecker : NSObject<UIAlertViewDelegate> {
 }
@@ -423,7 +431,8 @@ static void HideVolumeTapWindow()
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	HideVolumeTapWindow();
-	LASendEventWithName(LAEventNameVolumeDisplayTap);
+	if ([LASendEventWithName(LAEventNameVolumeDisplayTap) isHandled])
+		HideVolumeHUD([CHClass(VolumeControl) sharedVolumeControl]);
 }
 
 @end
@@ -739,14 +748,6 @@ static CFAbsoluteTime volumeChordBeganTime;
 static BOOL suppressVolumeButtonUp;
 static CFRunLoopTimerRef volumeButtonUpTimer;
 static BOOL isVolumeButtonDown;
-
-static void HideVolumeHUD(VolumeControl *volumeControl)
-{
-	if ([volumeControl respondsToSelector:@selector(hideVolumeHUDIfVisible)])
-		[volumeControl hideVolumeHUDIfVisible];
-	else
-		[volumeControl hideHUD];
-}
 
 static void DestroyCurrentVolumeButtonUpTimer()
 {
