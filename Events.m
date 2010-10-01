@@ -1129,10 +1129,9 @@ CHOptimizedMethod(2, self, void, UIStatusBar, touchesBegan, NSSet *, touches, wi
 	[self performSelector:@selector(activatorHoldEventCompleted) withObject:nil afterDelay:kStatusBarHoldDelay];
 	statusBarTouchDown = [[touches anyObject] locationInView:self];
 	hasSentStatusBarEvent = NO;
-	CHSuper(2, UIStatusBar, touchesBegan, touches, withEvent, event);
 }
 
-CHMethod(2, void, UIStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
+CHOptimizedMethod(2, super, void, UIStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	if (!hasSentStatusBarEvent) {
 		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorHoldEventCompleted) object:nil];
@@ -1154,16 +1153,19 @@ CHMethod(2, void, UIStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEven
 			}
 		}
 	}
-	CHSuper(2, UIStatusBar, touchesMoved, touches, withEvent, event);
 }
 
 CHOptimizedMethod(2, self, void, UIStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorHoldEventCompleted) object:nil];
-	if (!hasSentStatusBarEvent)
+	if (!hasSentStatusBarEvent) {
 		if ([[touches anyObject] tapCount] == 2)
 			LASendEventWithName(LAEventNameStatusBarTapDouble);
-	CHSuper(2, UIStatusBar, touchesEnded, touches, withEvent, event);
+		else {
+			CHSuper(2, UIStatusBar, touchesBegan, touches, withEvent, event);
+			CHSuper(2, UIStatusBar, touchesEnded, touches, withEvent, event);
+		}
+	}
 }
 
 static NSInteger nowPlayingButtonIndex;
