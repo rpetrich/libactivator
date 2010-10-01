@@ -129,6 +129,9 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 - (NSDictionary *)_currentIcons;
 @end
 
+@interface SBVolumeHUDView : UIView {
+}
+@end
 
 __attribute__((visibility("hidden")))
 @interface LAVersionChecker : NSObject<UIAlertViewDelegate> {
@@ -391,15 +394,19 @@ typedef enum {
 
 static LAVolumeTapWindow *volumeTapWindow;
 
-static void ShowVolumeTapWindow(UIWindow *window)
+static void ShowVolumeTapWindow(UIView *view)
 {
 	if ([LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:LAEventNameVolumeDisplayTap]]) {
-		if (volumeTapWindow)
-			[volumeTapWindow setFrame:[window frame]];
-		else
-			volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:[window frame]];
-		[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
-		[volumeTapWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
+		if (!volumeTapWindow) {
+			UIWindow *window = [view window];
+			CGRect frame = [view convertRect:view.bounds toView:window];
+			CGPoint windowPosition = window.frame.origin;
+			frame.origin.x += windowPosition.x;
+			frame.origin.y += windowPosition.y;
+			volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:frame];
+			[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
+			[volumeTapWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
+		}
 		[volumeTapWindow setHidden:NO];
 	}
 }
@@ -1325,7 +1332,7 @@ CHOptimizedMethod(0, super, void, SBVolumeHUDView, didMoveToWindow)
 {
 	UIWindow *window = [self window];
 	if (window)
-		ShowVolumeTapWindow(window);
+		ShowVolumeTapWindow(self);
 	else
 		HideVolumeTapWindow();
 	CHSuper(0, SBVolumeHUDView, didMoveToWindow);
