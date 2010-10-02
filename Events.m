@@ -405,12 +405,14 @@ static LAVolumeTapWindow *volumeTapWindow;
 static void ShowVolumeTapWindow(UIView *view)
 {
 	if ([LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:LAEventNameVolumeDisplayTap]]) {
-		if (!volumeTapWindow) {
-			UIWindow *window = [view window];
-			CGRect frame = [view convertRect:view.bounds toView:window];
-			CGPoint windowPosition = window.frame.origin;
-			frame.origin.x += windowPosition.x;
-			frame.origin.y += windowPosition.y;
+		UIWindow *window = [view window];
+		CGRect frame = [view convertRect:view.bounds toView:window];
+		CGPoint windowPosition = window.frame.origin;
+		frame.origin.x += windowPosition.x;
+		frame.origin.y += windowPosition.y;
+		if (volumeTapWindow)
+			volumeTapWindow.frame = frame;
+		else {
 			volumeTapWindow = [[LAVolumeTapWindow alloc] initWithFrame:frame];
 			[volumeTapWindow setWindowLevel:kWindowLevelTransparentTopMost];
 			[volumeTapWindow setBackgroundColor:kAlmostTransparentColor]; // Content seems to be required for swipe gestures to work in-app
@@ -1323,9 +1325,14 @@ CHOptimizedMethod(0, self, void, VolumeControl, _createUI)
 {
 	if (LAListenerForEventWithName(LAEventNameVolumeDisplayTap)) {
 		CHSuper(0, VolumeControl, _createUI);
-		UIWindow *window = CHIvar(self, _volumeWindow, UIWindow *);
-		if (window)
-			ShowVolumeTapWindow(window);
+		UIView **view = CHIvarRef(self, _volumeView, UIView *);
+		if (view && *view) {
+			ShowVolumeTapWindow(*view);
+		} else {
+			UIWindow *window = CHIvar(self, _volumeWindow, UIWindow *);
+			if (window)
+				ShowVolumeTapWindow(window);
+		}
 	} else {
 		CHSuper(0, VolumeControl, _createUI);
 	}
