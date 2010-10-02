@@ -422,8 +422,15 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSString *)assignedListenerNameForEvent:(LAEvent *)event
 {
-	NSString *prefName = ListenerKeyForEventNameAndMode([event name], [event mode] ?: [self currentEventMode]);
-	return [self _getObjectForPreference:prefName];
+	NSString *eventName = event.name;
+	NSString *eventMode = event.mode ?: [self currentEventMode];
+	NSString *listenerName = [self _getObjectForPreference:ListenerKeyForEventNameAndMode(eventName, eventMode)];
+	if ([self listenerWithName:listenerName isCompatibleWithMode:eventMode] &&
+		[self listenerWithName:listenerName isCompatibleWithEventName:eventName])
+	{
+		return listenerName;
+	}
+	return nil;
 }
 
 - (NSArray *)eventsAssignedToListenerWithName:(NSString *)listenerName
