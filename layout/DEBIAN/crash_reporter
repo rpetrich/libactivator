@@ -1,4 +1,4 @@
-include as "Activator Configuration" plist /User/Library/Caches/LibActivator/libactivator.plist
+include as "Activator Configuration" plist /var/mobile/Library/Caches/libactivator.plist
 include as "Package List" command dpkg --get-selections
 include as "Package Details" command dpkg -s libactivator | grep Version:
 include as "Installed Listeners" command ls /Library/Activator/Listeners/
