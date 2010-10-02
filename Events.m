@@ -113,6 +113,8 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 @end
 
 @interface VolumeControl (OS40)
++ (float)volumeStep;
+- (void)_changeVolumeBy:(float)volumeAdjust;
 - (void)hideVolumeHUDIfVisible;
 @end
 
@@ -859,7 +861,10 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 				break;
 			}
 			if (LAListenerForEventWithName(LAEventNameVolumeDownHoldShort) != nil || LAListenerForEventWithName(LAEventNameVolumeBothPress) != nil) {
-				[volumeControl decreaseVolume];
+				if ([CHClass(VolumeControl) respondsToSelector:@selector(volumeStep)])
+					[volumeControl _changeVolumeBy:-[CHClass(VolumeControl) volumeStep]];
+				else
+					[volumeControl decreaseVolume];
 				[volumeControl cancelVolumeEvent];
 			} else {
 				CHSuper(1, SpringBoard, volumeChanged, gsEvent);
