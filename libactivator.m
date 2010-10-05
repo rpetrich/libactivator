@@ -93,14 +93,12 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
   		}
 		// Cache event data
 		_eventData = [[NSMutableDictionary alloc] init];
-		NSString *eventsPath = SCRootPath(@"/Library/Activator/Events");
-		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:eventsPath error:NULL])
-			if (![fileName hasPrefix:@"."])
-				[_eventData setObject:[NSBundle bundleWithPath:[eventsPath stringByAppendingPathComponent:fileName]] forKey:fileName];
 		_cachedListenerTitles = [[NSMutableDictionary alloc] init];
 		_cachedListenerGroups = [[NSMutableDictionary alloc] init];
 		_cachedListenerSmallIcons = [[NSMutableDictionary alloc] init];
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didReceiveMemoryWarning) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+      // Initialize default event data source
+      [[[LADefaultEventDataSource alloc] init] autorelease];
 	}
 	return self;
 }
@@ -457,22 +455,31 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (BOOL)eventWithNameIsHidden:(NSString *)name
 {
-	return [[[_eventData objectForKey:name] objectForInfoDictionaryKey:@"hidden"] boolValue];
+	id<LAEventDataSource> dataSource = [_eventData objectForKey:name];
+   if (dataSource != nil)
+      return [dataSource eventWithNameIsHidden:name];
+   return YES;
 }
 
 - (NSArray *)compatibleModesForEventWithName:(NSString *)name
 {
-	return [[_eventData objectForKey:name] objectForInfoDictionaryKey:@"compatible-modes"] ?: [self availableEventModes];
+   id<LAEventDataSource> dataSource = [_eventData objectForKey:name];
+   if (dataSource != nil) {
+      NSMutableArray *modes = [NSMutableArray arrayWithCapacity:[[self availableEventModes] count]];
+      for (NSString *mode in [self availableEventModes])
+         if ([dataSource eventWithName:name isCompatibleWithMode:mode])
+            [modes addObject:mode];
+      return modes;
+   }
+	return [self availableEventModes];
 }
 
 - (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
 {
-	if (eventMode) {
-		NSArray *compatibleModes = [[_eventData objectForKey:eventName] objectForInfoDictionaryKey:@"compatible-modes"];
-		if (compatibleModes)
-			return [compatibleModes containsObject:eventMode];
-	}
-	return YES;
+   id<LAEventDataSource> dataSource = [_eventData objectForKey:eventName];
+   if (dataSource != nil)
+      return [dataSource eventWithName:eventName isCompatibleWithMode:eventMode];
+   return NO;
 }
 
 // Listeners
@@ -600,9 +607,10 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSString *)localizedTitleForEventName:(NSString *)eventName
 {	
-	NSBundle *bundle = [_eventData objectForKey:eventName];
-	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"title"] ?: eventName;
-	return Localize(activatorBundle, [@"EVENT_TITLE_" stringByAppendingString:eventName], Localize(bundle, unlocalized, unlocalized) ?: eventName);
+	id<LAEventDataSource> dataSource = [_eventData objectForKey:eventName];
+   if (dataSource != nil)
+      return [dataSource localizedTitleForEventName:eventName];
+   return nil;
 }
 
 - (NSString *)localizedTitleForListenerName:(NSString *)listenerName
@@ -618,11 +626,10 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSString *)localizedGroupForEventName:(NSString *)eventName
 {
-	NSBundle *bundle = [_eventData objectForKey:eventName];
-	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"] ?: @"";
-	if ([unlocalized length] == 0)
-		return @"";
-	return Localize(activatorBundle, [@"EVENT_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(bundle, unlocalized, unlocalized) ?: @"");
+	id<LAEventDataSource> dataSource = [_eventData objectForKey:eventName];
+   if (dataSource != nil)
+      return [dataSource localizedGroupForEventName:eventName];
+   return nil;
 }
 
 - (NSString *)localizedGroupForListenerName:(NSString *)listenerName
@@ -649,18 +656,29 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName
 {
-	NSBundle *bundle = [_eventData objectForKey:eventName];
-	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"description"];
-	if (unlocalized)
-		return Localize(activatorBundle, [@"EVENT_DESCRIPTION_" stringByAppendingString:eventName], Localize(bundle, unlocalized, unlocalized));
-	NSString *key = [@"EVENT_DESCRIPTION_" stringByAppendingString:eventName];
-	NSString *result = Localize(activatorBundle, key, nil);
-	return [result isEqualToString:key] ? nil : result;
+	id<LAEventDataSource> dataSource = [_eventData objectForKey:eventName];
+   if (dataSource != nil)
+      return [dataSource localizedDescriptionForEventName:eventName];
+   return nil;
 }
 
 - (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName
 {
 	return [[self listenerForName:listenerName] activator:self requiresLocalizedDescriptionForListenerName:listenerName];
+}
+
+@end
+
+@implementation LAActivator (DynamicEvents)
+
+- (void)registerEventDataSource:(id<LAEventDataSource>)dataSource forEventName:(NSString *)eventName
+{
+   [_eventData setObject:dataSource forKey:eventName];
+}
+
+- (void)unregisterEventDataSourceWithEventName:(NSString *)eventName
+{
+   [_eventData removeObjectForKey:eventName];
 }
 
 @end

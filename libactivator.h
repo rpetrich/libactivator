@@ -22,6 +22,19 @@
 
 @end
 
+@protocol LAEventDataSource <NSObject>
+
+@required
+- (NSString *)localizedTitleForEventName:(NSString *)eventName;
+- (NSString *)localizedGroupForEventName:(NSString *)eventName;
+- (NSString *)localizedDescriptionForEventName:(NSString *)eventName;
+
+@optional
+- (BOOL)eventWithNameIsHidden:(NSString *)eventName;
+- (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
+
+@end
+
 typedef enum {
     LAActivatorVersion_1_3 = 1030000,
     LAActivatorVersion_1_4 = 1040000
@@ -98,6 +111,11 @@ extern LAActivator *LASharedActivator;
 - (NSString *)localizedDescriptionForEventMode:(NSString *)eventMode;
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName;
 - (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName;
+@end
+
+@interface LAActivator (DynamicEvents)
+- (void)registerEventDataSource:(id<LAEventDataSource>)dataSource forEventName:(NSString *)eventName;
+- (void)unregisterEventDataSourceWithEventName:(NSString *)eventName;
 @end
 
 // Listeners

@@ -32,6 +32,20 @@ __attribute__((visibility("hidden")))
 
 @end
 
+__attribute__((visibility("hidden")))
+@interface LADefaultEventDataSource : NSObject<LAEventDataSource> {
+   NSMutableDictionary *_eventData;
+}
+
+- (id)init;
+- (NSString *)localizedTitleForEventName:(NSString *)eventName;
+- (NSString *)localizedGroupForEventName:(NSString *)eventName;
+- (NSString *)localizedDescriptionForEventName:(NSString *)eventName;
+- (BOOL)eventWithNameIsHidden:(NSString *)eventName;
+- (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
+
+@end
+
 // Events.m
 
 __attribute__((visibility("hidden")))
@@ -95,6 +109,11 @@ BOOL shouldAddNowPlayingButton;
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event;
 - (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event;
 - (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event;
+@end
+
+@interface NSObject (LAEventDataSource)
+- (BOOL)eventWithNameIsHidden:(NSString *)eventName;
+- (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
 @end
 
 @interface LASettingsViewController () <UITableViewDataSource, UITableViewDelegate>
