@@ -34,6 +34,8 @@ CHDeclareClass(SBIconController);
 + (UIImage *)imageWithData:(NSData *)data scale:(CGFloat)scale;
 @end
 
+#define LAInvalidSpringBoardOperation() do { [NSException raise:@"LAInvalidOperation" format:@"Calling -[LAActivator %s] is invalid from outside SpringBoard!", _cmd]; } while(0)
+
 @implementation LAActivator
 
 + (LAActivator *)sharedInstance
@@ -194,17 +196,17 @@ CHDeclareClass(SBIconController);
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name
 {
-	// TODO
+	LAInvalidSpringBoardOperation();
 }
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name ignoreHasSeen:(BOOL)ignoreHasSeen
 {
-	// TODO
+	LAInvalidSpringBoardOperation();
 }
 
 - (void)unregisterListenerWithName:(NSString *)name
 {
-	// TODO
+	LAInvalidSpringBoardOperation();
 }
 
 - (BOOL)hasSeenListenerWithName:(NSString *)name
@@ -301,12 +303,12 @@ CHDeclareClass(SBIconController);
 
 - (void)registerEventDataSource:(id<LAEventDataSource>)dataSource forEventName:(NSString *)eventName
 {
-	// TODO
+	LAInvalidSpringBoardOperation();
 }
 
 - (void)unregisterEventDataSourceWithEventName:(NSString *)eventName
 {
-	// TODO
+	LAInvalidSpringBoardOperation();
 }
 
 // Listeners
