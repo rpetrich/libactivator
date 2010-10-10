@@ -45,12 +45,9 @@ typedef enum {
 @protocol LAListener;
 
 @interface LAActivator : NSObject {
-@private
-	NSMutableDictionary *_listeners;
-	NSMutableDictionary *_preferences;
-	NSMutableDictionary *_eventData;
+@protected
 	NSBundle *_mainBundle;
-	NSDictionary *_cachedAndSortedListeners;
+	NSArray *_availableEventModes;
 	NSMutableDictionary *_cachedListenerTitles;
 	NSMutableDictionary *_cachedListenerGroups;
 	NSMutableDictionary *_cachedListenerSmallIcons;
@@ -82,6 +79,9 @@ typedef enum {
 - (NSArray *)compatibleModesForEventWithName:(NSString *)name;
 - (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
 
+- (void)registerEventDataSource:(id<LAEventDataSource>)dataSource forEventName:(NSString *)eventName;
+- (void)unregisterEventDataSourceWithEventName:(NSString *)eventName;
+
 @property (nonatomic, readonly) NSArray *availableListenerNames;
 - (id)infoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)name;
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name;
@@ -111,11 +111,6 @@ extern LAActivator *LASharedActivator;
 - (NSString *)localizedDescriptionForEventMode:(NSString *)eventMode;
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName;
 - (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName;
-@end
-
-@interface LAActivator (DynamicEvents)
-- (void)registerEventDataSource:(id<LAEventDataSource>)dataSource forEventName:(NSString *)eventName;
-- (void)unregisterEventDataSourceWithEventName:(NSString *)eventName;
 @end
 
 // Listeners

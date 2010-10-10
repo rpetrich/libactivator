@@ -22,13 +22,6 @@ CHDeclareClass(SBIconController);
 #define ListenerKeyForEventNameAndMode(eventName, eventMode) \
 	[NSString stringWithFormat:@"LAEventListener(%@)-%@", (eventMode), (eventName)]
 
-#define InSpringBoard (!!_listeners)
-
-static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
-{
-	return [[LASharedActivator localizedTitleForListenerName:a] localizedCaseInsensitiveCompare:[LASharedActivator localizedTitleForListenerName:b]];
-}
-
 @interface UIDevice (OS32)
 @property (nonatomic, readonly) NSInteger idiom;
 @end
@@ -56,62 +49,31 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 - (id)init
 {
 	if ((self = [super init])) {
-		// Detect if we're inside SpringBoard
-		if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.springboard"]) {
-			CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
-			[messagingCenter runServerOnCurrentThread];
-			// Remote messages to id<LAListener> (with event)
-			[messagingCenter registerForMessageName:@"activator:receiveEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"activator:abortEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"activator:otherListenerDidHandleEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
-			// Remote messages to id<LAListener> (without event)
-			[messagingCenter registerForMessageName:@"activator:requiresLocalizedTitleForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"activator:requiresLocalizedDescriptionForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"activator:requiresLocalizedGroupForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"activator:requiresRequiresAssignmentForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"activator:requiresCompatibleEventModesForListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"activator:requiresIsCompatibleWithEventName:listenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"activator:requiresInfoDictionaryValueOfKey:forListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-			// Remote messages to id<LAListener> (without event, with scale pointer)
-			[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];			
-			// Remote messages to LAActivator
-			[messagingCenter registerForMessageName:@"_cachedAndSortedListeners" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-			[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-			// Preferences
-			[messagingCenter registerForMessageName:@"setObjectForPreference" target:self selector:@selector(_setObjectForPreferenceFromMessageName:userInfo:)];
-			[messagingCenter registerForMessageName:@"getObjectForPreference" target:self selector:@selector(_getObjectForPreferenceFromMessageName:userInfo:)];
-			[messagingCenter registerForMessageName:@"resetPreferences" target:self selector:@selector(_resetPreferences)];
-			// Does not retain values!
-			_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
-			// Load preferences
-			if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]]))
-				_preferences = [[NSMutableDictionary alloc] init];
-  		}
-		// Cache event data
-		_eventData = [[NSMutableDictionary alloc] init];
-		_cachedListenerTitles = [[NSMutableDictionary alloc] init];
+		_availableEventModes = [[NSArray arrayWithObjects:LAEventModeSpringBoard, LAEventModeApplication, LAEventModeLockScreen, nil] retain];
+		// Caches
 		_cachedListenerGroups = [[NSMutableDictionary alloc] init];
+		_cachedListenerTitles = [[NSMutableDictionary alloc] init];
 		_cachedListenerSmallIcons = [[NSMutableDictionary alloc] init];
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didReceiveMemoryWarning) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
-      // Initialize default event data source
-      [[[LADefaultEventDataSource alloc] init] autorelease];
 	}
 	return self;
 }
 
 - (void)dealloc
 {
+	[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+	[_cachedListenerSmallIcons release];
 	[_cachedListenerTitles release];
 	[_cachedListenerGroups release];
-	[_cachedAndSortedListeners release];
-	[_preferences release];
-	[_listeners release];
-	[_eventData release];
+	[_availableEventModes release];
 	[super dealloc];
+}
+
+- (void)didReceiveMemoryWarning
+{
+	[_cachedListenerSmallIcons removeAllObjects];
+	[_cachedListenerTitles removeAllObjects];
+	[_cachedListenerGroups removeAllObjects];
 }
 
 - (LAActivatorVersion)version
@@ -119,25 +81,12 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	return LAActivatorVersion_1_4;
 }
 
-- (void)didReceiveMemoryWarning
-{
-	[_cachedListenerTitles removeAllObjects];
-	[_cachedListenerGroups removeAllObjects];
-	[_cachedListenerSmallIcons removeAllObjects];
-}
-
 // Preferences
 
 - (void)_resetPreferences
 {
-	if (InSpringBoard) {
-		unlink([[self settingsFilePath] UTF8String]);
-		[(SpringBoard *)[UIApplication sharedApplication] relaunchSpringBoard];
-		//notify_post("com.apple.language.changed");
-	} else {
-		CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
-		[messagingCenter sendMessageName:@"resetPreferences" userInfo:nil];
-	}
+	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+	[messagingCenter sendMessageName:@"resetPreferences" userInfo:nil];
 }
 
 - (NSDictionary *)_getObjectForPreferenceFromMessageName:(NSString *)messageName userInfo:(NSDictionary *)userInfo
@@ -151,82 +100,15 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (id)_getObjectForPreference:(NSString *)preference
 {
-	id value;
-	if (InSpringBoard) {
-		value = [_preferences objectForKey:preference];
-	} else {
-		CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
-		NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:@"getObjectForPreference" userInfo:[NSDictionary dictionaryWithObject:preference forKey:@"preference"]];
-		value = [response objectForKey:@"value"];
-	}
-#ifdef DEBUG
-	NSLog(@"Activator: Getting Preference %@ resulted in %@", preference, value);
-#endif
-	return value;
-}
-
-- (void)_setObjectForPreferenceFromMessageName:(NSString *)messageName userInfo:(NSDictionary *)userInfo
-{
-	[self _setObject:[userInfo objectForKey:@"value"] forPreference:[userInfo objectForKey:@"preference"]];
+	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:@"getObjectForPreference" userInfo:[NSDictionary dictionaryWithObject:preference forKey:@"preference"]];
+	return [response objectForKey:@"value"];
 }
 
 - (void)_setObject:(id)value forPreference:(NSString *)preference
 {
-	if (InSpringBoard) {
-		if (value)
-			[_preferences setObject:value forKey:preference];
-		else
-			[_preferences removeObjectForKey:preference];
-#ifdef DEBUG
-		NSLog(@"Activator: Setting preference %@ to %@", preference, value);
-#endif
-		CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
-		CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
-		CFRelease(url);
-		CFWriteStreamOpen(stream);
-		CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, NULL);
-		CFWriteStreamClose(stream);
-		CFRelease(stream);
-		chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-	} else {
-		CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
-		[messagingCenter sendMessageName:@"setObjectForPreference" userInfo:[NSDictionary dictionaryWithObjectsAndKeys:preference, @"preference", value, @"value", nil]];
-	}
-}
-
-- (NSDictionary *)_handleRemoteListenerEventMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
-	id<LAListener> listener = [self listenerForName:listenerName];
-	LAEvent *event = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"event"]];
-	objc_msgSend(listener, NSSelectorFromString(message), self, event, listenerName);
-	id result = [NSKeyedArchiver archivedDataWithRootObject:event];
-	return result ? [NSDictionary dictionaryWithObject:result forKey:@"result"] : [NSDictionary dictionary];
-}
-
-- (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
-	id<LAListener> listener = [self listenerForName:listenerName];
-	id result = objc_msgSend(listener, NSSelectorFromString(message), self, [userInfo objectForKey:@"object"], [userInfo objectForKey:@"object2"]);
-	return result ? [NSDictionary dictionaryWithObject:result forKey:@"result"] : [NSDictionary dictionary];
-}
-
-- (NSDictionary *)_handleRemoteListenerScalePtrMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
-	CGFloat scale = [[userInfo objectForKey:@"scale"] floatValue];
-	id<LAListener> listener = [self listenerForName:listenerName];
-	id result = objc_msgSend(listener, NSSelectorFromString(message), self, [userInfo objectForKey:@"object"], &scale);
-	return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithFloat:scale], @"scale", result, @"result", nil];
-}
-
-- (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	id withObject = [userInfo objectForKey:@"withObject"];
-	id withObject2 = [userInfo objectForKey:@"withObject2"];
-	id result = [self performSelector:NSSelectorFromString(message) withObject:withObject withObject:withObject2];
-	return result ? [NSDictionary dictionaryWithObject:result forKey:@"result"] : [NSDictionary dictionary];
+	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+	[messagingCenter sendMessageName:@"setObjectForPreference" userInfo:[NSDictionary dictionaryWithObjectsAndKeys:preference, @"preference", value, @"value", nil]];
 }
 
 - (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject
@@ -237,40 +119,13 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	return [response objectForKey:@"result"];
 }
 
-- (NSDictionary *)_cachedAndSortedListeners
+- (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject withObject:(id)withObject2
 {
-	if (_cachedAndSortedListeners)
-		return _cachedAndSortedListeners;
-	if (!InSpringBoard)
-		return [self _performRemoteMessage:_cmd withObject:nil];
-	NSMutableDictionary *listeners = [[NSMutableDictionary alloc] init];
-	for (NSString *listenerName in [self availableListenerNames]) {
-		NSString *key = [self localizedGroupForListenerName:listenerName] ?: @"";
-		NSMutableArray *groupList = [listeners objectForKey:key];
-		if (!groupList) {
-			groupList = [NSMutableArray array];
-			[listeners setObject:groupList forKey:key];
-		}					
-		[groupList addObject:listenerName];
-	}
-	for (NSString *key in [listeners allKeys]) {
-		// Sort array and make static
-		NSArray *array = [listeners objectForKey:key];
-		array = [array sortedArrayUsingFunction:CompareListenerNamesCallback context:nil];
-		[listeners setObject:array forKey:key];
-	}
-	_cachedAndSortedListeners = [listeners copy];
-	[listeners release];
-	return _cachedAndSortedListeners;
+	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:withObject, @"withObject", withObject2, @"withObject2", nil];
+	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
+	return [response objectForKey:@"result"];
 }
-
-- (void)_eventModeChanged
-{
-	NSString *eventMode = [self currentEventMode];
-	for (id<LAListener> listener in [_listeners allValues])
-		[listener activator:self didChangeToEventMode:eventMode];
-}
-
 
 // Sending Events
 
@@ -334,46 +189,22 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (id<LAListener>)listenerForName:(NSString *)name
 {
-	if (!InSpringBoard)
-		return [LARemoteListener sharedInstance];
-	return [_listeners objectForKey:name];
+	return [LARemoteListener sharedInstance];
 }
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name
 {
-#ifdef DEBUG
-	NSLog(@"Activator: registerListener:%@ forName:%@", listener, name);
-#endif
-	[_cachedAndSortedListeners release];
-	_cachedAndSortedListeners = nil;
-	[_listeners setObject:listener forKey:name];
-	NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
-	if (![[self _getObjectForPreference:key] boolValue])
-		[self _setObject:(id)kCFBooleanTrue forPreference:key];
+	// TODO
 }
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name ignoreHasSeen:(BOOL)ignoreHasSeen
 {
-	[_cachedAndSortedListeners release];
-	_cachedAndSortedListeners = nil;
-	[_listeners setObject:listener forKey:name];
-	if (!ignoreHasSeen) {
-		NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
-		if (![[self _getObjectForPreference:key] boolValue])
-			[self _setObject:(id)kCFBooleanTrue forPreference:key];
-	}
+	// TODO
 }
 
 - (void)unregisterListenerWithName:(NSString *)name
 {
-#ifdef DEBUG
-	NSLog(@"Activator: unregisterWithName:%@", name);
-#endif
-	[_cachedListenerTitles removeObjectForKey:name];
-	[_cachedListenerGroups removeObjectForKey:name];
-	[_cachedAndSortedListeners release];
-	_cachedAndSortedListeners = nil;
-	[_listeners removeObjectForKey:name];
+	// TODO
 }
 
 - (BOOL)hasSeenListenerWithName:(NSString *)name
@@ -408,7 +239,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		if ([self _getObjectForPreference:prefName])
 			[self _setObject:nil forPreference:prefName];
 	} else {
-		for (NSString *mode in [self availableEventModes]) {
+		for (NSString *mode in _availableEventModes) {
 			NSString *prefName = ListenerKeyForEventNameAndMode(eventName, mode);
 			if ([self _getObjectForPreference:prefName])
 				[self _setObject:nil forPreference:prefName];
@@ -435,7 +266,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	NSArray *events = [self availableEventNames];
 	NSMutableArray *result = [NSMutableArray array];
-	for (NSString *eventMode in [self availableEventModes]) {
+	for (NSString *eventMode in _availableEventModes) {
 		for (NSString *eventName in events) {
 			NSString *prefName = ListenerKeyForEventNameAndMode(eventName, eventMode);
 			NSString *assignedListener = [self _getObjectForPreference:prefName];
@@ -450,43 +281,44 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSArray *)availableEventNames
 {
-	return [_eventData allKeys];
+	return [self _performRemoteMessage:_cmd withObject:nil];
 }
 
 - (BOOL)eventWithNameIsHidden:(NSString *)name
 {
-	id<LAEventDataSource> dataSource = [_eventData objectForKey:name];
-   if (dataSource != nil)
-      return [dataSource eventWithNameIsHidden:name];
-   return YES;
+	return [[self _performRemoteMessage:_cmd withObject:name] boolValue];
 }
 
 - (NSArray *)compatibleModesForEventWithName:(NSString *)name
 {
-   id<LAEventDataSource> dataSource = [_eventData objectForKey:name];
-   if (dataSource != nil) {
-      NSMutableArray *modes = [NSMutableArray arrayWithCapacity:[[self availableEventModes] count]];
-      for (NSString *mode in [self availableEventModes])
-         if ([dataSource eventWithName:name isCompatibleWithMode:mode])
-            [modes addObject:mode];
-      return modes;
-   }
-	return [self availableEventModes];
+	return [self _performRemoteMessage:_cmd withObject:name];
 }
 
 - (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
 {
-   id<LAEventDataSource> dataSource = [_eventData objectForKey:eventName];
-   if (dataSource != nil)
-      return [dataSource eventWithName:eventName isCompatibleWithMode:eventMode];
-   return NO;
+	return [[self _performRemoteMessage:_cmd withObject:eventName withObject:eventMode] boolValue];
+}
+
+- (void)registerEventDataSource:(id<LAEventDataSource>)dataSource forEventName:(NSString *)eventName
+{
+	// TODO
+}
+
+- (void)unregisterEventDataSourceWithEventName:(NSString *)eventName
+{
+	// TODO
 }
 
 // Listeners
 
 - (NSArray *)availableListenerNames
 {
-	return InSpringBoard ? [_listeners allKeys] : [self _performRemoteMessage:_cmd withObject:nil];
+	return [self _performRemoteMessage:_cmd withObject:nil];
+}
+
+- (NSDictionary *)_cachedAndSortedListeners
+{
+	return [self _performRemoteMessage:_cmd withObject:nil];
 }
 
 - (id)infoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)name
@@ -501,7 +333,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSArray *)compatibleEventModesForListenerWithName:(NSString *)name;
 {
-	return [[self listenerForName:name] activator:self requiresCompatibleEventModesForListenerWithName:name] ?: [self availableEventModes];
+	return [[self listenerForName:name] activator:self requiresCompatibleEventModesForListenerWithName:name] ?: _availableEventModes;
 }
 
 - (BOOL)listenerWithName:(NSString *)listenerName isCompatibleWithMode:(NSString *)eventMode
@@ -545,28 +377,17 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSArray *)availableEventModes
 {
-	return [NSArray arrayWithObjects:LAEventModeSpringBoard, LAEventModeApplication, LAEventModeLockScreen, nil];
+	return _availableEventModes;
 }
 
 - (NSString *)currentEventMode
 {
-	if (InSpringBoard) {
-		// In SpringBoard
-		if ([(SpringBoard *)[UIApplication sharedApplication] isLocked])
-			return LAEventModeLockScreen;
-		/*if ([[CHSharedInstance(SBIconController) contentView] window])
-			return LAEventModeSpringBoard;
-		return LAEventModeApplication;*/
-		return [[LAApplicationListener sharedInstance] topApplication] ? LAEventModeApplication : LAEventModeSpringBoard;
-	} else {
-		// Outside SpringBoard
-		return [self _performRemoteMessage:_cmd withObject:nil];
-	}
+	return [self _performRemoteMessage:_cmd withObject:nil];
 }
 
 - (NSString *)description
 {
-	return [NSString stringWithFormat:@"<%s listeners=%@ events=%@ modes=%@ %p>", class_getName([self class]), _listeners, [self availableEventNames], [self availableEventModes], self];
+	return [NSString stringWithFormat:@"<LAActivator listeners=%@ events=%@ modes=%@ %p>", [self availableListenerNames], [self availableEventNames], [self availableEventModes], self];
 }
 
 - (NSURL *)moreActionsURL
@@ -607,10 +428,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSString *)localizedTitleForEventName:(NSString *)eventName
 {	
-	id<LAEventDataSource> dataSource = [_eventData objectForKey:eventName];
-   if (dataSource != nil)
-      return [dataSource localizedTitleForEventName:eventName];
-   return nil;
+	return [self _performRemoteMessage:_cmd withObject:eventName];
 }
 
 - (NSString *)localizedTitleForListenerName:(NSString *)listenerName
@@ -626,10 +444,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSString *)localizedGroupForEventName:(NSString *)eventName
 {
-	id<LAEventDataSource> dataSource = [_eventData objectForKey:eventName];
-   if (dataSource != nil)
-      return [dataSource localizedGroupForEventName:eventName];
-   return nil;
+	return [self _performRemoteMessage:_cmd withObject:eventName];
 }
 
 - (NSString *)localizedGroupForListenerName:(NSString *)listenerName
@@ -656,10 +471,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName
 {
-	id<LAEventDataSource> dataSource = [_eventData objectForKey:eventName];
-   if (dataSource != nil)
-      return [dataSource localizedDescriptionForEventName:eventName];
-   return nil;
+	return [self _performRemoteMessage:_cmd withObject:eventName];
 }
 
 - (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName
@@ -669,24 +481,9 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 @end
 
-@implementation LAActivator (DynamicEvents)
-
-- (void)registerEventDataSource:(id<LAEventDataSource>)dataSource forEventName:(NSString *)eventName
-{
-   [_eventData setObject:dataSource forKey:eventName];
-}
-
-- (void)unregisterEventDataSourceWithEventName:(NSString *)eventName
-{
-   [_eventData removeObjectForKey:eventName];
-}
-
-@end
-
 CHConstructor
 {
 	CHAutoreleasePoolForScope();
-	LASharedActivator = [[LAActivator alloc] init];
 	activatorBundle = [[NSBundle alloc] initWithPath:SCRootPath(@"/Library/Activator")];
 	if (CHLoadLateClass(SBIconController)) {
 		// Cache listener data
@@ -695,5 +492,8 @@ CHConstructor
 		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:listenersPath error:NULL])
 			if (![fileName hasPrefix:@"."])
 				[listenerData setObject:[NSBundle bundleWithPath:[listenersPath stringByAppendingPathComponent:fileName]] forKey:fileName];
+		LASharedActivator = [[LASpringBoardActivator alloc] init];
+	} else {
+		LASharedActivator = [[LAActivator alloc] init];
 	}
 }

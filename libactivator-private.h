@@ -7,20 +7,36 @@
 
 @interface LAActivator ()
 
+- (void)didReceiveMemoryWarning;
+
 - (void)_resetPreferences;
 - (id)_getObjectForPreference:(NSString *)preference;
 - (void)_setObject:(id)value forPreference:(NSString *)preference;
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name ignoreHasSeen:(BOOL)ignoreHasSeen;
 
-- (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
-- (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
 - (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject;
+
 - (NSDictionary *)_cachedAndSortedListeners;
-- (void)_eventModeChanged;
 
 @property (nonatomic, readonly) NSURL *moreActionsURL;
 @property (nonatomic, readonly) NSURL *adPaneURL;
+
+@end
+
+__attribute__((visibility("hidden")))
+@interface LASpringBoardActivator : LAActivator {
+@private
+	NSMutableDictionary *_listeners;
+	NSMutableDictionary *_preferences;
+	NSMutableDictionary *_eventData;
+	NSDictionary *_cachedAndSortedListeners;
+}
+
+- (void)_eventModeChanged;
+- (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
+- (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
+- (NSDictionary *)_handleRemoteBoolMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
 
 @end
 
@@ -37,7 +53,8 @@ __attribute__((visibility("hidden")))
    NSMutableDictionary *_eventData;
 }
 
-- (id)init;
++ (LADefaultEventDataSource *)sharedInstance;
+
 - (NSString *)localizedTitleForEventName:(NSString *)eventName;
 - (NSString *)localizedGroupForEventName:(NSString *)eventName;
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName;

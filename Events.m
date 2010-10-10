@@ -946,6 +946,7 @@ CHOptimizedMethod(0, self, void, SBUIController, finishLaunching)
 	}
 	[LASimpleListener sharedInstance];
 	[LAToggleListener sharedInstance];
+	[LADefaultEventDataSource sharedInstance];
 	CHSuper(0, SBUIController, finishLaunching);
 	[LASlideGestureWindow performSelector:@selector(updateVisibility) withObject:nil afterDelay:1.0];
 }
