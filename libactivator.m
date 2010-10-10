@@ -78,7 +78,7 @@ CHDeclareClass(SBIconController);
 
 - (LAActivatorVersion)version
 {
-	return LAActivatorVersion_1_4;
+	return LAActivatorVersion_1_5;
 }
 
 // Preferences
