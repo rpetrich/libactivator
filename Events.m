@@ -955,21 +955,21 @@ CHOptimizedMethod(0, self, void, SBUIController, tearDownIconListAndBar)
 {
 	CHSuper(0, SBUIController, tearDownIconListAndBar);
 	[LASlideGestureWindow updateVisibility];
-	[LASharedActivator _eventModeChanged];
+	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
 }
 
 CHOptimizedMethod(1, self, void, SBUIController, restoreIconList, BOOL, animate)
 {
 	CHSuper(1, SBUIController, restoreIconList, animate);
 	[LASlideGestureWindow updateVisibility];
-	[LASharedActivator _eventModeChanged];
+	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
 }
 
 CHOptimizedMethod(0, self, void, SBUIController, lock)
 {
 	CHSuper(0, SBUIController, lock);
 	[LASlideGestureWindow updateVisibility];
-	[LASharedActivator _eventModeChanged];
+	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
 }
 
 CHOptimizedMethod(1, self, void, SBScreenShotter, saveScreenshot, BOOL, something)
