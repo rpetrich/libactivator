@@ -972,6 +972,15 @@ CHOptimizedMethod(0, self, void, SBUIController, lock)
 	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
 }
 
+CHOptimizedMethod(0, self, void, SBUIController, _toggleSwitcher)
+{
+	if (![self isSwitcherShowing]) {
+		LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressSingle mode:LASharedActivator.currentEventMode];
+		[LASharedActivator sendDeactivateEventToListeners:event];
+	}
+	CHSuper(0, SBUIController, _toggleSwitcher);
+}
+
 CHOptimizedMethod(1, self, void, SBScreenShotter, saveScreenshot, BOOL, something)
 {
 	justTookScreenshot = YES;
@@ -1403,6 +1412,7 @@ CHConstructor
 		CHHook(0, SBUIController, tearDownIconListAndBar);
 		CHHook(1, SBUIController, restoreIconList);
 		CHHook(0, SBUIController, lock);
+		CHHook(0, SBUIController, _toggleSwitcher);
 	
 		CHLoadLateClass(SBScreenShotter);
 		CHHook(1, SBScreenShotter, saveScreenshot);
