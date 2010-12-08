@@ -44,4 +44,7 @@ internal-stage::
 	cp -a libactivator.h $(FW_STAGING_DIR)/usr/include/libactivator/
 	- find $(THEOS_STAGING_DIR) -iname '*.plist' -or -iname '*.strings' -exec plutil -convert binary1 {} \;
 
+internal-after-install::
+	install.exec "sbreload || respring || killall -9 SpringBoard"
+
 endif
