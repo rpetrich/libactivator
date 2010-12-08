@@ -1,0 +1,7 @@
+{
+	title = "Do Nothing";
+	description = "Suppress original action";
+	group = "System Actions";
+	selector = "doNothing";
+	"incompatible-events" = ("libactivator.lock.hold.short", "libactivator.lock.press.double", "libactivator.menu.press.double", "libactivator.menu.press.single");
+}

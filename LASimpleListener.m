@@ -215,6 +215,11 @@ static LASimpleListener *sharedSimpleListener;
 	return YES;
 }
 
+- (BOOL)doNothing
+{
+	return YES;
+}
+
 - (void)fixStatusBarTime
 {
 	[[CHClass(SBStatusBarDataManager) sharedDataManager] enableLock:NO time:YES];
@@ -331,6 +336,7 @@ static LASimpleListener *sharedSimpleListener;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.powerdown"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.spotlight"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.take-screenshot"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.nothing"];
 		if ([CHClass(SBVoiceControlAlert) shouldEnterVoiceControl])
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
 		if (GSSystemHasCapability(CFSTR("multitasking"))) {
