@@ -31,15 +31,17 @@ endif
 LOCALIZATION_PROJECT_NAME = libactivator
 LOCALIZATION_DEST_PATH = /Library/Activator/
 
+TARGET_IPHONEOS_DEPLOYMENT_VERSION := 3.0
+
 include framework/makefiles/common.mk
 include framework/makefiles/library.mk
 include framework/makefiles/bundle.mk
 include Localization/makefiles/common.mk
 
-internal-package::
-	mkdir -p $(FW_STAGING_DIR)/usr/include/libactivator
-	mkdir -p $(FW_STAGING_DIR)/Library/Activator/Listeners
+internal-stage::
+	mkdir -p $(THEOS_STAGING_DIR)/usr/include/libactivator
+	mkdir -p $(THEOS_STAGING_DIR)/Library/Activator/Listeners
 	cp -a libactivator.h $(FW_STAGING_DIR)/usr/include/libactivator/
-	- find $(FW_STAGING_DIR) -iname '*.plist' -or -iname '*.strings' -exec plutil -convert binary1 {} \;
+	- find $(THEOS_STAGING_DIR) -iname '*.plist' -or -iname '*.strings' -exec plutil -convert binary1 {} \;
 
 endif
