@@ -55,7 +55,7 @@ typedef enum {
 }
 + (LAActivator *)sharedInstance;
 
-- (LAActivatorVersion)version;
+@property (nonatomic, readonly) LAActivatorVersion version;
 
 @property (nonatomic, readonly) NSString *settingsFilePath;
 
@@ -93,7 +93,7 @@ typedef enum {
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName;
 
 @property (nonatomic, readonly) NSArray *availableEventModes;
-- (NSString *)currentEventMode;
+@property (nonatomic, readonly) NSString *currentEventMode;
 
 @end
 
