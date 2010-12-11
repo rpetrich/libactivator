@@ -87,6 +87,10 @@ static LASimpleListener *sharedSimpleListener;
 - (void)_postData;
 @end
 
+@interface SBAlertItemsController (iOS42)
+- (BOOL)hasAlertOfClass:(Class)alertClass;
+@end
+
 @implementation LASimpleListener
 
 - (BOOL)homeButton
@@ -265,7 +269,12 @@ static LASimpleListener *sharedSimpleListener;
 - (BOOL)musicControls
 {
 	SBAlertItemsController *controller = CHSharedInstance(SBAlertItemsController);
-	if ([controller isShowingAlertOfClass:CHClass(SBNowPlayingAlertItem)]) {
+	if ([controller respondsToSelector:@selector(hasAlertOfClass:)]) {
+		if ([controller hasAlertOfClass:CHClass(SBNowPlayingAlertItem)]) {
+			[controller deactivateAlertItemsOfClass:CHClass(SBNowPlayingAlertItem)];
+			return NO;
+		}
+	} else if ([controller isShowingAlertOfClass:CHClass(SBNowPlayingAlertItem)]) {
 		[controller deactivateAlertItemsOfClass:CHClass(SBNowPlayingAlertItem)];
 		return NO;
 	}
