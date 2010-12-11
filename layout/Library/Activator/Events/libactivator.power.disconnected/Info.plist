@@ -1,0 +1,5 @@
+{
+	title = "Disconnected";
+	group = "Power";
+	description = "Stop receiving A/C power";
+}

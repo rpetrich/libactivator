@@ -43,6 +43,9 @@ NSString * const LAEventNameHeadsetButtonHoldShort = @"libactivator.headset-butt
 
 NSString * const LAEventNameLockScreenClockDoubleTap = @"libactivator.lockscreen.clock.double-tap";
 
+NSString * const LAEventNamePowerConnected         = @"libactivator.power.connected";
+NSString * const LAEventNamePowerDisconnected      = @"libactivator.power.disconnected";
+
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
 #define kButtonHoldDelay                   0.8f
@@ -981,6 +984,13 @@ CHOptimizedMethod(0, self, void, SBUIController, _toggleSwitcher)
 	CHSuper(0, SBUIController, _toggleSwitcher);
 }
 
+CHOptimizedMethod(0, self, void, SBUIController, ACPowerChanged)
+{
+	CHSuper(0, SBUIController, ACPowerChanged);
+	if ([self respondsToSelector:@selector(isOnAC)])
+		LASendEventWithName([self isOnAC] ? LAEventNamePowerConnected : LAEventNamePowerDisconnected);
+}
+
 CHOptimizedMethod(1, self, void, SBScreenShotter, saveScreenshot, BOOL, something)
 {
 	justTookScreenshot = YES;
@@ -1413,6 +1423,7 @@ CHConstructor
 		CHHook(1, SBUIController, restoreIconList);
 		CHHook(0, SBUIController, lock);
 		CHHook(0, SBUIController, _toggleSwitcher);
+		CHHook(0, SBUIController, ACPowerChanged);
 	
 		CHLoadLateClass(SBScreenShotter);
 		CHHook(1, SBScreenShotter, saveScreenshot);

@@ -1,0 +1,5 @@
+{
+	title = "Connected";
+	group = "Power";
+	description = "Begin receiving A/C power";
+}
