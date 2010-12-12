@@ -1,7 +1,8 @@
 #import "libactivator-private.h"
 #import "ActivatorEventViewHeader.h"
+#import "LAListenerTableViewDataSource.h"
 
-@interface LAEventSettingsController () <ActivatorEventViewHeaderDelegate>
+@interface LAEventSettingsController () <ActivatorEventViewHeaderDelegate, LAListenerTableViewDataSourceDelegate>
 @end
 
 @implementation LAEventSettingsController
@@ -31,27 +32,9 @@
 				[availableModes addObject:mode];
 		_modes = [availableModes copy];
 		_currentAssignments = [[NSMutableSet alloc] init];
-		_listeners = [[LASharedActivator _cachedAndSortedListeners] mutableCopy];
-		for (NSString *key in [_listeners allKeys]) {
-			NSArray *group = [_listeners objectForKey:key];
-			NSMutableArray *mutableGroup = [NSMutableArray array];
-			BOOL hasItems = NO;
-			for (NSString *listenerName in group) {
-				if ([LASharedActivator listenerWithName:listenerName isCompatibleWithEventName:eventName])
-					for (NSString *mode in _modes)
-						if ([LASharedActivator listenerWithName:listenerName isCompatibleWithMode:mode]) {
-							[mutableGroup addObject:listenerName];
-							hasItems = YES;
-							break;
-						}
-			}
-			if (hasItems)
-				[_listeners setObject:mutableGroup forKey:key];
-			else
-				[_listeners removeObjectForKey:key];
-		}
-		_groups = [[[_listeners allKeys] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] retain];
 		_eventName = [eventName copy];
+		_dataSource = [[LAListenerTableViewDataSource alloc] init];
+		_dataSource.delegate = self;
 		self.navigationItem.title = [LASharedActivator localizedTitleForEventName:_eventName];
 		CGRect headerFrame;
 		headerFrame.origin.x = 0.0f;
@@ -70,12 +53,26 @@
 {
 	_headerView.delegate = nil;
 	[_headerView release];
-	[_groups release];
-	[_listeners release];
+	[_dataSource release];
 	[_eventName release];
 	[_currentAssignments release];
 	[_modes release];
 	[super dealloc];
+}
+
+- (BOOL)dataSource:(LAListenerTableViewDataSource *)dataSource shouldAllowListenerWithName:(NSString *)listenerName
+{
+	if ([LASharedActivator listenerWithName:listenerName isCompatibleWithEventName:_eventName])
+		for (NSString *mode in _modes)
+			if ([LASharedActivator listenerWithName:listenerName isCompatibleWithMode:mode])
+				return YES;
+	return NO;
+}
+
+- (void)loadView
+{
+	[super loadView];
+	self.tableView.dataSource = _dataSource;
 }
 
 - (void)viewDidLoad
@@ -126,31 +123,6 @@
 	[self updateHeader];
 }
 
-- (NSMutableArray *)groupAtIndex:(NSInteger)index
-{
-	return [_listeners objectForKey:[_groups objectAtIndex:index]];
-}
-
-- (NSString *)listenerNameForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-	return [[self groupAtIndex:[indexPath section]] objectAtIndex:[indexPath row]];
-}
-
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
-{
-	return [_groups count];
-}
-
-- (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
-{
-	return [_groups objectAtIndex:section];
-}
-
-- (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section
-{
-	return [[self groupAtIndex:section] count];
-}
-
 - (NSInteger)countOfModesAssignedToListener:(NSString *)name
 {
 	NSInteger result = 0;
@@ -161,23 +133,17 @@
 	return result;
 }
 
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+- (void)dataSource:(LAListenerTableViewDataSource *)dataSource appliedContentToCell:(UITableViewCell *)cell forListenerWithName:(NSString *)listenerName
 {
-	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
-	NSString *listenerName = [self listenerNameForRowAtIndexPath:indexPath];
-	cell.textLabel.text = [LASharedActivator localizedTitleForListenerName:listenerName];
-	cell.detailTextLabel.text = [LASharedActivator localizedDescriptionForListenerName:listenerName];
-	cell.imageView.image = [LASharedActivator smallIconForListenerName:listenerName];
 	BOOL assigned = [_currentAssignments containsObject:listenerName];
 	cell.accessoryType = assigned ? UITableViewCellAccessoryCheckmark : UITableViewCellAccessoryNone;
-	return cell;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
 	UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-	NSString *listenerName = [self listenerNameForRowAtIndexPath:indexPath];
+	NSString *listenerName = [_dataSource listenerNameForRowAtIndexPath:indexPath];
 	NSUInteger compatibleModeCount = 0;
 	for (NSString *mode in _modes)
 		if ([LASharedActivator listenerWithName:listenerName isCompatibleWithMode:mode])

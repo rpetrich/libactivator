@@ -179,14 +179,14 @@ extern LAActivator *LASharedActivator;
 @end
 
 @class ActivatorEventViewHeader;
+@class LAListenerTableViewDataSource;
 
 @interface LAEventSettingsController : LASettingsViewController {
 @private
 	NSArray *_modes;
 	NSMutableSet *_currentAssignments;
 	NSString *_eventName;
-	NSMutableDictionary *_listeners;
-	NSArray *_groups;
+	LAListenerTableViewDataSource *_dataSource;
 	ActivatorEventViewHeader *_headerView;
 }
 

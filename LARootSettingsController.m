@@ -1,5 +1,6 @@
 #import "libactivator-private.h"
 #import "ActivatorAdController.h"
+#import "LAMenuSettingsController.h"
 
 @interface LARootSettingsController () <UIAlertViewDelegate>
 @end
@@ -27,7 +28,7 @@
 		case 1:
 			return [[LASharedActivator availableEventModes] count];
 		case 2:
-			return 2;
+			return 3;
 		case 3:
 			return 1;
 		default:
@@ -70,14 +71,20 @@
 			break;
 		}
 		case 2:
-			if (indexPath.row == 0) {
-				cell.textLabel.text = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"];
-				cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS_DETAIL" value:@"Get more actions via Cydia"];
-				cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
-			} else {
-				cell.textLabel.text = [LASharedActivator localizedStringForKey:@"DONATE" value:@"Donate"];
-				cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"DONATE_DETAIL" value:@"Contribute via PayPal"];
-				cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+			cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+			switch (indexPath.row) {
+				case 0:
+					cell.textLabel.text = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"];
+					cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS_DETAIL" value:@"Get more actions via Cydia"];
+					break;
+				case 1:
+					cell.textLabel.text = [LASharedActivator localizedStringForKey:@"DONATE" value:@"Donate"];
+					cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"DONATE_DETAIL" value:@"Contribute via PayPal"];
+					break;
+				case 2:
+					cell.textLabel.text = [LASharedActivator localizedStringForKey:@"MENUS" value:@"Menus"];
+					cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"MENUS_DETAIL" value:@"Manage custom Activator menus"];
+					break;
 			}
 			break;
 		case 3:
@@ -104,20 +111,28 @@
 		case 1:
 			vc = [[LAModeSettingsController alloc] initWithMode:[self eventModeForIndexPath:indexPath]];
 			break;
-		case 2: {
-			if (indexPath.row == 1) {
-				// Hide ads and show donation form
-				[LASharedActivator _setObject:(id)kCFBooleanTrue forPreference:@"LAHideAds"];
-				[[objc_getClass("ActivatorAdController") sharedInstance] hideAnimated:NO];
-				[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"http://rpetri.ch/cydia/activator/donate/"]];
-				return;
+		case 2:
+			switch (indexPath.row) {
+				case 0: {
+					LAWebSettingsController *wsc = [[LAWebSettingsController alloc] init];
+					[wsc loadURL:[LASharedActivator moreActionsURL]];
+					wsc.navigationItem.title = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"];
+					vc = wsc;
+					break;
+				}
+				case 1:
+					// Hide ads and show donation form
+					[LASharedActivator _setObject:(id)kCFBooleanTrue forPreference:@"LAHideAds"];
+					[[objc_getClass("ActivatorAdController") sharedInstance] hideAnimated:NO];
+					[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"http://rpetri.ch/cydia/activator/donate/"]];
+					return;
+				case 2:
+					vc = [[LAMenuSettingsController alloc] init];
+					break;
+				default:
+					return;
 			}
-			LAWebSettingsController *wsc = [[LAWebSettingsController alloc] init];
-			[wsc loadURL:[LASharedActivator moreActionsURL]];
-			wsc.navigationItem.title = [LASharedActivator localizedStringForKey:@"MORE_ACTIONS" value:@"More Actions"];
-			vc = wsc;
 			break;
-		}
 		default: {
 			UIAlertView *av = [[UIAlertView alloc] initWithTitle:[LASharedActivator localizedStringForKey:@"RESET_ALERT_TITLE" value:@"Reset Activator Settings"] message:[LASharedActivator localizedStringForKey:@"RESET_ALERT_MESSAGE" value:@"Are you sure you wish to reset Activator settings to defaults?\nYour device will respring if you continue."] delegate:self cancelButtonTitle:[LASharedActivator localizedStringForKey:@"RESET_ALERT_CANCEL" value:@"Cancel"] otherButtonTitles:[LASharedActivator localizedStringForKey:@"RESET_ALERT_CONTINUE" value:@"Reset"], nil];
 			[av show];

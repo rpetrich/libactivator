@@ -1,6 +1,7 @@
 #import "libactivator.h"
 #import "libactivator-private.h"
 #import "LAToggleListener.h"
+#import "LAMenuListener.h"
 
 #import <CaptainHook/CaptainHook.h>
 #import <SpringBoard/SpringBoard.h>
@@ -950,6 +951,7 @@ CHOptimizedMethod(0, self, void, SBUIController, finishLaunching)
 	[LASimpleListener sharedInstance];
 	[LAToggleListener sharedInstance];
 	[LADefaultEventDataSource sharedInstance];
+	[LAMenuListener sharedMenuListener];
 	CHSuper(0, SBUIController, finishLaunching);
 	[LASlideGestureWindow performSelector:@selector(updateVisibility) withObject:nil afterDelay:1.0];
 }
