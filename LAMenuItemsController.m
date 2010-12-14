@@ -50,7 +50,7 @@
 			break;
 		}
 		case 1:
-			cell.textLabel.text = @"Add Action";
+			cell.textLabel.text = [LASharedActivator localizedStringForKey:@"ADD_ACTION" value:@"Add Action"];
 			cell.detailTextLabel.text = nil;
 			cell.imageView.image = nil;
 			break;
@@ -86,7 +86,7 @@
 {
 	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
 	LAMenuListenerSelectionController *vc = [LAMenuListenerSelectionController controller];
-	vc.navigationItem.title = @"Action";
+	vc.navigationItem.title = [LASharedActivator localizedStringForKey:@"ACTION" value:@"Action"];
 	if (indexPath.section == 1)
 		destinationIndex = -1;
 	else {

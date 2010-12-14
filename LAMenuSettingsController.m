@@ -15,7 +15,7 @@
 		NSDictionary *settings = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/libactivator.menu.plist"];
 		menus = [[settings objectForKey:@"menus"] mutableCopy] ?: [[NSMutableDictionary alloc] init];
 		sortedMenus = [[menus allKeys] mutableCopy];
-		self.navigationItem.title = @"Menus";
+		self.navigationItem.title = [LASharedActivator localizedStringForKey:@"MENUS" value:@"Menus"];
 	}
 	return self;
 }
@@ -64,7 +64,7 @@
 		}
 		case 1:
 			cell.accessoryType = UITableViewCellAccessoryNone;
-			title = @"Add New Menu";
+			title = [LASharedActivator localizedStringForKey:@"ADD_NEW_MENU" value:@"Add New Menu"];
 			break;
 		default:
 			title = nil;
@@ -117,10 +117,10 @@
 		}
 		case 1: {
 			UIAlertView *av = [[UIAlertView alloc] init];
-			av.title = @"New Menu";
-			[av addTextFieldWithValue:nil label:@"Menu Title"];
-			[av addButtonWithTitle:@"Add"];
-			av.cancelButtonIndex = [av addButtonWithTitle:@"Cancel"];
+			av.title = [LASharedActivator localizedStringForKey:@"NEW_MENU" value:@"New Menu"];
+			[av addTextFieldWithValue:nil label:[LASharedActivator localizedStringForKey:@"MENU_TITLE" value:@"Menu Title"]];
+			[av addButtonWithTitle:[LASharedActivator localizedStringForKey:@"ADD" value:@"Add"]];
+			av.cancelButtonIndex = [av addButtonWithTitle:[LASharedActivator localizedStringForKey:@"CANCEL" value:@"Cancel"]];
 			av.delegate = self;
 			[av show];
 			[av release];
