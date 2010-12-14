@@ -10,6 +10,7 @@
 
 #include <objc/runtime.h>
 #include <sys/stat.h>
+#include <execinfo.h>
 
 NSString * const LAEventModeSpringBoard = @"springboard";
 NSString * const LAEventModeApplication = @"application";
@@ -34,7 +35,25 @@ CHDeclareClass(SBIconController);
 + (UIImage *)imageWithData:(NSData *)data scale:(CGFloat)scale;
 @end
 
-#define LAInvalidSpringBoardOperation() do { [NSException raise:@"LAInvalidOperation" format:@"Calling -[LAActivator %s] is invalid from outside SpringBoard!", _cmd]; } while(0)
+static inline void LAInvalidSpringBoardOperation(SEL _cmd)
+{
+	CHAutoreleasePoolForScope();
+	void *symbols[2];
+	size_t size = backtrace(symbols, 2);
+	NSString *culprit;
+	if (size == 2) {
+		char **strings = backtrace_symbols(symbols, size);
+		NSString *description = [NSString stringWithUTF8String:strings[1]];
+		free(strings);
+		culprit = [[[description componentsSeparatedByString:@" "] objectAtIndex:3] stringByDeletingPathExtension];
+	} else {
+		culprit = nil;
+	}
+	[LASharedActivator performSelector:@selector(apiFailWithCulprit:) withObject:culprit afterDelay:0.0f];
+	NSLog(@"Activator: %@ called -[LAActivator %s] from outside SpringBoard. This is invalid!", culprit, _cmd);
+}
+
+#define LAInvalidSpringBoardOperation() LAInvalidSpringBoardOperation(_cmd)
 
 @implementation LAActivator
 
@@ -81,6 +100,16 @@ CHDeclareClass(SBIconController);
 - (LAActivatorVersion)version
 {
 	return LAActivatorVersion_1_5;
+}
+
+- (void)apiFailWithCulprit:(NSString *)culprit
+{
+	UIAlertView *av = [[UIAlertView alloc] init];
+	av.title = @"Invalid Operation";
+	av.message = [culprit stringByAppendingString:@" has called an Activator API improperly from outside SpringBoard.\nContact the developer."];
+	[av addButtonWithTitle:@"OK"];
+	[av show];
+	[av release];
 }
 
 // Preferences
