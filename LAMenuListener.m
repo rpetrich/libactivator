@@ -3,7 +3,7 @@
 
 #import <UIKit/UIKit.h>
 
-@interface LAMenuListener () <UIAlertViewDelegate>
+@interface LAMenuListener () <UIActionSheetDelegate>
 - (void)unloadConfiguration;
 - (void)refreshConfiguration;
 @end
@@ -40,8 +40,8 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 {
 	CFNotificationCenterRemoveObserver(CFNotificationCenterGetDarwinNotifyCenter(), self, CFSTR("libactivator.menu/settingschanged"), NULL);
 	[currentItems release];
-	currentAlertView.delegate = nil;
-	[currentAlertView release];
+	currentActionSheet.delegate = nil;
+	[currentActionSheet release];
 	[currentEvent release];
 	[self unloadConfiguration];
 	[super dealloc];
@@ -64,35 +64,45 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 		[LASharedActivator registerListener:self forName:menuKey ignoreHasSeen:YES];
 }
 
-- (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+- (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
 {
-	if (buttonIndex != alertView.cancelButtonIndex) {
+	if (buttonIndex != actionSheet.cancelButtonIndex) {
 		NSString *listenerName = [currentItems objectAtIndex:buttonIndex];
 		[[LASharedActivator listenerForName:listenerName] activator:LASharedActivator receiveEvent:currentEvent forListenerName:listenerName];
 	}
 }
 
+- (void)actionSheet:(UIActionSheet *)actionSheet didDismissWithButtonIndex:(NSInteger)buttonIndex
+{
+	alertWindow.hidden = YES;
+}
+
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
-	if (currentAlertView) {
-		[currentAlertView dismissWithClickedButtonIndex:currentAlertView.cancelButtonIndex animated:YES];
-		[currentAlertView release];
-		currentAlertView = nil;
+	if (currentActionSheet) {
+		[currentActionSheet dismissWithClickedButtonIndex:currentActionSheet.cancelButtonIndex animated:YES];
+		[currentActionSheet release];
+		currentActionSheet = nil;
 	} else {
 		NSDictionary *menuData = [menus objectForKey:listenerName];
-		UIAlertView *av = [[UIAlertView alloc] init];
-		av.title = [menuData objectForKey:@"title"];
+		UIActionSheet *actionSheet = [[UIActionSheet alloc] init];
+		actionSheet.title = [menuData objectForKey:@"title"];
 		NSMutableArray *compatibleItems = [[NSMutableArray alloc] init];
 		for (NSString *item in [menuData objectForKey:@"items"]) {
 			if ([LASharedActivator listenerWithName:item isCompatibleWithMode:event.mode]) {
 				[compatibleItems addObject:item];
-				[av addButtonWithTitle:[activator localizedTitleForListenerName:item] ?: @""];
+				[actionSheet addButtonWithTitle:[activator localizedTitleForListenerName:item] ?: @""];
 			}
 		}
-		av.cancelButtonIndex = [av addButtonWithTitle:[activator localizedStringForKey:@"CANCEL" value:@"Cancel"]];
-		av.delegate = self;
-		[av show];
-		currentAlertView = av;
+		actionSheet.cancelButtonIndex = [actionSheet addButtonWithTitle:[activator localizedStringForKey:@"CANCEL" value:@"Cancel"]];
+		actionSheet.delegate = self;
+		if (!alertWindow) {
+			alertWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+			alertWindow.windowLevel = UIWindowLevelStatusBar;
+		}
+		alertWindow.hidden = NO;
+		[actionSheet showInView:alertWindow];
+		currentActionSheet = actionSheet;
 		[currentEvent release];
 		currentEvent = [event copy];
 		[currentItems release];
@@ -103,17 +113,17 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event
 {
-	[currentAlertView dismissWithClickedButtonIndex:currentAlertView.cancelButtonIndex animated:YES];
-	[currentAlertView release];
-	currentAlertView = nil;
+	[currentActionSheet dismissWithClickedButtonIndex:currentActionSheet.cancelButtonIndex animated:YES];
+	[currentActionSheet release];
+	currentActionSheet = nil;
 }
 
 - (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event
 {
-	if (currentAlertView) {
-		[currentAlertView dismissWithClickedButtonIndex:currentAlertView.cancelButtonIndex animated:YES];
-		[currentAlertView release];
-		currentAlertView = nil;
+	if (currentActionSheet) {
+		[currentActionSheet dismissWithClickedButtonIndex:currentActionSheet.cancelButtonIndex animated:YES];
+		[currentActionSheet release];
+		currentActionSheet = nil;
 		event.handled = YES;
 	}
 }
