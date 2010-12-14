@@ -34,7 +34,7 @@
 
 - (BOOL)dataSource:(LAListenerTableViewDataSource *)dataSource shouldAllowListenerWithName:(NSString *)listenerName
 {
-	return YES;
+	return ![listenerName hasPrefix:@"libactivator.menu."];
 }
 
 - (void)dataSource:(LAListenerTableViewDataSource *)dataSource appliedContentToCell:(UITableViewCell *)cell forListenerWithName:(NSString *)listenerName
