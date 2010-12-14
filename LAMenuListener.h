@@ -7,7 +7,7 @@ __attribute__((visibility("hidden")))
 	NSDictionary *configuration;
 	NSDictionary *menus;
 	UIAlertView *currentAlertView;
-	NSString *currentListenerName;
+	NSArray *currentItems;
 	LAEvent *currentEvent;
 }
 

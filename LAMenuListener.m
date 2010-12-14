@@ -39,7 +39,7 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 - (void)dealloc
 {
 	CFNotificationCenterRemoveObserver(CFNotificationCenterGetDarwinNotifyCenter(), self, CFSTR("libactivator.menu/settingschanged"), NULL);
-	[currentListenerName release];
+	[currentItems release];
 	currentAlertView.delegate = nil;
 	[currentAlertView release];
 	[currentEvent release];
@@ -67,9 +67,8 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
 {
 	if (buttonIndex != alertView.cancelButtonIndex) {
-		NSArray *items = [[menus objectForKey:currentListenerName] objectForKey:@"items"];
-		NSString *listenerName = [items objectAtIndex:buttonIndex];
-		[[LASharedActivator listenerForName:listenerName] activator:LASharedActivator receiveEvent:currentEvent forListenerName:currentListenerName];
+		NSString *listenerName = [currentItems objectAtIndex:buttonIndex];
+		[[LASharedActivator listenerForName:listenerName] activator:LASharedActivator receiveEvent:currentEvent forListenerName:listenerName];
 	}
 }
 
@@ -83,16 +82,21 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 		NSDictionary *menuData = [menus objectForKey:listenerName];
 		UIAlertView *av = [[UIAlertView alloc] init];
 		av.title = [menuData objectForKey:@"title"];
-		for (NSString *item in [menuData objectForKey:@"items"])
-			[av addButtonWithTitle:[activator localizedTitleForListenerName:item] ?: @""];
+		NSMutableArray *compatibleItems = [[NSMutableArray alloc] init];
+		for (NSString *item in [menuData objectForKey:@"items"]) {
+			if ([LASharedActivator listenerWithName:item isCompatibleWithMode:event.mode]) {
+				[compatibleItems addObject:item];
+				[av addButtonWithTitle:[activator localizedTitleForListenerName:item] ?: @""];
+			}
+		}
 		av.cancelButtonIndex = [av addButtonWithTitle:[activator localizedStringForKey:@"CANCEL" value:@"Cancel"]];
 		av.delegate = self;
 		[av show];
 		currentAlertView = av;
-		[currentListenerName release];
-		currentListenerName = [listenerName copy];
 		[currentEvent release];
 		currentEvent = [event copy];
+		[currentItems release];
+		currentItems = compatibleItems;
 		event.handled = YES;
 	}
 }
