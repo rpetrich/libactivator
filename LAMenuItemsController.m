@@ -87,10 +87,10 @@
 	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
 	LAMenuListenerSelectionController *vc = [LAMenuListenerSelectionController controller];
 	vc.navigationItem.title = @"Action";
-	if (indexPath.section == 1) {
-		vc.selectedListenerName = [_items objectAtIndex:indexPath.row];
+	if (indexPath.section == 1)
 		destinationIndex = -1;
-	} else {
+	else {
+		vc.selectedListenerName = [_items objectAtIndex:indexPath.row];
 		destinationIndex = indexPath.row;
 	}
 	[vc addObserver:self forKeyPath:@"selectedListenerName" options:NSKeyValueObservingOptionNew context:NULL];
