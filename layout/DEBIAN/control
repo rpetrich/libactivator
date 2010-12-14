@@ -1,7 +1,7 @@
 Package: libactivator
 Depends: mobilesubstrate (>= 0.9.3228), preferenceloader (>= 2.0.2), firmware (>= 3.0)
 Name: Activator
-Version: 1.4.6
+Version: 1.5.0~BETA1
 Priority: optional
 Architecture: iphoneos-arm
 Description: Activate apps via gestures, buttons and shortcuts
@@ -10,7 +10,7 @@ Depiction: http://moreinfo.thebigboss.org/moreinfo/depiction.php?file=libactivat
 Maintainer: BigBoss <bigboss@thebigboss.org>
 Author: Ryan Petrich <rpetrich@gmail.com>
 Sponsor: thebigboss.org <http://thebigboss.org>
-Conflicts: com.booleanmagic.overboard (<= 1.1), com.sinfuliphone.overboard, com.AppBox.OverBoard, com.xsellize.overboard, com.beyoip.overboard, com.ashman.lockinfo (<= 2.0.0-6), com.beyoip.lockinfo (<= 2.0.0-6), com.sinfuliphone.lockinfo (<= 2.0.0-6), com.gbtech.libactivator, com.beyoip.libactivator, sbsettings (<= 3.0.6)
-Replaces: com.booleanmagic.overboard (<= 1.1), com.sinfuliphone.overboard, com.AppBox.OverBoard, com.xsellize.overboard, com.beyoip.overboard, com.ashman.lockinfo (<= 2.0.0-6), com.beyoip.lockinfo (<= 2.0.0-6), com.sinfuliphone.lockinfo (<= 2.0.0-6), com.gbtech.libactivator, com.beyoip.libactivator
+Conflicts: com.booleanmagic.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6), sbsettings (<= 3.0.6)
+Replaces: com.booleanmagic.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6)
 Section: System
 dev: rpetrich
