@@ -39,6 +39,8 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 - (void)dealloc
 {
 	CFNotificationCenterRemoveObserver(CFNotificationCenterGetDarwinNotifyCenter(), self, CFSTR("libactivator.menu/settingschanged"), NULL);
+	[imageData2x release];
+	[imageData release];
 	[currentItems release];
 	currentActionSheet.delegate = nil;
 	[currentActionSheet release];
@@ -137,6 +139,19 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedGroupForListenerName:(NSString *)listenerName
 {
 	return [activator localizedStringForKey:@"MENUS" value:@"Menus"];
+}
+
+- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
+{
+	if (scale && (*scale == 2.0f)) {
+		if (!imageData2x)
+			imageData2x = [[NSData dataWithContentsOfMappedFile:@"/System/Library/PreferenceBundles/LibActivator.bundle/icon@2x.png"] retain];
+		return imageData2x;
+	} else {
+		if (!imageData)
+			imageData = [[NSData dataWithContentsOfMappedFile:@"/System/Library/PreferenceBundles/LibActivator.bundle/icon.png"] retain];
+		return imageData;
+	}
 }
 
 @end

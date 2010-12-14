@@ -10,6 +10,8 @@ __attribute__((visibility("hidden")))
 	UIActionSheet *currentActionSheet;
 	NSArray *currentItems;
 	LAEvent *currentEvent;
+	NSData *imageData;
+	NSData *imageData2x;
 }
 
 + (LAMenuListener *)sharedMenuListener;
