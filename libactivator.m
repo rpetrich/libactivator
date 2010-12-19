@@ -11,6 +11,7 @@
 #include <objc/runtime.h>
 #include <sys/stat.h>
 #include <execinfo.h>
+#include <notify.h>
 
 NSString * const LAEventModeSpringBoard = @"springboard";
 NSString * const LAEventModeApplication = @"application";
@@ -167,12 +168,21 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (BOOL)isInProtectedApplication
 {
-	NSString *displayIdentifier = [[[LAApplicationListener sharedInstance] topApplication] displayIdentifier];
-	if ([displayIdentifier isEqualToString:@"com.saurik.Cydia"]) {
-		if (![[self _getObjectForPreference:@"LAIgnoreProtectedApplications"] boolValue])
-			return YES;
+	SBApplication *application = [[LAApplicationListener sharedInstance] topApplication];
+	NSString *displayIdentifier = [application displayIdentifier];
+	if (![displayIdentifier isEqualToString:@"com.saurik.Cydia"])
+		return NO;
+	if ([[NSFileManager defaultManager] fileExistsAtPath:@"/Applications/Cydia.app/MobileCydia"]) {
+	    int notify_token;
+		if (notify_register_check("com.saurik.Cydia.status", &notify_token) != NOTIFY_STATUS_OK)
+			return NO;
+		uint64_t state = 1;
+		notify_get_state(notify_token, &state);
+		notify_cancel(notify_token);
+    	if (state == 0)
+    		return NO;
 	}
-	return NO;
+	return ![[self _getObjectForPreference:@"LAIgnoreProtectedApplications"] boolValue];
 }
 
 - (id<LAListener>)listenerForEvent:(LAEvent *)event
