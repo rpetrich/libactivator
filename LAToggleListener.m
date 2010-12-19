@@ -58,25 +58,27 @@ static UIAlertView *alertView;
 - (id)init
 {
 	if ((self = [super init])) {
-		toggles = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);	
-		NSFileManager *fileManager = [NSFileManager defaultManager];
-		NSString *togglesPath = [LAToggleListener togglesPath];
-		for (NSString *subpath in [fileManager contentsOfDirectoryAtPath:togglesPath error:NULL]) {
-			if ([subpath hasPrefix:@"."])
-				continue;
-			if ([subpath isEqualToString:@"Fast Notes"])
-				continue;
-			if ([subpath isEqualToString:@"Brightness"])
-				continue;
-			if ([subpath isEqualToString:@"Processes"])
-				continue;
-			NSString *togglePath = [[togglesPath stringByAppendingPathComponent:subpath] stringByAppendingPathComponent:@"Toggle.dylib"];
-			void *toggle = dlopen([togglePath UTF8String], RTLD_LAZY);
-			if (toggle && isCapable(toggle)) {
-				[LASharedActivator registerListener:self forName:ListenerNameFromToggleName(subpath) ignoreHasSeen:YES];
-				CFDictionaryAddValue(toggles, subpath, toggle);
-			} else {
-				dlclose(toggle);
+		if (LASharedActivator.runningInsideSpringBoard) {
+			toggles = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
+			NSFileManager *fileManager = [NSFileManager defaultManager];
+			NSString *togglesPath = [LAToggleListener togglesPath];
+			for (NSString *subpath in [fileManager contentsOfDirectoryAtPath:togglesPath error:NULL]) {
+				if ([subpath hasPrefix:@"."])
+					continue;
+				if ([subpath isEqualToString:@"Fast Notes"])
+					continue;
+				if ([subpath isEqualToString:@"Brightness"])
+					continue;
+				if ([subpath isEqualToString:@"Processes"])
+					continue;
+				NSString *togglePath = [[togglesPath stringByAppendingPathComponent:subpath] stringByAppendingPathComponent:@"Toggle.dylib"];
+				void *toggle = dlopen([togglePath UTF8String], RTLD_LAZY);
+				if (toggle && isCapable(toggle)) {
+					[LASharedActivator registerListener:self forName:ListenerNameFromToggleName(subpath) ignoreHasSeen:YES];
+					CFDictionaryAddValue(toggles, subpath, toggle);
+				} else {
+					dlclose(toggle);
+				}
 			}
 		}
 	}

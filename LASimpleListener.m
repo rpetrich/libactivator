@@ -334,7 +334,7 @@ static LASimpleListener *sharedSimpleListener;
 
 + (void)initialize
 {
-	if (!sharedSimpleListener) {
+	if ((self == [LASimpleListener class]) && LASharedActivator.runningInsideSpringBoard) {
 		sharedSimpleListener = [[self alloc] init];
 		// System
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.homebutton"];

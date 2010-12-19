@@ -73,6 +73,11 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	[super didReceiveMemoryWarning];
 }
 
+- (BOOL)isRunningInsideSpringBoard
+{
+	return YES;
+}
+
 // Remote Messaging
 
 - (NSDictionary *)_handleRemoteListenerEventMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo

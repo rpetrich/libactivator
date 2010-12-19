@@ -56,6 +56,7 @@ typedef enum {
 + (LAActivator *)sharedInstance;
 
 @property (nonatomic, readonly) LAActivatorVersion version;
+@property (nonatomic, readonly, getter=isRunningInsideSpringBoard) BOOL runningInsideSpringBoard;
 
 @property (nonatomic, readonly) NSString *settingsFilePath;
 

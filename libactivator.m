@@ -102,6 +102,11 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 	return LAActivatorVersion_1_5;
 }
 
+- (BOOL)isRunningInsideSpringBoard
+{
+	return NO;
+}
+
 - (void)apiFailWithCulprit:(NSString *)culprit
 {
 	UIAlertView *av = [[UIAlertView alloc] init];

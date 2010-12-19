@@ -22,10 +22,12 @@ static LADefaultEventDataSource *sharedInstance;
 		// Cache event data
 		_eventData = [[NSMutableDictionary alloc] init];
 		NSString *eventsPath = SCRootPath(@"/Library/Activator/Events");
-		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:eventsPath error:NULL])
-			if (![fileName hasPrefix:@"."]) {
-				[_eventData setObject:[NSBundle bundleWithPath:[eventsPath stringByAppendingPathComponent:fileName]] forKey:fileName];
-			[LASharedActivator registerEventDataSource:self forEventName:fileName];
+		if (LASharedActivator.runningInsideSpringBoard) {
+			for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:eventsPath error:NULL])
+				if (![fileName hasPrefix:@"."]) {
+					[_eventData setObject:[NSBundle bundleWithPath:[eventsPath stringByAppendingPathComponent:fileName]] forKey:fileName];
+				[LASharedActivator registerEventDataSource:self forEventName:fileName];
+			}
 		}
 	}
 	return self;
@@ -33,8 +35,9 @@ static LADefaultEventDataSource *sharedInstance;
 
 - (void)dealloc
 {
-	for (NSString *eventName in [_eventData allKeys])
-		[LASharedActivator unregisterEventDataSourceWithEventName:eventName];
+	if (LASharedActivator.runningInsideSpringBoard)
+		for (NSString *eventName in [_eventData allKeys])
+			[LASharedActivator unregisterEventDataSourceWithEventName:eventName];
 	[_eventData release];
 	[super dealloc];
 }

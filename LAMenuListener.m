@@ -51,8 +51,9 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 
 - (void)unloadConfiguration
 {
-	for (NSString *menuKey in [menus allKeys])
-		[LASharedActivator unregisterListenerWithName:menuKey];
+	if (LASharedActivator.runningInsideSpringBoard)
+		for (NSString *menuKey in [menus allKeys])
+			[LASharedActivator unregisterListenerWithName:menuKey];
 	menus = nil;
 	[configuration release];
 	configuration = nil;
@@ -62,8 +63,9 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 {
 	configuration = [[NSDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/libactivator.menu.plist"];
 	menus = [configuration objectForKey:@"menus"];
-	for (NSString *menuKey in [menus allKeys])
-		[LASharedActivator registerListener:self forName:menuKey ignoreHasSeen:YES];
+	if (LASharedActivator.runningInsideSpringBoard)
+		for (NSString *menuKey in [menus allKeys])
+			[LASharedActivator registerListener:self forName:menuKey ignoreHasSeen:YES];
 }
 
 - (void)actionSheet:(UIActionSheet *)actionSheet clickedButtonAtIndex:(NSInteger)buttonIndex
