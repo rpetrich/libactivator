@@ -1,5 +1,6 @@
 #import "libactivator.h"
 
+@class LAMenuListenerSelectionController;
 @protocol LAMenuItemsControllerDelegate;
 
 __attribute__((visibility("hidden")))
@@ -7,7 +8,9 @@ __attribute__((visibility("hidden")))
 @private
 	NSMutableArray *_items;
 	NSInteger destinationIndex;
+	LAMenuListenerSelectionController *vc;
 }
+
 
 @property (nonatomic, copy) NSArray *items;
 

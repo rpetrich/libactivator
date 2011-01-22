@@ -22,6 +22,8 @@
 
 - (void)dealloc
 {
+	[vc removeObserver:self forKeyPath:@"items"];
+	[vc release];
 	[selectedMenu release];
 	[sortedMenus release];
 	[menus release];
@@ -105,14 +107,15 @@
 		case 0: {
 			NSString *key = [sortedMenus objectAtIndex:indexPath.row];
 			NSDictionary *menuData = [menus objectForKey:key];
-			LAMenuItemsController *vc = [[LAMenuItemsController alloc] init];
+			[vc removeObserver:self forKeyPath:@"items"];
+			[vc release];
+			vc = [[LAMenuItemsController alloc] init];
 			vc.navigationItem.title = [menuData objectForKey:@"title"];
 			vc.items = [menuData objectForKey:@"items"];
 			[selectedMenu release];
 			selectedMenu = [key copy];
 			[vc addObserver:self forKeyPath:@"items" options:NSKeyValueObservingOptionNew context:NULL];
 			[self pushSettingsController:vc];
-			[vc release];
 			break;
 		}
 		case 1: {

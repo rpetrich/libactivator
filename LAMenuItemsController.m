@@ -6,6 +6,8 @@
 
 - (void)dealloc
 {
+	[vc removeObserver:self forKeyPath:@"selectedListenerName"];
+	[vc release];
 	[_items release];
 	[super dealloc];
 }
@@ -85,7 +87,9 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
-	LAMenuListenerSelectionController *vc = [LAMenuListenerSelectionController controller];
+	[vc removeObserver:self forKeyPath:@"selectedListenerName"];
+	[vc release];
+	vc = [[LAMenuListenerSelectionController alloc] init];
 	vc.navigationItem.title = [LASharedActivator localizedStringForKey:@"ACTION" value:@"Action"];
 	if (indexPath.section == 1)
 		destinationIndex = -1;
