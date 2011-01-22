@@ -221,13 +221,24 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 - (void)sendDeactivateEventToListeners:(LAEvent *)event
 {
 	BOOL handled = [event isHandled];
+#ifdef DEBUG
+	NSString *handledListenerName = nil;
+	for (NSString *listenerName in [self availableListenerNames]) {
+		[[self listenerForName:listenerName] activator:self receiveDeactivateEvent:event forListenerName:listenerName];
+		event.handled = NO;
+		BOOL currentEventIsHandled = [event isHandled];
+		handled |= currentEventIsHandled;
+		if (currentEventIsHandled)
+			handledListenerName = listenerName;
+	}
+	[event setHandled:handled];
+	NSLog(@"Activator: sendDeactivateEventToListeners:%@ (handled by %@)", event, handledListenerName);
+#else
 	for (NSString *listenerName in [self availableListenerNames]) {
 		[[self listenerForName:listenerName] activator:self receiveDeactivateEvent:event forListenerName:listenerName];
 		handled |= [event isHandled];
 	}
 	[event setHandled:handled];
-#ifdef DEBUG
-	NSLog(@"Activator: sendDeactivateEventToListeners:%@", event);
 #endif
 }
 
