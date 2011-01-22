@@ -52,6 +52,7 @@ typedef enum {
 	NSMutableDictionary *_cachedListenerTitles;
 	NSMutableDictionary *_cachedListenerGroups;
 	NSMutableDictionary *_cachedListenerSmallIcons;
+	CFMutableSetRef _listenerInstances;
 }
 + (LAActivator *)sharedInstance;
 
@@ -125,14 +126,12 @@ extern LAActivator *LASharedActivator;
 // Incoming events
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
-- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
-- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event forListenerName:(NSString *)listenerName;
+- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event;
+- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event;
 
 // Simpler versions
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event;
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event;
-- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event;
-- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event;
 
 // Metadata (may be cached)
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName;

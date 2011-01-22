@@ -76,6 +76,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 		_cachedListenerGroups = [[NSMutableDictionary alloc] init];
 		_cachedListenerTitles = [[NSMutableDictionary alloc] init];
 		_cachedListenerSmallIcons = [[NSMutableDictionary alloc] init];
+		_listenerInstances = CFSetCreateMutable(kCFAllocatorDefault, 0, NULL);
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didReceiveMemoryWarning) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
 	}
 	return self;
@@ -84,6 +85,8 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 - (void)dealloc
 {
 	[[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+	if (_listenerInstances)
+		CFRelease(_listenerInstances);
 	[_cachedListenerSmallIcons release];
 	[_cachedListenerTitles release];
 	[_cachedListenerGroups release];
@@ -199,9 +202,9 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 		id<LAListener> listener = [self listenerForName:listenerName];
 		[listener activator:self receiveEvent:event forListenerName:listenerName];
 		if ([event isHandled])
-			for (NSString *other in [self availableListenerNames])
-				if (![other isEqualToString:listenerName])
-					[[self listenerForName:other] activator:self otherListenerDidHandleEvent:event forListenerName:other];
+			for (id<LAListener> otherListener in (NSSet *)_listenerInstances)
+				if (otherListener != listener)
+					[otherListener activator:self otherListenerDidHandleEvent:event];
 	}
 #ifdef DEBUG
 	NSLog(@"Activator: sendEventToListener:%@ (listener=%@)", event, listenerName);
@@ -224,7 +227,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 #ifdef DEBUG
 	NSString *handledListenerName = nil;
 	for (NSString *listenerName in [self availableListenerNames]) {
-		[[self listenerForName:listenerName] activator:self receiveDeactivateEvent:event forListenerName:listenerName];
+		[[self listenerForName:listenerName] activator:self receiveDeactivateEvent:event];
 		event.handled = NO;
 		BOOL currentEventIsHandled = [event isHandled];
 		handled |= currentEventIsHandled;
@@ -234,8 +237,8 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 	[event setHandled:handled];
 	NSLog(@"Activator: sendDeactivateEventToListeners:%@ (handled by %@)", event, handledListenerName);
 #else
-	for (NSString *listenerName in [self availableListenerNames]) {
-		[[self listenerForName:listenerName] activator:self receiveDeactivateEvent:event forListenerName:listenerName];
+	for (id<LAListener> listener in (NSSet *)_listenerInstances) {
+		[listener activator:self receiveDeactivateEvent:event];
 		handled |= [event isHandled];
 	}
 	[event setHandled:handled];

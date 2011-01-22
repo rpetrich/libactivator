@@ -36,16 +36,6 @@ static LARemoteListener *sharedInstance;
 	[self _performRemoteSelector:_cmd withEvent:event forListenerName:listenerName];
 }
 
-- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
-{
-	[self _performRemoteSelector:_cmd withEvent:event forListenerName:listenerName];
-}
-
-- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
-{
-	[self _performRemoteSelector:_cmd withEvent:event forListenerName:listenerName];
-}
-
 - (id)_performRemoteSelector:(SEL)selector withObject:(id)object withObject:(id)object2 forListenerName:(NSString *)listenerName
 {
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:listenerName, @"listenerName", object, @"object", object2, @"object2", nil];

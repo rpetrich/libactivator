@@ -18,7 +18,6 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		// Remote messages to id<LAListener> (with event)
 		[messagingCenter registerForMessageName:@"activator:receiveEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"activator:abortEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:otherListenerDidHandleEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
 		// Remote messages to id<LAListener> (without event)
 		[messagingCenter registerForMessageName:@"activator:requiresLocalizedTitleForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"activator:requiresLocalizedDescriptionForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
@@ -186,6 +185,8 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	[_cachedAndSortedListeners release];
 	_cachedAndSortedListeners = nil;
 	[_listeners setObject:listener forKey:name];
+	// Store all listener instances in a set so deactivate/otherListener methods can be quick
+	CFSetAddValue(_listenerInstances, listener);
 	NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
 	if (![[self _getObjectForPreference:key] boolValue])
 		[self _setObject:(id)kCFBooleanTrue forPreference:key];
@@ -193,9 +194,14 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name ignoreHasSeen:(BOOL)ignoreHasSeen
 {
+#ifdef DEBUG
+	NSLog(@"Activator: registerListener:%@ forName:%@ ignoreHasSeen:%s", listener, name, ignoreHasSeen ? "YES" : "NO");
+#endif
 	[_cachedAndSortedListeners release];
 	_cachedAndSortedListeners = nil;
 	[_listeners setObject:listener forKey:name];
+	// Store all listener instances in a set so deactivate/otherListener methods can be quick
+	CFSetAddValue(_listenerInstances, listener);
 	if (!ignoreHasSeen) {
 		NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
 		if (![[self _getObjectForPreference:key] boolValue])
@@ -208,11 +214,18 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 #ifdef DEBUG
 	NSLog(@"Activator: unregisterWithName:%@", name);
 #endif
-	[_cachedListenerTitles removeObjectForKey:name];
-	[_cachedListenerGroups removeObjectForKey:name];
-	[_cachedAndSortedListeners release];
-	_cachedAndSortedListeners = nil;
-	[_listeners removeObjectForKey:name];
+	id listener = [_listeners objectForKey:name];
+	if (listener) {
+		[_cachedListenerTitles removeObjectForKey:name];
+		[_cachedListenerGroups removeObjectForKey:name];
+		[_cachedAndSortedListeners release];
+		_cachedAndSortedListeners = nil;
+		// Do some monkey-work so that only the last removal of a shared instance removes it from the set
+		// Since removal is uncommon, this is allowed to be slowish
+		if ([[_listeners allKeysForObject:listener] count] == 1)
+			CFSetRemoveValue(_listenerInstances, listener);
+		[_listeners removeObjectForKey:name];
+	}
 }
 
 // Listeners

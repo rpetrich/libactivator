@@ -15,14 +15,6 @@
 {
 	[self activator:activator abortEvent:event];
 }
-- (void)activator:(LAActivator *)activator otherListenerDidHandleEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
-{
-	[self activator:activator otherListenerDidHandleEvent:event];
-}
-- (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
-{
-	[self activator:activator receiveDeactivateEvent:event];
-}
 
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName
 {
