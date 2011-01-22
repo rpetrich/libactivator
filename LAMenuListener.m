@@ -8,6 +8,14 @@
 - (void)refreshConfiguration;
 @end
 
+@interface UIDevice (OS32)
+- (BOOL)isWildcat;
+@end
+
+@interface UIActionSheet (OS32)
+- (void)showFromRect:(CGRect)rect inView:(UIView *)view animated:(BOOL)animated;
+@end
+
 @implementation LAMenuListener
 
 static LAMenuListener *sharedMenuListener;
@@ -112,7 +120,15 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 			alertWindow.windowLevel = UIWindowLevelStatusBar;
 		}
 		alertWindow.hidden = NO;
-		[actionSheet showInView:alertWindow];
+		if ([UIDevice instancesRespondToSelector:@selector(isWildcat)] && [[UIDevice currentDevice] isWildcat]) {
+			CGRect bounds = alertWindow.bounds;
+			if (![event.name hasPrefix:@"libactivator.statusbar."])
+				bounds.origin.y += bounds.size.height;
+			bounds.size.height = 0.0f;
+			[actionSheet showFromRect:bounds inView:alertWindow animated:YES];
+		} else {
+			[actionSheet showInView:alertWindow];
+		}
 		currentActionSheet = actionSheet;
 		[currentEvent release];
 		currentEvent = [event copy];
