@@ -61,6 +61,7 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 
 - (void)refreshConfiguration
 {
+	[self unloadConfiguration];
 	configuration = [[NSDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/libactivator.menu.plist"];
 	menus = [configuration objectForKey:@"menus"];
 	if (LASharedActivator.runningInsideSpringBoard)
