@@ -76,17 +76,23 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 	}
 }
 
+- (void)cleanup
+{
+	[currentActionSheet release];
+	currentActionSheet = nil;
+}
+
 - (void)actionSheet:(UIActionSheet *)actionSheet didDismissWithButtonIndex:(NSInteger)buttonIndex
 {
 	alertWindow.hidden = YES;
+	[self performSelector:@selector(cleanup) withObject:nil afterDelay:0.0];
 }
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
 	if (currentActionSheet) {
 		[currentActionSheet dismissWithClickedButtonIndex:currentActionSheet.cancelButtonIndex animated:YES];
-		[currentActionSheet release];
-		currentActionSheet = nil;
+		[self performSelector:@selector(cleanup) withObject:nil afterDelay:0.0];
 	} else {
 		NSDictionary *menuData = [menus objectForKey:listenerName];
 		UIActionSheet *actionSheet = [[UIActionSheet alloc] init];
@@ -118,16 +124,14 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event
 {
 	[currentActionSheet dismissWithClickedButtonIndex:currentActionSheet.cancelButtonIndex animated:YES];
-	[currentActionSheet release];
-	currentActionSheet = nil;
+	[self performSelector:@selector(cleanup) withObject:nil afterDelay:0.0];
 }
 
 - (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event
 {
 	if (currentActionSheet) {
 		[currentActionSheet dismissWithClickedButtonIndex:currentActionSheet.cancelButtonIndex animated:YES];
-		[currentActionSheet release];
-		currentActionSheet = nil;
+		[self performSelector:@selector(cleanup) withObject:nil afterDelay:0.0];
 		event.handled = YES;
 	}
 }
