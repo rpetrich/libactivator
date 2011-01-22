@@ -55,7 +55,7 @@ NSString * const LAEventNamePowerDisconnected      = @"libactivator.power.discon
 #define kStatusBarHoldDelay                0.5f
 #define kSlideGestureWindowHeight          13.0f
 #define kWindowLevelTransparentTopMost     9999.0f
-#define kAlmostTransparentColor            [[UIColor blackColor] colorWithAlphaComponent:(1.0f / 255.0f)]
+#define kAlmostTransparentColor            [[UIColor grayColor] colorWithAlphaComponent:(2.0f / 255.0f)]
 
 CHDeclareClass(SpringBoard);
 CHDeclareClass(iHome);
