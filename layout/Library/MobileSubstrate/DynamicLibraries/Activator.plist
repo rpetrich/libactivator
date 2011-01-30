@@ -1,1 +1,2 @@
 Filter = {Bundles = ("com.apple.UIKit");};
+SupportsRoot = 1;
