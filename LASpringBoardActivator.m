@@ -95,7 +95,7 @@ CHDeclareClass(SBApplicationController);
 		if (![application process])
 			return NO;
 	} else if ([application respondsToSelector:@selector(pid)]) {
-		if ([application pid] == 0)
+		if ([application pid] == -1)
 			return NO;
 	} else {
 		return NO;
