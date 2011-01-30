@@ -42,6 +42,7 @@ internal-stage::
 	mkdir -p $(THEOS_STAGING_DIR)/usr/include/libactivator
 	mkdir -p $(THEOS_STAGING_DIR)/Library/Activator/Listeners
 	cp -a libactivator.h $(FW_STAGING_DIR)/usr/include/libactivator/
+	cp -a LICENSE $(FW_STAGING_DIR)/Library/Activator
 	- find $(THEOS_STAGING_DIR) -iname '*.plist' -or -iname '*.strings' -exec plutil -convert binary1 {} \;
 
 internal-after-install::
