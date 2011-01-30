@@ -436,7 +436,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (NSString *)description
 {
-	return [NSString stringWithFormat:@"<LAActivator listeners=%@ events=%@ modes=%@ %p>", [self availableListenerNames], [self availableEventNames], [self availableEventModes], self];
+	return [NSString stringWithFormat:@"<LAActivator listenerCount=%d eventCount=%d %p>", [[self availableListenerNames] count], [[self availableEventNames] count], self];
 }
 
 - (NSURL *)moreActionsURL
