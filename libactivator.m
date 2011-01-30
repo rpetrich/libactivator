@@ -49,7 +49,11 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 	} else {
 		culprit = nil;
 	}
-	[LASharedActivator performSelector:@selector(apiFailWithCulprit:) withObject:culprit afterDelay:0.0f];
+	NSDictionary *culpritDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
+		[NSString stringWithUTF8String:(char *)_cmd], @"selector",
+		culprit, @"culprit",
+		nil];
+	[LASharedActivator performSelector:@selector(apiFailWithCulpritDictionary:) withObject:culpritDictionary afterDelay:0.0];
 	NSLog(@"Activator: %@ called -[LAActivator %s] from outside SpringBoard. This is invalid!", culprit, _cmd);
 }
 
@@ -110,11 +114,11 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 	return NO;
 }
 
-- (void)apiFailWithCulprit:(NSString *)culprit
+- (void)apiFailWithCulpritDictionary:(NSDictionary *)culpritDictionary
 {
 	UIAlertView *av = [[UIAlertView alloc] init];
 	av.title = @"Invalid Operation";
-	av.message = [culprit stringByAppendingString:@" has called an Activator API improperly from outside SpringBoard.\nContact the developer."];
+	av.message = [[culpritDictionary objectForKey:@"culprit"] stringByAppendingFormat:@" has called -[LAActivator %@] improperly from outside SpringBoard.\nContact the developer.", [culpritDictionary objectForKey:@"selector"]];
 	[av addButtonWithTitle:@"OK"];
 	[av show];
 	[av release];
