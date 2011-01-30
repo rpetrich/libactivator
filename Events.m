@@ -55,6 +55,7 @@ NSString * const LAEventNamePowerDisconnected      = @"libactivator.power.discon
 #define kStatusBarHoldDelay                0.5f
 #define kSlideGestureWindowHeight          13.0f
 #define kWindowLevelTransparentTopMost     9999.0f
+#define kShakeIgnoreTimeout                2.0
 #define kAlmostTransparentColor            [[UIColor grayColor] colorWithAlphaComponent:(2.0f / 255.0f)]
 
 CHDeclareClass(SpringBoard);
@@ -700,18 +701,32 @@ CHOptimizedMethod(0, new, void, SpringBoard, activatorLockButtonDoubleTapAborted
 	isWaitingForLockDoubleTap = NO;
 }
 
+static CFAbsoluteTime lastShakeEventSentAt;
+
 CHOptimizedMethod(0, self, void, SpringBoard, _showEditAlertView)
 {
 	// iOS3.x
-	if (![LASendEventWithName(LAEventNameMotionShake) isHandled])
-		CHSuper(0, SpringBoard, _showEditAlertView);
+	CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+	if (lastShakeEventSentAt + kShakeIgnoreTimeout < now) {
+		if ([LASendEventWithName(LAEventNameMotionShake) isHandled]) {
+			lastShakeEventSentAt = now;
+			return;
+		}
+	}
+	CHSuper(0, SpringBoard, _showEditAlertView);
 }
 
 CHOptimizedMethod(1, super, void, SpringBoard, _sendMotionEnded, int, subtype)
 {
 	// iOS4.0+
-	if (![LASendEventWithName(LAEventNameMotionShake) isHandled])
-		CHSuper(1, SpringBoard, _sendMotionEnded, subtype);
+	CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
+	if (lastShakeEventSentAt + kShakeIgnoreTimeout < now) {
+		if ([LASendEventWithName(LAEventNameMotionShake) isHandled]) {
+			lastShakeEventSentAt = now;
+			return;
+		}
+	}
+	CHSuper(1, SpringBoard, _sendMotionEnded, subtype);
 }
 
 static LAEvent *menuEventToAbort;
