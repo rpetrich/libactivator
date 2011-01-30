@@ -1,6 +1,8 @@
 #import "libactivator-private.h"
 #import "LAApplicationListener.h"
 
+#import <CaptainHook/CaptainHook.h>
+
 #include <sys/stat.h>
 #include <notify.h>
 
@@ -8,6 +10,13 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
 	return [[(LAActivator *)context localizedTitleForListenerName:a] localizedCaseInsensitiveCompare:[(LAActivator *)context localizedTitleForListenerName:b]];
 }
+
+@class SBProcess;
+@interface SBApplication (OS40)
+@property (nonatomic, retain) SBProcess *process;
+@end
+
+CHDeclareClass(SBApplicationController);
 
 @implementation LASpringBoardActivator
 
@@ -57,6 +66,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		if ([[NSFileManager defaultManager] fileExistsAtPath:@"/Applications/Cydia.app/MobileCydia"]) {
 			notify_register_check("com.saurik.Cydia.status", &notify_token);
 		}
+		CHLoadLateClass(SBApplicationController);
 	}
 	return self;
 }
@@ -80,10 +90,16 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 
 - (BOOL)isInProtectedApplication
 {
-	SBApplication *application = [[LAApplicationListener sharedInstance] topApplication];
-	NSString *displayIdentifier = [application displayIdentifier];
-	if (![displayIdentifier isEqualToString:@"com.saurik.Cydia"])
+	SBApplication *application = [CHSharedInstance(SBApplicationController) applicationWithDisplayIdentifier:@"com.saurik.Cydia"];
+	if ([application respondsToSelector:@selector(process)]) {
+		if (![application process])
+			return NO;
+	} else if ([application respondsToSelector:@selector(pid)]) {
+		if ([application pid] == 0)
+			return NO;
+	} else {
 		return NO;
+	}
 	if (notify_token) {
 		uint64_t state = 1;
 		notify_get_state(notify_token, &state);
