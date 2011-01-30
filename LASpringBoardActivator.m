@@ -2,6 +2,7 @@
 #import "LAApplicationListener.h"
 
 #include <sys/stat.h>
+#include <notify.h>
 
 static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 {
@@ -52,12 +53,17 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 		if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]]))
 			_preferences = [[NSMutableDictionary alloc] init];
 		_eventData = [[NSMutableDictionary alloc] init];
+		// Load NewCydia notify check
+		if ([[NSFileManager defaultManager] fileExistsAtPath:@"/Applications/Cydia.app/MobileCydia"]) {
+			notify_register_check("com.saurik.Cydia.status", &notify_token);
+		}
 	}
 	return self;
 }
 
 - (void)dealloc
 {
+	notify_cancel(notify_token);
 	[_cachedAndSortedListeners release];
 	[_eventData release];
 	[_preferences release];
@@ -70,6 +76,21 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 	[_cachedAndSortedListeners release];
 	_cachedAndSortedListeners = nil;
 	[super didReceiveMemoryWarning];
+}
+
+- (BOOL)isInProtectedApplication
+{
+	SBApplication *application = [[LAApplicationListener sharedInstance] topApplication];
+	NSString *displayIdentifier = [application displayIdentifier];
+	if (![displayIdentifier isEqualToString:@"com.saurik.Cydia"])
+		return NO;
+	if (notify_token) {
+		uint64_t state = 1;
+		notify_get_state(notify_token, &state);
+		if (state == 0)
+			return NO;
+	}
+	return ![[self _getObjectForPreference:@"LAIgnoreProtectedApplications"] boolValue];
 }
 
 - (BOOL)isRunningInsideSpringBoard

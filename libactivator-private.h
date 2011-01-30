@@ -31,6 +31,7 @@ __attribute__((visibility("hidden")))
 	NSMutableDictionary *_preferences;
 	NSMutableDictionary *_eventData;
 	NSDictionary *_cachedAndSortedListeners;
+	int notify_token;
 }
 
 - (void)_eventModeChanged;
