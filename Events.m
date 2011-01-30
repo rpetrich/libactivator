@@ -74,6 +74,9 @@ CHDeclareClass(VolumeControl);
 CHDeclareClass(SBVolumeHUDView);
 CHDeclareClass(SBStatusBarController);
 CHDeclareClass(SBAppSwitcherController);
+CHDeclareClass(SBRemoteLocalNotificationAlert);
+CHDeclareClass(SBAlertItemsController);
+CHDeclareClass(SBAlert);
 
 //static BOOL isInSleep;
 
@@ -137,6 +140,16 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 
 @interface SBVolumeHUDView : UIView {
 }
+@end
+
+@interface SBRemoteLocalNotificationAlert : SBAlertItem {
+}
++ (BOOL)isPlayingRingtone;
++ (void)stopPlayingAlertSoundOrRingtone;
+@end
+
+@interface SBAlertItemsController (OS40)
+- (NSArray *)alertItemsOfClass:(Class)aClass;
 @end
 
 static void HideVolumeHUD(VolumeControl *volumeControl)
@@ -788,8 +801,21 @@ static void VolumeDownButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
 		[volumeControl decreaseVolume];
 }
 
+static BOOL justSuppressedNotificationSound;
+
 CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
 {
+	// Suppress ringtone
+	if ([CHClass(SBAlert) respondsToSelector:@selector(alertWindow)]) {
+		id alertWindow = [CHClass(SBAlert) alertWindow];
+		if ([alertWindow respondsToSelector:@selector(currentDisplay)]) {
+			id alertDisplay = [alertWindow currentDisplay];
+			if ([alertDisplay respondsToSelector:@selector(handleVolumeEvent:)]) {
+				[alertDisplay handleVolumeEvent:gsEvent];
+				return;
+			}
+		}
+	}
 	VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
 	switch (GSEventGetType(gsEvent)) {
 		case kGSEventVolumeUpButtonDown:
@@ -838,6 +864,16 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			break;
 		}
 		case kGSEventVolumeDownButtonDown:
+			// Suppress notification alert sounds
+			if ([CHClass(SBRemoteLocalNotificationAlert) respondsToSelector:@selector(isPlayingRingtone)] && [CHClass(SBRemoteLocalNotificationAlert) isPlayingRingtone]) {
+				NSArray *notificationAlerts = [CHSharedInstance(SBAlertItemsController) alertItemsOfClass:CHClass(SBRemoteLocalNotificationAlert)];
+				[notificationAlerts makeObjectsPerformSelector:@selector(snoozeIfPossible)];
+				if ([CHClass(SBRemoteLocalNotificationAlert) respondsToSelector:@selector(stopPlayingAlertSoundOrRingtone)]) {
+					[CHClass(SBRemoteLocalNotificationAlert) stopPlayingAlertSoundOrRingtone];
+				}
+				justSuppressedNotificationSound = YES;
+				break;
+			}
 			if (isVolumeButtonDown) {
 				DestroyCurrentVolumeButtonUpTimer();
 				suppressVolumeButtonUp = YES;
@@ -856,6 +892,10 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			}
 			break;
 		case kGSEventVolumeDownButtonUp: {
+			if (justSuppressedNotificationSound) {
+				justSuppressedNotificationSound = NO;
+				break;
+			}
 			isVolumeButtonDown = NO;
 			DestroyCurrentVolumeButtonUpTimer();
 			if (suppressVolumeButtonUp) {
@@ -1484,6 +1524,9 @@ CHConstructor
 		CHLoadLateClass(SBAppSwitcherController);
 		
 		CHLoadLateClass(SBStatusBarController);
+		CHLoadLateClass(SBRemoteLocalNotificationAlert);
+		CHLoadLateClass(SBAlertItemsController);
+		CHLoadLateClass(SBAlert);
 		[[LAVersionChecker class] performSelector:@selector(checkVersion) withObject:nil afterDelay:0.1];
 	}
 }
