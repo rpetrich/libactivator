@@ -758,6 +758,16 @@ CHOptimizedMethod(0, self, void, SpringBoard, menuButtonWasHeld)
 	CHSuper(0, SpringBoard, menuButtonWasHeld);
 }
 
+CHOptimizedMethod(0, self, void, SpringBoard, _menuButtonWasHeld)
+{
+	if (menuEventToAbort) {
+		LAAbortEvent(menuEventToAbort);
+		[menuEventToAbort release];
+		menuEventToAbort = nil;
+	}
+	CHSuper(0, SpringBoard, _menuButtonWasHeld);
+}
+
 CHOptimizedMethod(0, new, void, SpringBoard, activatorMenuButtonTimerCompleted)
 {
 	[menuEventToAbort release];
@@ -1453,6 +1463,7 @@ CHConstructor
 		CHHook(1, SpringBoard, menuButtonDown);
 		CHHook(1, SpringBoard, menuButtonUp);
 		CHHook(0, SpringBoard, menuButtonWasHeld);
+		CHHook(0, SpringBoard, _menuButtonWasHeld);
 		CHHook(0, SpringBoard, activatorMenuButtonTimerCompleted);
 		CHHook(1, SpringBoard, volumeChanged);
 		CHHook(0, SpringBoard, _showEditAlertView);
