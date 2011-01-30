@@ -10,9 +10,11 @@ CHDeclareClass(SBApplicationController);
 CHDeclareClass(SBApplication);
 CHDeclareClass(SBDisplayStack);
 CHDeclareClass(SBIconModel);
+CHDeclareClass(SBAwayController);
 
 static LAApplicationListener *sharedApplicationListener;
 static NSMutableArray *displayStacks;
+static NSArray *allEventModesExceptLockScreen;
 
 #define SBWPreActivateDisplayStack        (SBDisplayStack *)[displayStacks objectAtIndex:0]
 #define SBWActiveDisplayStack             (SBDisplayStack *)[displayStacks objectAtIndex:1]
@@ -101,9 +103,17 @@ static NSMutableArray *displayStacks;
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
 	SBApplication *application = SBApp(listenerName);
-	if ([activator currentEventMode] == LAEventModeSpringBoard) {
+	NSString *eventMode = [activator currentEventMode];
+	if (eventMode == LAEventModeSpringBoard) {
 		[self performSelector:@selector(activateApplication:) withObject:application afterDelay:0.0f];
 		[event setHandled:YES];
+	} else if (eventMode == LAEventModeLockScreen) {
+		SBAwayController *awayController = [CHClass(SBAwayController) sharedAwayController];
+		if (![awayController isPasswordProtected]) {
+			[awayController unlockWithSound:NO];
+			[self performSelector:@selector(activateApplication:) withObject:application afterDelay:0.0f];
+			[event setHandled:YES];
+		}
 	} else if ([self activateApplication:application]) {
 		[event setHandled:YES];
 	}
@@ -129,7 +139,10 @@ static NSMutableArray *displayStacks;
 
 - (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)name
 {
-	return [NSArray arrayWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil];
+	if ([[CHClass(SBAwayController) sharedAwayController] isPasswordProtected])
+		return allEventModesExceptLockScreen;
+	else
+		return activator.availableEventModes;
 }
 
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
@@ -259,6 +272,7 @@ CHConstructor {
 	CHAutoreleasePoolForScope();
 	if (CHLoadLateClass(SBApplicationController)) {
 		sharedApplicationListener = [[LAApplicationListener alloc] init];
+		allEventModesExceptLockScreen = [[NSArray alloc] initWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil];
 		displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
 		CHLoadLateClass(SBApplication);
 		CHHook(8, SBApplication, initWithBundleIdentifier, roleIdentifier, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
@@ -267,5 +281,6 @@ CHConstructor {
 		CHHook(0, SBDisplayStack, init);
 		CHHook(0, SBDisplayStack, dealloc);
 		CHLoadLateClass(SBIconModel);
+		CHLoadLateClass(SBAwayController);
 	}
 }
