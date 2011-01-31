@@ -7,6 +7,8 @@
 
 @interface LAActivator ()
 
+@property (nonatomic, readonly) NSString *settingsFilePath;
+
 - (void)didReceiveMemoryWarning;
 
 - (void)_resetPreferences;
@@ -32,6 +34,7 @@ __attribute__((visibility("hidden")))
 	NSMutableDictionary *_eventData;
 	NSDictionary *_cachedAndSortedListeners;
 	int notify_token;
+	BOOL waitingToWriteSettings;
 }
 
 - (void)_eventModeChanged;

@@ -59,8 +59,6 @@ typedef enum {
 @property (nonatomic, readonly) LAActivatorVersion version;
 @property (nonatomic, readonly, getter=isRunningInsideSpringBoard) BOOL runningInsideSpringBoard;
 
-@property (nonatomic, readonly) NSString *settingsFilePath;
-
 - (id<LAListener>)listenerForEvent:(LAEvent *)event;
 - (void)sendEventToListener:(LAEvent *)event;
 - (void)sendAbortToListener:(LAEvent *)event;

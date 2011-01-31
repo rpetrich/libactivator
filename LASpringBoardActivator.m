@@ -181,6 +181,19 @@ CHDeclareClass(SBApplicationController);
 	[self _setObject:[userInfo objectForKey:@"value"] forPreference:[userInfo objectForKey:@"preference"]];
 }
 
+- (void)_savePreferences
+{
+	CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
+	CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
+	CFRelease(url);
+	CFWriteStreamOpen(stream);
+	CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, NULL);
+	CFWriteStreamClose(stream);
+	CFRelease(stream);
+	chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+	waitingToWriteSettings = NO;
+}
+
 - (void)_setObject:(id)value forPreference:(NSString *)preference
 {
 	if (value)
@@ -190,14 +203,10 @@ CHDeclareClass(SBApplicationController);
 #ifdef DEBUG
 	NSLog(@"Activator: Setting preference %@ to %@", preference, value);
 #endif
-	CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
-	CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
-	CFRelease(url);
-	CFWriteStreamOpen(stream);
-	CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, NULL);
-	CFWriteStreamClose(stream);
-	CFRelease(stream);
-	chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+	if (!waitingToWriteSettings) {
+		waitingToWriteSettings = YES;
+		[self performSelector:@selector(_savePreferences) withObject:nil afterDelay:0.2];
+	}
 }
 
 - (void)_eventModeChanged
