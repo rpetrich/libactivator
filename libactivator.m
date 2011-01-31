@@ -189,7 +189,9 @@ static UIAlertView *inCydiaAlert;
 	NSString *listenerName = [self assignedListenerNameForEvent:event];
 	if ([self listenerWithName:listenerName isCompatibleWithEventName:[event name]]) {
 		if ([self isInProtectedApplication]) {
-			if (![[event name] isEqualToString:LAEventNameMenuPressSingle]) {
+			if (![[event name] isEqualToString:LAEventNameMenuPressSingle] &&
+				![[event name] isEqualToString:LAEventNameMenuPressDouble]
+			) {
 				if (!inCydiaAlert) {
 					inCydiaAlert = [[UIAlertView alloc] init];
 					inCydiaAlert.title = [self localizedStringForKey:@"ACTIVATOR" value:@"Activator"];
