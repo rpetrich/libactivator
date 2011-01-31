@@ -563,6 +563,8 @@ static UIAlertView *inCydiaAlert;
 CHConstructor
 {
 	CHAutoreleasePoolForScope();
+	if ([[NSBundle mainBundle] bundleIdentifier] == nil)
+		return;
 	activatorBundle = [[NSBundle alloc] initWithPath:SCRootPath(@"/Library/Activator")];
 	if (CHLoadLateClass(SBIconController)) {
 		// Cache listener data
