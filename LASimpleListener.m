@@ -335,6 +335,20 @@ static LASimpleListener *sharedSimpleListener;
 + (void)initialize
 {
 	if ((self == [LASimpleListener class]) && LASharedActivator.runningInsideSpringBoard) {
+		CHLoadLateClass(SBIconController);
+		CHLoadLateClass(SBSearchController);
+		CHLoadLateClass(SBAlertItemsController);
+		CHLoadLateClass(SBNowPlayingAlertItem);
+		CHLoadLateClass(SBScreenShotter);
+		CHLoadLateClass(SBVoiceControlAlert);
+		CHLoadLateClass(SBAwayController);
+		CHLoadLateClass(SBUIController);
+		CHLoadLateClass(SBStatusBarController);
+		CHLoadLateClass(SBStatusBarDataManager);
+		CHLoadLateClass(SBMediaController);
+		CHLoadLateClass(SBApplicationController);
+		CHLoadLateClass(SBSoundPreferences);
+		CHLoadLateClass(SBAppSwitcherController);
 		sharedSimpleListener = [[self alloc] init];
 		// System
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.homebutton"];
@@ -369,20 +383,6 @@ static LASimpleListener *sharedSimpleListener;
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.keypad"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.voicemail"];
 		}
-		CHLoadLateClass(SBIconController);
-		CHLoadLateClass(SBSearchController);
-		CHLoadLateClass(SBAlertItemsController);
-		CHLoadLateClass(SBNowPlayingAlertItem);
-		CHLoadLateClass(SBScreenShotter);
-		CHLoadLateClass(SBVoiceControlAlert);
-		CHLoadLateClass(SBAwayController);
-		CHLoadLateClass(SBUIController);
-		CHLoadLateClass(SBStatusBarController);
-		CHLoadLateClass(SBStatusBarDataManager);
-		CHLoadLateClass(SBMediaController);
-		CHLoadLateClass(SBApplicationController);
-		CHLoadLateClass(SBSoundPreferences);
-		CHLoadLateClass(SBAppSwitcherController);
 	}
 }
 
