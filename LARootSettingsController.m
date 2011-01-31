@@ -42,7 +42,7 @@
 		case 3:
 			return [LASharedActivator localizedStringForKey:@"LOCALIZATION_ABOUT" value:@""];
 		case 4:
-			return @"\u00A9 2009-2010 Ryan Petrich";
+			return @"\u00A9 2009-2011 Ryan Petrich";
 		default:
 			return nil;
 	}
