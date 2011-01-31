@@ -182,18 +182,21 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 	return [self listenerForName:[self assignedListenerNameForEvent:event]];
 }
 
+static UIAlertView *inCydiaAlert;
+
 - (void)sendEventToListener:(LAEvent *)event
 {
 	NSString *listenerName = [self assignedListenerNameForEvent:event];
 	if ([self listenerWithName:listenerName isCompatibleWithEventName:[event name]]) {
 		if ([self isInProtectedApplication]) {
 			if (![[event name] isEqualToString:LAEventNameMenuPressSingle]) {
-				UIAlertView *av = [[UIAlertView alloc] init];
-				av.title = [self localizedStringForKey:@"ACTIVATOR" value:@"Activator"];
-				av.message = [self localizedStringForKey:@"IN_CYDIA_WARNING" value:@"It is potentially dangerous to perform actions while Cydia is installing software."];
-				[av addButtonWithTitle:[self localizedStringForKey:@"ALERT_OK" value:@"OK"]];
-				[av show];
-				[av release];
+				if (!inCydiaAlert) {
+					inCydiaAlert = [[UIAlertView alloc] init];
+					inCydiaAlert.title = [self localizedStringForKey:@"ACTIVATOR" value:@"Activator"];
+					inCydiaAlert.message = [self localizedStringForKey:@"IN_CYDIA_WARNING" value:@"It is potentially dangerous to perform actions while Cydia is installing software."];
+					[inCydiaAlert addButtonWithTitle:[self localizedStringForKey:@"ALERT_OK" value:@"OK"]];
+				}
+				[inCydiaAlert show];
 			}
 			NSLog(@"Activator: sendEventToListener:%@ (listener=%@) aborted in Cydia", event, listenerName);
 			return;
