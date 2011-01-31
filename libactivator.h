@@ -47,7 +47,6 @@ typedef enum {
 
 @interface LAActivator : NSObject {
 @protected
-	NSBundle *_mainBundle;
 	NSArray *_availableEventModes;
 	NSMutableDictionary *_cachedListenerTitles;
 	NSMutableDictionary *_cachedListenerGroups;
