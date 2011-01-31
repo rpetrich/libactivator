@@ -1,10 +1,10 @@
 Package: libactivator
 Depends: mobilesubstrate (>= 0.9.3228), preferenceloader (>= 2.0.2), firmware (>= 3.0)
 Name: Activator
-Version: 1.5.0~RC3
+Version: 1.5.0
 Priority: optional
 Architecture: iphoneos-arm
-Description: Activate apps via gestures, buttons and shortcuts
+Description: Centralized gestures, button and shortcut management for iOS
 Homepage: http://rpetri.ch/cydia/activator/
 Depiction: http://rpetri.ch/cydia/activator/
 Maintainer: BigBoss <bigboss@thebigboss.org>
