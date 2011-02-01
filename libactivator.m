@@ -109,7 +109,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (LAActivatorVersion)version
 {
-	return LAActivatorVersion_1_5;
+	return LAActivatorVersion_1_5_1;
 }
 
 - (BOOL)isRunningInsideSpringBoard
@@ -475,7 +475,7 @@ static UIAlertView *inCydiaAlert;
 {
 	UIDevice *device = [UIDevice currentDevice];
 	NSInteger idiom = [device respondsToSelector:@selector(idiom)] ? [device idiom] : 0;
-	NSString *url = [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/actions/?udid=%@&idiom=%d&version=%@&activator=%d", device.uniqueIdentifier, idiom, device.systemVersion, [LASharedActivator version]];
+	NSString *url = [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/actions/?udid=%@&idiom=%d&version=%@&activator=%d", device.uniqueIdentifier, idiom, device.systemVersion, self.version];
 	return [NSURL URLWithString:url];
 }
 
@@ -483,7 +483,7 @@ static UIAlertView *inCydiaAlert;
 {
 	UIDevice *device = [UIDevice currentDevice];
 	NSInteger idiom = [device respondsToSelector:@selector(idiom)] ? [device idiom] : 0;
-	NSString *url = [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/ads/?udid=%@&idiom=%d&version=%@&activator=%d", device.uniqueIdentifier, idiom, device.systemVersion, [LASharedActivator version]];
+	NSString *url = [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/ads/?udid=%@&idiom=%d&version=%@&activator=%d", device.uniqueIdentifier, idiom, device.systemVersion, self.version];
 	return [NSURL URLWithString:url];
 }
 

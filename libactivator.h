@@ -38,7 +38,8 @@
 typedef enum {
     LAActivatorVersion_1_3 = 1030000,
     LAActivatorVersion_1_4 = 1040000,
-    LAActivatorVersion_1_5 = 1050000
+    LAActivatorVersion_1_5 = 1050000,
+    LAActivatorVersion_1_5_1 = 1050100,
 } LAActivatorVersion;
 
 // Activator
