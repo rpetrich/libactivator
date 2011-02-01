@@ -4,6 +4,8 @@
 #import <CaptainHook/CaptainHook.h>
 
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <notify.h>
 
 static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
@@ -104,6 +106,16 @@ CHDeclareClass(SBApplicationController);
 		uint64_t state = 1;
 		notify_get_state(notify_token, &state);
 		if (state == 0)
+			return NO;
+	} else {
+		// Workaround to detect installing/not installing on legacy cydia
+		struct stat status;
+		struct stat partial;
+		struct stat archives;
+		stat("/var/cache/apt/archives", &archives);
+		stat("/var/cache/apt/archives/partial", &partial);
+		stat("/var/lib/dpkg/status", &status);
+		if ((archives.st_mtime < status.st_mtime) && (partial.st_mtime < status.st_mtime))
 			return NO;
 	}
 	return ![[self _getObjectForPreference:@"LAIgnoreProtectedApplications"] boolValue];
