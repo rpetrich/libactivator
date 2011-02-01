@@ -11,6 +11,7 @@ CHDeclareClass(SBApplication);
 CHDeclareClass(SBDisplayStack);
 CHDeclareClass(SBIconModel);
 CHDeclareClass(SBAwayController);
+CHDeclareClass(SBUIController);
 
 static LAApplicationListener *sharedApplicationListener;
 static NSMutableArray *displayStacks;
@@ -44,6 +45,10 @@ static NSArray *allEventModesExceptLockScreen;
 @interface UIImage (OS40)
 @property (nonatomic, readonly) CGFloat scale;
 @end
+@interface SBUIController (OS40)
+- (void)activateApplicationAnimated:(SBApplication *)application;
+- (void)activateApplicationFromSwitcher:(SBApplication *)application;
+@end
 #endif
 
 @implementation LAApplicationListener
@@ -76,6 +81,10 @@ static NSArray *allEventModesExceptLockScreen;
 		[icon launch];
 	else {
 		if (oldApplication == springBoard) {
+			if ([CHClass(SBUIController) instancesRespondToSelector:@selector(activateApplicationAnimated:)]) {
+				[CHSharedInstance(SBUIController) activateApplicationAnimated:application];
+				return YES;
+			}
 			[application setDisplaySetting:0x4 flag:YES];
 			[SBWPreActivateDisplayStack pushDisplay:application];
 		} else if (application == springBoard) {
@@ -83,6 +92,10 @@ static NSArray *allEventModesExceptLockScreen;
 			[SBWActiveDisplayStack popDisplay:oldApplication];
 			[SBWSuspendingDisplayStack pushDisplay:oldApplication];
 		} else {
+			if ([CHClass(SBUIController) instancesRespondToSelector:@selector(activateApplicationFromSwitcher:)]) {
+				[CHSharedInstance(SBUIController) activateApplicationFromSwitcher:application];
+				return YES;
+			}
 			[application setDisplaySetting:0x4 flag:YES];
 			[application setActivationSetting:0x40 flag:YES];
 			[application setActivationSetting:0x20000 flag:YES];
@@ -282,5 +295,6 @@ CHConstructor {
 		CHHook(0, SBDisplayStack, dealloc);
 		CHLoadLateClass(SBIconModel);
 		CHLoadLateClass(SBAwayController);
+		CHLoadLateClass(SBUIController);
 	}
 }
