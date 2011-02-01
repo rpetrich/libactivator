@@ -16,6 +16,7 @@ CHDeclareClass(SBUIController);
 static LAApplicationListener *sharedApplicationListener;
 static NSMutableArray *displayStacks;
 static NSArray *allEventModesExceptLockScreen;
+static NSArray *ignoredDisplayIdentifiers;
 
 #define SBWPreActivateDisplayStack        (SBDisplayStack *)[displayStacks objectAtIndex:0]
 #define SBWActiveDisplayStack             (SBDisplayStack *)[displayStacks objectAtIndex:1]
@@ -236,27 +237,17 @@ static NSArray *allEventModesExceptLockScreen;
 CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdentifier, roleIdentifier, NSString *, roleIdentifier, path, NSString *, path, bundle, id, bundle, infoDictionary, NSDictionary *, infoDictionary, isSystemApplication, BOOL, isSystemApplication, signerIdentity, id, signerIdentity, provisioningProfileValidated, BOOL, validated)
 {
 	if ((self = CHSuper(8, SBApplication, initWithBundleIdentifier, bundleIdentifier, roleIdentifier, roleIdentifier, path, path, bundle, bundle, infoDictionary, infoDictionary, isSystemApplication, isSystemApplication, signerIdentity, signerIdentity, provisioningProfileValidated, validated))) {
+		NSString *listenerName = [self displayIdentifier];
 		if (isSystemApplication) {
-			NSString *displayIdentifier = [self displayIdentifier];
-			if ([displayIdentifier isEqualToString:@"com.apple.DemoApp"] ||
-				[displayIdentifier isEqualToString:@"com.apple.fieldtest"] ||
-				[displayIdentifier isEqualToString:@"com.apple.springboard"] ||
-				[displayIdentifier isEqualToString:@"com.apple.AdSheet"] ||
-				[displayIdentifier isEqualToString:@"com.apple.iphoneos.iPodOut"] ||
-				[displayIdentifier isEqualToString:@"com.apple.TrustMe"] ||
-				[displayIdentifier isEqualToString:@"com.apple.DataActivation"] ||
-				[displayIdentifier isEqualToString:@"com.apple.WebSheet"]
-			) {
+			if ([ignoredDisplayIdentifiers containsObject:listenerName]) {
 				return self;
 			}
 			if (![[NSFileManager defaultManager] fileExistsAtPath:[bundle executablePath]]) {
 				return self;
 			}
 		}
-		NSString *listenerName = [self displayIdentifier];
-		if (LASharedActivator.runningInsideSpringBoard)
-			if (![LASharedActivator listenerForName:listenerName])
-				[LASharedActivator registerListener:sharedApplicationListener forName:listenerName ignoreHasSeen:YES];
+		if (![LASharedActivator listenerForName:listenerName])
+			[LASharedActivator registerListener:sharedApplicationListener forName:listenerName ignoreHasSeen:YES];
 	}
 	return self;
 }
@@ -286,6 +277,7 @@ CHConstructor {
 	if (CHLoadLateClass(SBApplicationController)) {
 		sharedApplicationListener = [[LAApplicationListener alloc] init];
 		allEventModesExceptLockScreen = [[NSArray alloc] initWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil];
+		ignoredDisplayIdentifiers = [[NSArray alloc] initWithObjects:@"com.apple.DemoApp", @"com.apple.fieldtest", @"com.apple.springboard", @"com.apple.AdSheet", @"com.apple.iphoneos.iPodOut", @"com.apple.TrustMe", @"com.apple.DataActivation", @"com.apple.WebSheet", @"com.apple.AdSheetPhone", @"com.apple.AdSheetPad", @"com.apple.iosdiagnostics", nil];
 		displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
 		CHLoadLateClass(SBApplication);
 		CHHook(8, SBApplication, initWithBundleIdentifier, roleIdentifier, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
