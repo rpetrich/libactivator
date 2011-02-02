@@ -59,6 +59,7 @@ typedef enum {
 
 @property (nonatomic, readonly) LAActivatorVersion version;
 @property (nonatomic, readonly, getter=isRunningInsideSpringBoard) BOOL runningInsideSpringBoard;
+@property (nonatomic, readonly, getter=isDangerousToSendEvents) BOOL dangerousToSendEvents;
 
 - (id<LAListener>)listenerForEvent:(LAEvent *)event;
 - (void)sendEventToListener:(LAEvent *)event;

@@ -81,7 +81,8 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 {
 	if (buttonIndex != actionSheet.cancelButtonIndex) {
 		NSString *listenerName = [currentItems objectAtIndex:buttonIndex];
-		[[LASharedActivator listenerForName:listenerName] activator:LASharedActivator receiveEvent:currentEvent forListenerName:listenerName];
+		if (![LASharedActivator isDangerousToSendEvents])
+			[[LASharedActivator listenerForName:listenerName] activator:LASharedActivator receiveEvent:currentEvent forListenerName:listenerName];
 	}
 }
 

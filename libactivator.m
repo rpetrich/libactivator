@@ -177,7 +177,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 // Sending Events
 
-- (BOOL)isInProtectedApplication
+- (BOOL)isDangerousToSendEvents
 {
 	return NO;
 }
@@ -200,7 +200,7 @@ static UIAlertView *inCydiaAlert;
 {
 	NSString *listenerName = [self assignedListenerNameForEvent:event];
 	if ([self listenerWithName:listenerName isCompatibleWithEventName:[event name]]) {
-		if ([self isInProtectedApplication]) {
+		if ([self isDangerousToSendEvents]) {
 			if (![[event name] isEqualToString:LAEventNameMenuPressSingle] &&
 				![[event name] isEqualToString:LAEventNameMenuPressDouble]
 			) {

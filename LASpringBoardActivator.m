@@ -88,7 +88,7 @@ CHDeclareClass(SBApplicationController);
 	[super didReceiveMemoryWarning];
 }
 
-- (BOOL)isInProtectedApplication
+- (BOOL)isDangerousToSendEvents
 {
 	SBApplication *application = [CHSharedInstance(SBApplicationController) applicationWithDisplayIdentifier:@"com.saurik.Cydia"];
 	if ([application respondsToSelector:@selector(process)]) {
