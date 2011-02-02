@@ -7,8 +7,8 @@ Architecture: iphoneos-arm
 Description: Centralized gestures, button and shortcut management for iOS
 Homepage: http://rpetri.ch/cydia/activator/
 Depiction: http://rpetri.ch/cydia/activator/
-Maintainer: BigBoss <bigboss@thebigboss.org>
-Author: Ryan Petrich <rpetrich@gmail.com>
+Maintainer: Ryan Petrich <rpetrich+activator@gmail.com>
+Author: Ryan Petrich <rpetrich+activator@gmail.com>
 Sponsor: thebigboss.org <http://thebigboss.org>
 Conflicts: com.booleanmagic.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6), sbsettings (<= 3.0.6)
 Replaces: com.booleanmagic.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6)
