@@ -191,8 +191,6 @@ static UIAlertView *inCydiaAlert;
 
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
 {
-	if (buttonIndex != alertView.cancelButtonIndex)
-		[self _setObject:(id)kCFBooleanTrue forPreference:@"LASuppressProtectedApplicationsAlert"];
 	inCydiaAlert.delegate = nil;
 	[inCydiaAlert release];
 	inCydiaAlert = nil;
@@ -204,15 +202,13 @@ static UIAlertView *inCydiaAlert;
 	if ([self listenerWithName:listenerName isCompatibleWithEventName:[event name]]) {
 		if ([self isInProtectedApplication]) {
 			if (![[event name] isEqualToString:LAEventNameMenuPressSingle] &&
-				![[event name] isEqualToString:LAEventNameMenuPressDouble] &&
-				![[self _getObjectForPreference:@"LASuppressProtectedApplicationsAlert"] boolValue]
+				![[event name] isEqualToString:LAEventNameMenuPressDouble]
 			) {
 				if (!inCydiaAlert) {
 					inCydiaAlert = [[UIAlertView alloc] init];
 					inCydiaAlert.title = [self localizedStringForKey:@"ACTIVATOR" value:@"Activator"];
 					inCydiaAlert.message = [self localizedStringForKey:@"IN_CYDIA_WARNING" value:@"It is potentially dangerous to perform actions while Cydia is installing software."];
-					[inCydiaAlert addButtonWithTitle:[self localizedStringForKey:@"ALERT_IGNORE" value:@"Ignore"]];
-					inCydiaAlert.cancelButtonIndex = [inCydiaAlert addButtonWithTitle:[self localizedStringForKey:@"ALERT_OK" value:@"OK"]];
+					[inCydiaAlert addButtonWithTitle:[self localizedStringForKey:@"ALERT_OK" value:@"OK"]];
 					inCydiaAlert.delegate = self;
 				}
 				[inCydiaAlert show];
