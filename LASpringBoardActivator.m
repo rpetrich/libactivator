@@ -65,9 +65,7 @@ CHDeclareClass(SBApplicationController);
 			_preferences = [[NSMutableDictionary alloc] init];
 		_eventData = [[NSMutableDictionary alloc] init];
 		// Load NewCydia notify check
-		if ([[NSFileManager defaultManager] fileExistsAtPath:@"/Applications/Cydia.app/MobileCydia"]) {
-			notify_register_check("com.saurik.Cydia.status", &notify_token);
-		}
+		notify_register_check("com.saurik.Cydia.status", &notify_token);
 		CHLoadLateClass(SBApplicationController);
 	}
 	return self;
@@ -102,12 +100,9 @@ CHDeclareClass(SBApplicationController);
 	} else {
 		return NO;
 	}
-	if (notify_token) {
-		uint64_t state = 1;
-		notify_get_state(notify_token, &state);
-		if (state == 0)
-			return NO;
-	} else {
+	uint64_t state = 1;
+	notify_get_state(notify_token, &state);
+	if (state == 0) {
 		// Workaround to detect installing/not installing on legacy cydia
 		struct stat status;
 		struct stat partial;
