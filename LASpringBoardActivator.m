@@ -216,13 +216,18 @@ static void NewCydiaStatusChanged()
 
 - (void)_setObject:(id)value forPreference:(NSString *)preference
 {
-	if (value)
-		[_preferences setObject:value forKey:preference];
-	else
-		[_preferences removeObjectForKey:preference];
 #ifdef DEBUG
 	NSLog(@"Activator: Setting preference %@ to %@", preference, value);
 #endif
+	if (value) {
+		if ([[_preferences objectForKey:preference] isEqual:preference])
+			return;
+		[_preferences setObject:value forKey:preference];
+	} else {
+		if ([_preferences objectForKey:preference])
+			return;
+		[_preferences removeObjectForKey:preference];
+	}
 	if (!waitingToWriteSettings) {
 		waitingToWriteSettings = YES;
 		[self performSelector:@selector(_savePreferences) withObject:nil afterDelay:0.2];
@@ -254,8 +259,7 @@ static void NewCydiaStatusChanged()
 	// Store all listener instances in a set so deactivate/otherListener methods can be quick
 	CFSetAddValue(_listenerInstances, listener);
 	NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
-	if (![[self _getObjectForPreference:key] boolValue])
-		[self _setObject:(id)kCFBooleanTrue forPreference:key];
+	[self _setObject:(id)kCFBooleanTrue forPreference:key];
 }
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name ignoreHasSeen:(BOOL)ignoreHasSeen
@@ -270,8 +274,7 @@ static void NewCydiaStatusChanged()
 	CFSetAddValue(_listenerInstances, listener);
 	if (!ignoreHasSeen) {
 		NSString *key = [@"LAHasSeenListener-" stringByAppendingString:name];
-		if (![[self _getObjectForPreference:key] boolValue])
-			[self _setObject:(id)kCFBooleanTrue forPreference:key];
+		[self _setObject:(id)kCFBooleanTrue forPreference:key];
 	}
 }
 
