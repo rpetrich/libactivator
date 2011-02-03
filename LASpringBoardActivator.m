@@ -349,7 +349,11 @@ CHDeclareClass(SBApplicationController);
 
 - (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
 {
-	return [[_eventData objectForKey:eventName] eventWithName:eventName isCompatibleWithMode:eventMode];
+	BOOL result = [[_eventData objectForKey:eventName] eventWithName:eventName isCompatibleWithMode:eventMode];
+#ifdef DEBUG
+	NSLog(@"Activator: eventWithName:%@ isCompatibleWithMode:%@ = %d", eventName, eventMode, result);
+#endif
+	return result;
 }
 
 - (void)registerEventDataSource:(id<LAEventDataSource>)dataSource forEventName:(NSString *)eventName

@@ -297,6 +297,9 @@ static UIAlertView *inCydiaAlert;
 
 - (void)assignEvent:(LAEvent *)event toListenerWithName:(NSString *)listenerName
 {
+#ifdef DEBUG
+	NSLog(@"Activator: assignEvent:%@ toListenerWithName:%@", event, listenerName);
+#endif
 	NSString *eventName = [event name];
 	NSString *eventMode = [event mode];
 	if ([eventMode length]) {
@@ -311,6 +314,9 @@ static UIAlertView *inCydiaAlert;
 
 - (void)unassignEvent:(LAEvent *)event
 {
+#ifdef DEBUG
+	NSLog(@"Activator: unassignEvent:%@", event, listenerName);
+#endif
 	NSString *eventName = [event name];
 	NSString *eventMode = [event mode];
 	if ([eventMode length]) {
