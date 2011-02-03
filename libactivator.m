@@ -11,6 +11,7 @@
 #include <objc/runtime.h>
 #include <sys/stat.h>
 #include <execinfo.h>
+#include <dlfcn.h>
 
 NSString * const LAEventModeSpringBoard = @"springboard";
 NSString * const LAEventModeApplication = @"application";
@@ -561,8 +562,15 @@ static UIAlertView *inCydiaAlert;
 CHConstructor
 {
 	CHAutoreleasePoolForScope();
-	if ([[NSBundle mainBundle] bundleIdentifier] == nil)
-		return;
+	if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.Preferences"]) {
+		// Prevent disabling PreferenceLoader
+		// This has come up quite often where users can't get back in to change their settings
+		if (!dlopen("/Library/MobileSubstrate/DynamicLibraries/PreferenceLoader.dylib", RTLD_LAZY)) {
+			if (dlopen("/Library/MobileSubstrate/DynamicLibraries/PreferenceLoader.disabled", RTLD_LAZY)) {
+				NSLog(@"Activator: PreferenceLoader was disabled; forced load!");
+			}
+		}
+	}
 	activatorBundle = [[NSBundle alloc] initWithPath:SCRootPath(@"/Library/Activator")];
 	if (CHLoadLateClass(SBIconController)) {
 		// Cache listener data
