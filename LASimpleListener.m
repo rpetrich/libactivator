@@ -165,9 +165,14 @@ static LASimpleListener *sharedSimpleListener;
 
 - (BOOL)voiceControl
 {
+	SBVoiceControlAlert *alert = [CHClass(SBVoiceControlAlert) pendingOrActiveAlert];
+	if (alert) {
+		[alert cancel];
+		return YES;
+	}
 	if ([CHClass(SBVoiceControlAlert) shouldEnterVoiceControl]) {
-		SBVoiceControlAlert *alert = [CHAlloc(SBVoiceControlAlert) init];
-		[alert activate];
+		alert = [CHAlloc(SBVoiceControlAlert) initFromMenuButton];
+		[alert _workspaceActivate];
 		[alert release];
 		return YES;
 	}
