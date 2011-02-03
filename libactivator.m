@@ -587,6 +587,7 @@ CHConstructor
 			if (![fileName hasPrefix:@"."])
 				[listenerData setObject:[NSBundle bundleWithPath:[listenersPath stringByAppendingPathComponent:fileName]] forKey:fileName];
 		LASharedActivator = [[LASpringBoardActivator alloc] init];
+		[LADefaultEventDataSource sharedInstance];
 	} else {
 		LASharedActivator = [[LAActivator alloc] init];
 	}
