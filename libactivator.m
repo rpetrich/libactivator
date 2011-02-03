@@ -120,14 +120,16 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (void)apiFailWithCulpritDictionary:(NSDictionary *)culpritDictionary
 {
-	UIAlertView *av = [[UIAlertView alloc] init];
-	av.title = @"Invalid Operation";
-	NSString *culprit = [culpritDictionary objectForKey:@"culprit"];
-	NSString *selector = [culpritDictionary objectForKey:@"selector"];
-	av.message = [NSString stringWithFormat:@"%@ has called -[LAActivator %@] improperly from outside SpringBoard.\nContact %@'s developer.", culprit, selector, culprit];
-	[av addButtonWithTitle:@"OK"];
-	[av show];
-	[av release];
+	if ([UIApplication sharedApplication]) {
+		UIAlertView *av = [[UIAlertView alloc] init];
+		av.title = @"Invalid Operation";
+		NSString *culprit = [culpritDictionary objectForKey:@"culprit"];
+		NSString *selector = [culpritDictionary objectForKey:@"selector"];
+		av.message = [NSString stringWithFormat:@"%@ has called -[LAActivator %@] improperly from outside SpringBoard.\nContact %@'s developer.", culprit, selector, culprit];
+		[av addButtonWithTitle:@"OK"];
+		[av show];
+		[av release];
+	}
 }
 
 // Preferences
