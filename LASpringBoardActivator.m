@@ -22,6 +22,11 @@ CHDeclareClass(SBApplicationController);
 
 @implementation LASpringBoardActivator
 
+static void NewCydiaStatusChanged()
+{
+	[LASharedActivator _setObject:(id)kCFBooleanTrue forPreference:@"LAHasNewCydia"];
+}
+
 - (id)init
 {
 	if ((self = [super init])) {
@@ -66,6 +71,9 @@ CHDeclareClass(SBApplicationController);
 		_eventData = [[NSMutableDictionary alloc] init];
 		// Load NewCydia notify check
 		notify_register_check("com.saurik.Cydia.status", &notify_token);
+		if (![[_preferences objectForKey:@"LAHasNewCydia"] boolValue]) {
+			CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (void *)NewCydiaStatusChanged, CFSTR("com.saurik.Cydia.status"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+		}
 		CHLoadLateClass(SBApplicationController);
 	}
 	return self;
@@ -100,17 +108,22 @@ CHDeclareClass(SBApplicationController);
 	} else {
 		return NO;
 	}
-	uint64_t state = 1;
-	notify_get_state(notify_token, &state);
-	if (state == 0) {
+	if ([[_preferences objectForKey:@"LAHasNewCydia"] boolValue]) {
+		uint64_t state = 1;
+		notify_get_state(notify_token, &state);
+		if (state == 0)
+			return NO;
+	} else {
 		// Workaround to detect installing/not installing on legacy cydia
 		struct stat status;
+		struct stat lock;
 		struct stat partial;
 		struct stat archives;
 		stat("/var/cache/apt/archives", &archives);
+		stat("/var/cache/apt/archives/lock", &lock);
 		stat("/var/cache/apt/archives/partial", &partial);
 		stat("/var/lib/dpkg/status", &status);
-		if ((archives.st_mtime < status.st_mtime) && (partial.st_mtime < status.st_mtime))
+		if (((archives.st_mtime < status.st_mtime) || (archives.st_mtime <= lock.st_mtime)) && (partial.st_mtime < status.st_mtime))
 			return NO;
 	}
 	return ![[self _getObjectForPreference:@"LAIgnoreProtectedApplications"] boolValue];
