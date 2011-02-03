@@ -300,11 +300,10 @@ static UIAlertView *inCydiaAlert;
 	NSString *eventName = [event name];
 	NSString *eventMode = [event mode];
 	if ([eventMode length]) {
-		if ([self listenerWithName:listenerName isCompatibleWithMode:eventMode])
-			if ([self eventWithName:eventName isCompatibleWithMode:eventMode])
-				[self _setObject:listenerName forPreference:ListenerKeyForEventNameAndMode(eventName, eventMode)];
+		if ([self eventWithName:eventName isCompatibleWithMode:eventMode])
+			[self _setObject:listenerName forPreference:ListenerKeyForEventNameAndMode(eventName, eventMode)];
 	} else {
-		for (NSString *mode in [self compatibleEventModesForListenerWithName:listenerName])
+		for (NSString *mode in _availableEventModes)
 			if ([self eventWithName:eventName isCompatibleWithMode:mode])
 				[self _setObject:listenerName forPreference:ListenerKeyForEventNameAndMode(eventName, mode)];
 	}
