@@ -26,7 +26,7 @@
 {
 	if (!_tableView) {
 		_tableView = [[UITableView alloc] initWithFrame:CGRectZero style:UITableViewStyleGrouped];
-		_tableView.rowHeight = 60.0f;
+		_tableView.rowHeight = 55.0f;
 		_tableView.delegate = self;
 		_tableView.dataSource = self;
 	}
