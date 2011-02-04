@@ -224,7 +224,7 @@ static void NewCydiaStatusChanged()
 			return;
 		[_preferences setObject:value forKey:preference];
 	} else {
-		if ([_preferences objectForKey:preference])
+		if (![_preferences objectForKey:preference])
 			return;
 		[_preferences removeObjectForKey:preference];
 	}

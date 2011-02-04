@@ -315,19 +315,17 @@ static UIAlertView *inCydiaAlert;
 - (void)unassignEvent:(LAEvent *)event
 {
 #ifdef DEBUG
-	NSLog(@"Activator: unassignEvent:%@", event, listenerName);
+	NSLog(@"Activator: unassignEvent:%@", event);
 #endif
 	NSString *eventName = [event name];
 	NSString *eventMode = [event mode];
 	if ([eventMode length]) {
 		NSString *prefName = ListenerKeyForEventNameAndMode(eventName, eventMode);
-		if ([self _getObjectForPreference:prefName])
-			[self _setObject:nil forPreference:prefName];
+		[self _setObject:nil forPreference:prefName];
 	} else {
 		for (NSString *mode in _availableEventModes) {
 			NSString *prefName = ListenerKeyForEventNameAndMode(eventName, mode);
-			if ([self _getObjectForPreference:prefName])
-				[self _setObject:nil forPreference:prefName];
+			[self _setObject:nil forPreference:prefName];
 		}
 	}
 }
