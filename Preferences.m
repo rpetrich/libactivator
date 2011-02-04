@@ -195,10 +195,7 @@ __attribute__((visibility("hidden")))
 
 - (UIView *)activatorAdControllerRequiresTarget:(ActivatorAdController *)ac
 {
-	if ([self isKindOfClass:[UIViewController class]])
-		return [[[UIWindow keyWindow] subviews] objectAtIndex:0];
-	else
-		return [[self view] superview];
+	return [[self view] superview];
 }
 
 @end
