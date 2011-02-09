@@ -283,6 +283,11 @@ static LASimpleListener *sharedSimpleListener;
 		[controller deactivateAlertItemsOfClass:CHClass(SBNowPlayingAlertItem)];
 		return NO;
 	}
+	if ([CHClass(SBAwayController) instancesRespondToSelector:@selector(toggleMediaControls)]) {
+		SBAwayController *ac = [CHClass(SBAwayController) sharedAwayController];
+		if ([ac isLocked])
+			return [ac toggleMediaControls];
+	}
 	SBMediaController *mc = CHSharedInstance(SBMediaController);
 	if ([mc respondsToSelector:@selector(mediaControlsDestinationApp)] && ![mc mediaControlsDestinationApp]) {
 		SBApplication *application = [CHSharedInstance(SBApplicationController) applicationWithDisplayIdentifier:@"com.apple.mobileipod"];
