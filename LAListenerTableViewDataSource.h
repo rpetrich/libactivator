@@ -9,7 +9,7 @@ __attribute__((visibility("hidden")))
 	NSMutableDictionary *_listeners;
 	NSMutableDictionary *_filteredListeners;
 	NSArray *_groups;
-	NSArray *_filteredGroups;
+	NSMutableArray *_filteredGroups;
 	NSString *_searchText;
 }
 

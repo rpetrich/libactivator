@@ -48,7 +48,33 @@
 		}
 	} else {
 		_filteredListeners = [_listeners retain];
-		_filteredGroups = [_groups retain];
+		_filteredGroups = [_groups mutableCopy];
+	}
+}
+
+- (void)refineFilteredListeners
+{
+	for (NSString *groupName in [_filteredListeners allKeys]) {
+		if ([groupName rangeOfString:_searchText options:NSCaseInsensitiveSearch].location == NSNotFound) {
+			NSMutableArray *mutableGroup = [NSMutableArray array];
+			for (NSString *listenerName in [_filteredListeners objectForKey:groupName]) {
+				NSString *text;
+				text = [LASharedActivator localizedTitleForListenerName:listenerName];
+				if (text && [text rangeOfString:_searchText options:NSCaseInsensitiveSearch].location != NSNotFound) {
+					[mutableGroup addObject:listenerName];
+					continue;
+				}
+				text = [LASharedActivator localizedDescriptionForListenerName:listenerName];
+				if (text && [text rangeOfString:_searchText options:NSCaseInsensitiveSearch].location != NSNotFound) {
+					[mutableGroup addObject:listenerName];
+					continue;
+				}
+			}
+			if ([mutableGroup count])
+				[_filteredListeners setObject:mutableGroup forKey:groupName];
+			else
+				[_filteredGroups removeObject:groupName];
+		}
 	}
 }
 
@@ -95,9 +121,13 @@
 - (void)setSearchText:(NSString *)searchText
 {
 	if (_searchText != searchText) {
+		BOOL refinedSearch = _searchText && searchText && [searchText rangeOfString:_searchText options:NSCaseInsensitiveSearch].location != NSNotFound;
 		[_searchText release];
 		_searchText = [searchText copy];
-		[self updateFilteredListeners];
+		if (refinedSearch)
+			[self refineFilteredListeners];
+		else
+			[self updateFilteredListeners];
 	}
 }
 
