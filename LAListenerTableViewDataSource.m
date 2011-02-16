@@ -5,9 +5,51 @@
 
 - (void)dealloc
 {
+	[_searchText release];
+	[_filteredListeners release];
+	[_filteredGroups release];
 	[_listeners release];
 	[_groups release];
 	[super dealloc];
+}
+
+- (void)updateFilteredListeners
+{
+	[_filteredGroups release];
+	[_filteredListeners release];
+	if ([_searchText length]) {
+		_filteredListeners = [[NSMutableDictionary alloc] init];
+		NSMutableArray *groups = [[NSMutableArray alloc] init];
+		_filteredGroups = groups;
+		for (NSString *groupName in [_listeners allKeys]) {
+			if ([groupName rangeOfString:_searchText options:NSCaseInsensitiveSearch].location != NSNotFound) {
+				[_filteredListeners setObject:[_listeners objectForKey:groupName] forKey:groupName];
+				[groups addObject:groupName];
+				continue;
+			}
+			NSMutableArray *mutableGroup = [NSMutableArray array];
+			for (NSString *listenerName in [_listeners objectForKey:groupName]) {
+				NSString *text;
+				text = [LASharedActivator localizedTitleForListenerName:listenerName];
+				if (text && [text rangeOfString:_searchText options:NSCaseInsensitiveSearch].location != NSNotFound) {
+					[mutableGroup addObject:listenerName];
+					continue;
+				}
+				text = [LASharedActivator localizedDescriptionForListenerName:listenerName];
+				if (text && [text rangeOfString:_searchText options:NSCaseInsensitiveSearch].location != NSNotFound) {
+					[mutableGroup addObject:listenerName];
+					continue;
+				}
+			}
+			if ([mutableGroup count]) {
+				[groups addObject:groupName];
+				[_filteredListeners setObject:mutableGroup forKey:groupName];
+			}
+		}
+	} else {
+		_filteredListeners = [_listeners retain];
+		_filteredGroups = [_groups retain];
+	}
 }
 
 - (id<LAListenerTableViewDataSourceDelegate>)delegate
@@ -19,29 +61,49 @@
 {
 	_delegate = delegate;
 	[_listeners release];
-	_listeners = [[LASharedActivator _cachedAndSortedListeners] mutableCopy];
-	for (NSString *key in [_listeners allKeys]) {
-		NSArray *group = [_listeners objectForKey:key];
-		NSMutableArray *mutableGroup = [NSMutableArray array];
-		BOOL hasItems = NO;
-		for (NSString *listenerName in group) {
-			if ([delegate dataSource:self shouldAllowListenerWithName:listenerName]) {
-				[mutableGroup addObject:listenerName];
-				hasItems = YES;
-			}
-		}
-		if (hasItems)
-			[_listeners setObject:mutableGroup forKey:key];
-		else
-			[_listeners removeObjectForKey:key];
-	}
 	[_groups release];
-	_groups = [[[_listeners allKeys] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] retain];
+	if (!delegate) {
+		_listeners = nil;
+		_groups = nil;
+	} else {
+		_listeners = [[LASharedActivator _cachedAndSortedListeners] mutableCopy];
+		for (NSString *key in [_listeners allKeys]) {
+			NSArray *group = [_listeners objectForKey:key];
+			NSMutableArray *mutableGroup = [NSMutableArray array];
+			BOOL hasItems = NO;
+			for (NSString *listenerName in group) {
+				if ([delegate dataSource:self shouldAllowListenerWithName:listenerName]) {
+					[mutableGroup addObject:listenerName];
+					hasItems = YES;
+				}
+			}
+			if (hasItems)
+				[_listeners setObject:mutableGroup forKey:key];
+			else
+				[_listeners removeObjectForKey:key];
+		}
+		_groups = [[[_listeners allKeys] sortedArrayUsingSelector:@selector(localizedCaseInsensitiveCompare:)] retain];
+	}
+	[self updateFilteredListeners];
+}
+
+- (NSString *)searchText
+{
+	return _searchText;
+}
+
+- (void)setSearchText:(NSString *)searchText
+{
+	if (_searchText != searchText) {
+		[_searchText release];
+		_searchText = [searchText copy];
+		[self updateFilteredListeners];
+	}
 }
 
 - (NSMutableArray *)groupAtIndex:(NSInteger)index
 {
-	return [_listeners objectForKey:[_groups objectAtIndex:index]];
+	return [_filteredListeners objectForKey:[_filteredGroups objectAtIndex:index]];
 }
 
 - (NSString *)listenerNameForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -51,12 +113,12 @@
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
-	return [_groups count];
+	return [_filteredGroups count];
 }
 
 - (NSString *)tableView:(UITableView *)tableView titleForHeaderInSection:(NSInteger)section
 {
-	return [_groups objectAtIndex:section];
+	return [_filteredGroups objectAtIndex:section];
 }
 
 - (NSInteger)tableView:(UITableView *)table numberOfRowsInSection:(NSInteger)section

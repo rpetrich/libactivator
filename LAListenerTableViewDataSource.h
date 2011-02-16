@@ -7,10 +7,14 @@ __attribute__((visibility("hidden")))
 @private
 	id<LAListenerTableViewDataSourceDelegate> _delegate;
 	NSMutableDictionary *_listeners;
+	NSMutableDictionary *_filteredListeners;
 	NSArray *_groups;
+	NSArray *_filteredGroups;
+	NSString *_searchText;
 }
 
 @property (nonatomic, assign) id<LAListenerTableViewDataSourceDelegate> delegate;
+@property (nonatomic, copy) NSString *searchText;
 
 - (NSString *)listenerNameForRowAtIndexPath:(NSIndexPath *)indexPath;
 
