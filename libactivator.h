@@ -189,6 +189,8 @@ extern LAActivator *LASharedActivator;
 	NSString *_eventName;
 	LAListenerTableViewDataSource *_dataSource;
 	ActivatorEventViewHeader *_headerView;
+	UISearchBar *_searchBar;
+	UIView *_headerWrapper;
 }
 
 - (id)initWithModes:(NSArray *)modes eventName:(NSString *)eventName;

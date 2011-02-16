@@ -2,7 +2,7 @@
 #import "ActivatorEventViewHeader.h"
 #import "LAListenerTableViewDataSource.h"
 
-@interface LAEventSettingsController () <ActivatorEventViewHeaderDelegate, LAListenerTableViewDataSourceDelegate>
+@interface LAEventSettingsController () <ActivatorEventViewHeaderDelegate, LAListenerTableViewDataSourceDelegate, UISearchBarDelegate>
 @end
 
 @implementation LAEventSettingsController
@@ -20,7 +20,7 @@
 	CGRect frame = _headerView.frame;
 	frame.size.width = tableView.bounds.size.width;
 	_headerView.frame = frame;
-	tableView.tableHeaderView = _headerView;
+	tableView.tableHeaderView = [_searchBar isFirstResponder] ? nil : _headerView;
 }
 
 - (id)initWithModes:(NSArray *)modes eventName:(NSString *)eventName
@@ -42,22 +42,101 @@
 		headerFrame.size.width = 0.0f;
 		headerFrame.size.height = 76.0f;
 		_headerView = [[ActivatorEventViewHeader alloc] initWithFrame:headerFrame];
-		_headerView.autoresizingMask = UIViewAutoresizingFlexibleWidth;
 		_headerView.delegate = self;
 		[self updateHeader];
+		_searchBar = [[UISearchBar alloc] initWithFrame:CGRectZero];
+		_searchBar.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+		if ([_searchBar respondsToSelector:@selector(setUsesEmbeddedAppearance:)])
+			[_searchBar setUsesEmbeddedAppearance:YES];
+		_searchBar.delegate = self;
+		NSNotificationCenter *nc = [NSNotificationCenter defaultCenter];
+		[nc addObserver:self selector:@selector(keyboardWillShowWithNotification:) name:UIKeyboardWillShowNotification object:nil];
+		[nc addObserver:self selector:@selector(keyboardWillHideWithNotification:) name:UIKeyboardWillHideNotification object:nil];
 	}
 	return self;
 }
 
 - (void)dealloc
 {
+	[[NSNotificationCenter defaultCenter] removeObserver:self];
+	_searchBar.delegate = nil;
 	_headerView.delegate = nil;
+	[_searchBar release];
 	[_headerView release];
 	[_dataSource release];
 	[_eventName release];
 	[_currentAssignments release];
 	[_modes release];
 	[super dealloc];
+}
+
+- (void)keyboardWillShowWithNotification:(NSNotification *)notification
+{
+	[UIView beginAnimations:nil context:NULL];
+	NSDictionary *userInfo = notification.userInfo;
+	[UIView setAnimationDuration:[[userInfo objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue]];
+	[UIView setAnimationCurve:[[userInfo objectForKey:UIKeyboardAnimationCurveUserInfoKey] integerValue]];
+	CGRect keyboardFrame = CGRectZero;
+    [[userInfo valueForKey:UIKeyboardBoundsUserInfoKey] getValue:&keyboardFrame];
+    UIEdgeInsets insets;
+    insets.top = 44.0f;
+    insets.right = 0.0f;
+    insets.bottom = keyboardFrame.size.height;
+    insets.left = 0.0f;
+    UITableView *tableView = self.tableView;
+    tableView.contentInset = insets;
+    insets.top = 0.0f;
+    tableView.scrollIndicatorInsets = insets;
+	[UIView commitAnimations];
+}
+
+- (void)keyboardWillHideWithNotification:(NSNotification *)notification
+{
+	[UIView beginAnimations:nil context:NULL];
+	NSDictionary *userInfo = notification.userInfo;
+	[UIView setAnimationDuration:[[userInfo objectForKey:UIKeyboardAnimationDurationUserInfoKey] doubleValue]];
+	[UIView setAnimationCurve:[[userInfo objectForKey:UIKeyboardAnimationCurveUserInfoKey] integerValue]];
+    UIEdgeInsets insets;
+    insets.top = 44.0f;
+    insets.right = 0.0f;
+    insets.bottom = 0.0f;
+    insets.left = 0.0f;
+    UITableView *tableView = self.tableView;
+    tableView.contentInset = insets;
+    insets.top = 0.0f;
+    tableView.scrollIndicatorInsets = insets;
+	[UIView commitAnimations];
+}
+
+- (void)searchBarTextDidBeginEditing:(UISearchBar *)searchBar
+{
+	[_searchBar setShowsCancelButton:YES animated:YES];
+	[self updateHeader];
+}
+
+- (void)searchBarTextDidEndEditing:(UISearchBar *)searchBar
+{
+	[_searchBar setShowsCancelButton:NO animated:YES];
+	[self updateHeader];
+}
+
+- (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText
+{
+	_dataSource.searchText = searchText;
+	[self.tableView reloadData];
+}
+
+- (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar
+{
+	searchBar.text = nil;
+	_dataSource.searchText = nil;
+	[self.tableView reloadData];
+	[searchBar resignFirstResponder];
+}
+
+- (void)searchBarSearchButtonClicked:(UISearchBar *)searchBar
+{
+	[searchBar resignFirstResponder];
 }
 
 - (BOOL)dataSource:(LAListenerTableViewDataSource *)dataSource shouldAllowListenerWithName:(NSString *)listenerName
@@ -77,6 +156,22 @@
 
 - (void)viewDidLoad
 {
+    UIEdgeInsets insets;
+    insets.top = 44.0f;
+    insets.right = 0.0f;
+    insets.bottom = 0.0f;
+    insets.left = 0.0f;
+    UITableView *tableView = self.tableView;
+    tableView.contentInset = insets;
+    insets.top = 0.0f;
+    tableView.scrollIndicatorInsets = insets;
+    CGRect frame;
+    frame.origin.x = 0.0f;
+    frame.origin.y = -44.0f;
+    frame.size.height = 44.0f;
+    frame.size.width = tableView.bounds.size.width;
+    _searchBar.frame = frame;
+	[tableView addSubview:_searchBar];
 	[self updateHeader];
 }
 
