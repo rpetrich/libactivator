@@ -123,7 +123,9 @@
 - (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText
 {
 	_dataSource.searchText = searchText;
-	[self.tableView reloadData];
+	UITableView *tableView = self.tableView;
+	[tableView reloadData];
+	tableView.contentOffset = CGPointMake(0.0f, -44.0f);
 }
 
 - (void)searchBarCancelButtonClicked:(UISearchBar *)searchBar
