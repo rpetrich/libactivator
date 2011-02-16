@@ -87,6 +87,26 @@ __attribute__((visibility("hidden")))
 	[super viewWillBecomeVisible:source];
 }
 
+- (void)viewWillAppear:(BOOL)animated
+{
+	[_settingsController viewWillAppear:animated];
+}
+
+- (void)viewDidAppear:(BOOL)animated
+{
+	[_settingsController viewDidAppear:animated];
+}
+
+- (void)viewWillDisappear:(BOOL)animated
+{
+	[_settingsController viewWillDisappear:animated];
+}
+
+- (void)viewDidDisappear:(BOOL)animated
+{
+	[_settingsController viewDidDisappear:animated];
+}
+
 - (void)loadFromSpecifier:(PSSpecifier *)specifier
 {
 }
@@ -164,6 +184,7 @@ __attribute__((visibility("hidden")))
 
 - (void)viewWillAppear:(BOOL)animated
 {
+	[super viewWillAppear:animated];
 	if (shouldShowAds) {
 		ActivatorAdController *aac = [ActivatorAdController sharedInstance];
 		[aac setURL:[LASharedActivator adPaneURL]];
@@ -174,6 +195,7 @@ __attribute__((visibility("hidden")))
 
 - (void)viewWillDisappear:(BOOL)animated
 {
+	[super viewWillDisappear:animated];
 	UIViewController *rootController = [[(UIViewController *)self navigationController].viewControllers objectAtIndex:0];
 	UIView *view = rootController.view;
 	view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -183,6 +205,7 @@ __attribute__((visibility("hidden")))
 
 - (void)viewDidDisappear:(BOOL)animated
 {
+	[super viewDidDisappear:animated];
 	if (![(UIViewController *)self navigationController])
 		[[ActivatorAdController sharedInstance] hideAnimated:YES];
 }

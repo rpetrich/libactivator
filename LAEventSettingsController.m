@@ -175,6 +175,12 @@
 	[self updateHeader];
 }
 
+- (void)viewWillDisappear:(BOOL)animated
+{
+	[super viewWillDisappear:animated];
+	[_searchBar resignFirstResponder];
+}
+
 - (void)showLastEventMessageForListener:(NSString *)listenerName
 {
 	NSString *title = [LASharedActivator localizedStringForKey:@"CANT_DEACTIVATE_REMAINING" value:@"Can't deactivate\nremaining event"];
