@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [[ $1 == install || $1 == upgrade ]]; then
+    /usr/libexec/cydia/move.sh /usr/include || true
+fi
+
+exit 0
