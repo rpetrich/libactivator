@@ -301,9 +301,11 @@ static void NewCydiaStatusChanged()
 		_cachedAndSortedListeners = nil;
 		// Do some monkey-work so that only the last removal of a shared instance removes it from the set
 		// Since removal is uncommon, this is allowed to be slowish
-		if ([[_listeners allKeysForObject:listener] count] == 1)
-			CFSetRemoveValue(_listenerInstances, listener);
 		[_listeners removeObjectForKey:name];
+		for (id l in [_listeners objectEnumerator])
+			if (l == listener)
+				return;
+		CFSetRemoveValue(_listenerInstances, listener);
 	}
 }
 
