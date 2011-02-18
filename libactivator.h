@@ -49,8 +49,9 @@ typedef enum {
 @protocol LAListener;
 
 @interface LAActivator : NSObject {
-@protected
+@private
 	NSArray *_availableEventModes;
+@protected
 	NSMutableDictionary *_cachedListenerTitles;
 	NSMutableDictionary *_cachedListenerGroups;
 	NSMutableDictionary *_cachedListenerSmallIcons;
