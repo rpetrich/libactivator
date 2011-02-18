@@ -59,6 +59,8 @@ static void NewCydiaStatusChanged()
 		[messagingCenter registerForMessageName:@"localizedTitleForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"localizedGroupForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"localizedDescriptionForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+		// Remote message to deactivate event
+		[messagingCenter registerForMessageName:@"sendDeactivateEventToListeners:" target:self selector:@selector(_handleRemoteDeactivateMessage:withUserInfo:)];
 		// Preferences
 		[messagingCenter registerForMessageName:@"setObjectForPreference" target:self selector:@selector(_setObjectForPreferenceFromMessageName:userInfo:)];
 		[messagingCenter registerForMessageName:@"getObjectForPreference" target:self selector:@selector(_getObjectForPreferenceFromMessageName:userInfo:)];
@@ -177,6 +179,14 @@ static void NewCydiaStatusChanged()
 	id withObject2 = [userInfo objectForKey:@"withObject2"];
 	id result = [self performSelector:NSSelectorFromString(message) withObject:withObject withObject:withObject2];
 	return [NSDictionary dictionaryWithObject:result ? (id)kCFBooleanTrue : (id)kCFBooleanFalse forKey:@"result"];
+}
+
+- (NSDictionary *)_handleRemoteDeactivateMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
+{
+	LAEvent *event = [LAEvent eventWithName:[userInfo objectForKey:@"name"] mode:[userInfo objectForKey:@"mode"]];
+	event.handled = [[userInfo objectForKey:@"handled"] boolValue];
+	[self sendDeactivateEventToListeners:event];
+	return [NSDictionary dictionaryWithObject:event.handled ? (id)kCFBooleanTrue : (id)kCFBooleanFalse forKey:@"result"];
 }
 
 // Preferences
@@ -385,6 +395,21 @@ static void NewCydiaStatusChanged()
 - (NSArray *)availableListenerNames
 {
 	return [_listeners allKeys];
+}
+
+- (void)sendDeactivateEventToListeners:(LAEvent *)event
+{
+	BOOL handled = [event isHandled];
+	[event setHandled:NO];
+	for (id<LAListener> listener in (NSSet *)_listenerInstances) {
+		[listener activator:self receiveDeactivateEvent:event];
+		if ([event isHandled]) {
+			handled = YES;
+			[event setHandled:NO];
+			NSLog(@"Activator: deactivate event was handled by %@ assigned to %@ (suppressing home button event)", [listener class], [[_listeners allKeysForObject:listener] componentsJoinedByString:@", "]);
+		}
+	}
+	[event setHandled:handled];
 }
 
 // Localization

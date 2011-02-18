@@ -243,26 +243,14 @@ static UIAlertView *inCydiaAlert;
 
 - (void)sendDeactivateEventToListeners:(LAEvent *)event
 {
-	BOOL handled = [event isHandled];
-#ifdef DEBUG
-	NSString *handledListenerName = nil;
-	for (NSString *listenerName in [self availableListenerNames]) {
-		[[self listenerForName:listenerName] activator:self receiveDeactivateEvent:event];
-		event.handled = NO;
-		BOOL currentEventIsHandled = [event isHandled];
-		handled |= currentEventIsHandled;
-		if (currentEventIsHandled)
-			handledListenerName = listenerName;
-	}
-	[event setHandled:handled];
-	NSLog(@"Activator: sendDeactivateEventToListeners:%@ (handled by %@)", event, handledListenerName);
-#else
-	for (id<LAListener> listener in (NSSet *)_listenerInstances) {
-		[listener activator:self receiveDeactivateEvent:event];
-		handled |= [event isHandled];
-	}
-	[event setHandled:handled];
-#endif
+	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+		event.name, @"name",
+		event.handled ? (id)kCFBooleanTrue : (id)kCFBooleanFalse, @"handled",
+		event.mode, @"mode",
+		nil];
+	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:@"sendDeactivateEventToListeners:" userInfo:userInfo];
+	event.handled = [[response objectForKey:@"result"] boolValue];
 }
 
 // Registration of listeners
