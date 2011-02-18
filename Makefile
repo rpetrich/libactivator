@@ -19,6 +19,7 @@ LibActivator_PRIVATE_FRAMEWORKS = Preferences
 LibActivator_LDFLAGS = -L$(FW_OBJ_DIR) -lactivator
 
 ADDITIONAL_CFLAGS = -std=c99
+OPTFLAG = -Os
 
 ifeq ($(PROFILING),1)
 	ADDITIONAL_CFLAGS += -DCHEnableProfiling
