@@ -36,6 +36,16 @@ CHDeclareClass(SBIconController);
 + (UIImage *)imageWithData:(NSData *)data scale:(CGFloat)scale;
 @end
 
+
+static inline CPDistributedMessagingCenter *GetMessagingCenter()
+{
+	static CPDistributedMessagingCenter *messagingCenter;
+	if (messagingCenter)
+		return messagingCenter;
+	messagingCenter = [[CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"] retain];
+	return messagingCenter;
+}
+
 static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 {
 	CHAutoreleasePoolForScope();
@@ -136,8 +146,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (void)_resetPreferences
 {
-	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
-	[messagingCenter sendMessageName:@"resetPreferences" userInfo:nil];
+	[GetMessagingCenter() sendMessageName:@"resetPreferences" userInfo:nil];
 }
 
 - (NSDictionary *)_getObjectForPreferenceFromMessageName:(NSString *)messageName userInfo:(NSDictionary *)userInfo
@@ -151,30 +160,26 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (id)_getObjectForPreference:(NSString *)preference
 {
-	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
-	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:@"getObjectForPreference" userInfo:[NSDictionary dictionaryWithObject:preference forKey:@"preference"]];
+	NSDictionary *response = [GetMessagingCenter() sendMessageAndReceiveReplyName:@"getObjectForPreference" userInfo:[NSDictionary dictionaryWithObject:preference forKey:@"preference"]];
 	return [response objectForKey:@"value"];
 }
 
 - (void)_setObject:(id)value forPreference:(NSString *)preference
 {
-	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
-	[messagingCenter sendMessageName:@"setObjectForPreference" userInfo:[NSDictionary dictionaryWithObjectsAndKeys:preference, @"preference", value, @"value", nil]];
+	[GetMessagingCenter() sendMessageName:@"setObjectForPreference" userInfo:[NSDictionary dictionaryWithObjectsAndKeys:preference, @"preference", value, @"value", nil]];
 }
 
 - (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject
 {
-	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:withObject, @"withObject", nil];
-	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
+	NSDictionary *response = [GetMessagingCenter() sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
 	return [response objectForKey:@"result"];
 }
 
 - (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject withObject:(id)withObject2
 {
-	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:withObject, @"withObject", withObject2, @"withObject2", nil];
-	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
+	NSDictionary *response = [GetMessagingCenter() sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
 	return [response objectForKey:@"result"];
 }
 
@@ -243,13 +248,12 @@ static UIAlertView *inCydiaAlert;
 
 - (void)sendDeactivateEventToListeners:(LAEvent *)event
 {
-	CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
 		event.name, @"name",
 		event.handled ? (id)kCFBooleanTrue : (id)kCFBooleanFalse, @"handled",
 		event.mode, @"mode",
 		nil];
-	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:@"sendDeactivateEventToListeners:" userInfo:userInfo];
+	NSDictionary *response = [GetMessagingCenter() sendMessageAndReceiveReplyName:@"sendDeactivateEventToListeners:" userInfo:userInfo];
 	event.handled = [[response objectForKey:@"result"] boolValue];
 }
 
