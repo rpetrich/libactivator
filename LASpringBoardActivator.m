@@ -169,7 +169,7 @@ static void NewCydiaStatusChanged()
 {
 	id withObject = [userInfo objectForKey:@"withObject"];
 	id withObject2 = [userInfo objectForKey:@"withObject2"];
-	id result = [self performSelector:NSSelectorFromString(message) withObject:withObject withObject:withObject2];
+	id result = objc_msgSend(self, NSSelectorFromString(message), withObject, withObject2);
 	return result ? [NSDictionary dictionaryWithObject:result forKey:@"result"] : [NSDictionary dictionary];
 }
 
@@ -177,7 +177,7 @@ static void NewCydiaStatusChanged()
 {
 	id withObject = [userInfo objectForKey:@"withObject"];
 	id withObject2 = [userInfo objectForKey:@"withObject2"];
-	id result = [self performSelector:NSSelectorFromString(message) withObject:withObject withObject:withObject2];
+	id result = objc_msgSend(self, NSSelectorFromString(message), withObject, withObject2);
 	return [NSDictionary dictionaryWithObject:result ? (id)kCFBooleanTrue : (id)kCFBooleanFalse forKey:@"result"];
 }
 
