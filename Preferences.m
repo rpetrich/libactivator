@@ -128,8 +128,11 @@ __attribute__((visibility("hidden")))
 + (void)popAllControllers
 {
 	UINavigationController *navigationController = [(id)[UIApplication sharedApplication] rootController];
-	while ([navigationController.topViewController isKindOfClass:self])
+	while ([navigationController.topViewController isKindOfClass:self]) {
+		if ([navigationController.viewControllers count] == 1)
+			break;
 		[navigationController popViewControllerAnimated:NO];
+	}
 	[[ActivatorAdController sharedInstance] hideAnimated:NO];
 }
 
