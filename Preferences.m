@@ -8,13 +8,19 @@
 // TODO: figure out the proper way to store this in headers
 @interface PSViewController (OS32)
 @property (nonatomic, retain) PSSpecifier *specifier;
+@property (nonatomic, retain) UIView *view;
+- (void)viewDidLoad;
+@end
+
+@interface UIDevice (OS32)
+- (BOOL)isWildcat;
 @end
 
 __attribute__((visibility("hidden")))
 @interface ActivatorPSViewControllerHost : PSViewController<LASettingsViewControllerDelegate> {
 @private
 	LASettingsViewController *_settingsController;
-	CGSize _contentSize;
+	UIView *_wrapperView;
 }
 - (id)initForContentSize:(CGSize)size;
 @property (nonatomic, retain) LASettingsViewController *settingsController;
@@ -25,20 +31,24 @@ __attribute__((visibility("hidden")))
 
 - (id)initForContentSize:(CGSize)size
 {
-	if ([[PSViewController class] instancesRespondToSelector:@selector(initForContentSize:)])
-		self = [super initForContentSize:size];
-	else
-		self = [super init];
-	if (self) {
-		_contentSize = size;
+	if ([PSViewController instancesRespondToSelector:@selector(initForContentSize:)]) {
+		if ((self = [super initForContentSize:size])) {
+			CGRect frame;
+			frame.origin.x = 0.0f;
+			frame.origin.y = 0.0f;
+			frame.size = size;
+			_wrapperView = [[UIView alloc] initWithFrame:frame];
+		}
+		return self;
 	}
-	return self;
+	return [super init];
 }
 
 - (void)dealloc
 {
 	_settingsController.delegate = nil;
 	[_settingsController release];
+	[_wrapperView release];
 	[super dealloc];
 }
 
@@ -53,15 +63,22 @@ __attribute__((visibility("hidden")))
 		_settingsController.delegate = nil;
 		[_settingsController release];
 		_settingsController = [settingsController retain];
-		CGRect frame;
-		frame.origin.x = 0.0f;
-		frame.origin.y = 0.0f;
-		frame.size = _contentSize;
-		UIView *view = _settingsController.view;
-		view.frame = frame;
-		view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+		UIView *view = self.view;
+		UIView *subview = _settingsController.view;
+		subview.frame = view.bounds;
+		subview.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
+		[view addSubview:subview];
 		_settingsController.delegate = self;
 	}
+}
+
+- (void)viewDidLoad
+{
+	[super viewDidLoad];
+	UIView *view = self.view;
+	UIView *subview = _settingsController.view;
+	subview.frame = view.bounds;
+	[view addSubview:subview];
 }
 
 - (NSString *)navigationTitle
@@ -84,11 +101,19 @@ __attribute__((visibility("hidden")))
 {
 	if (source)
 		[self loadFromSpecifier:(PSSpecifier *)source];
+	UIView *view = self.view;
+	UIView *subview = _settingsController.view;
+	subview.frame = view.bounds;
+	[view addSubview:subview];
 	[super viewWillBecomeVisible:source];
 }
 
 - (void)viewWillAppear:(BOOL)animated
 {
+	UIView *view = self.view;
+	UIView *subview = _settingsController.view;
+	subview.frame = view.bounds;
+	[view addSubview:subview];
 	[_settingsController viewWillAppear:animated];
 }
 
@@ -113,7 +138,7 @@ __attribute__((visibility("hidden")))
 
 - (UIView *)view
 {
-	return _settingsController.view;
+	return [super view] ?: _wrapperView;
 }
 
 - (void)settingsViewController:(LASettingsViewController *)settingsController shouldPushToChildController:(LASettingsViewController *)childController
@@ -125,8 +150,10 @@ __attribute__((visibility("hidden")))
 	[vch release];
 }
 
-+ (void)popAllControllers
++ (void)enteredBackground
 {
+	if ([[UIDevice currentDevice] isWildcat])
+		return;
 	UINavigationController *navigationController = [(id)[UIApplication sharedApplication] rootController];
 	while ([navigationController.topViewController isKindOfClass:self]) {
 		if ([navigationController.viewControllers count] == 1)
@@ -134,6 +161,11 @@ __attribute__((visibility("hidden")))
 		[navigationController popViewControllerAnimated:NO];
 	}
 	[[ActivatorAdController sharedInstance] hideAnimated:NO];
+}
+
++ (void)initialize
+{
+	[[NSNotificationCenter defaultCenter] addObserver:[ActivatorPSViewControllerHost class] selector:@selector(enteredBackground) name:@"UIApplicationDidEnterBackgroundNotification" object:nil];
 }
 
 @end
@@ -187,6 +219,8 @@ __attribute__((visibility("hidden")))
 
 - (void)viewWillAppear:(BOOL)animated
 {
+	if (!self.settingsController)
+		[self loadFromSpecifier:nil];
 	[super viewWillAppear:animated];
 	if (shouldShowAds) {
 		ActivatorAdController *aac = [ActivatorAdController sharedInstance];
@@ -225,11 +259,3 @@ __attribute__((visibility("hidden")))
 }
 
 @end
-
-__attribute__((constructor))
-static void Init() {
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	NSLog(@"Activator: Loaded in settings");
-	[[NSNotificationCenter defaultCenter] addObserver:[ActivatorPSViewControllerHost class] selector:@selector(popAllControllers) name:@"UIApplicationDidEnterBackgroundNotification" object:nil];
-	[pool release];
-}
