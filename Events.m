@@ -786,7 +786,8 @@ CHOptimizedMethod(0, self, void, SpringBoard, _menuButtonWasHeld)
 CHOptimizedMethod(0, new, void, SpringBoard, activatorMenuButtonTimerCompleted)
 {
 	[menuEventToAbort release];
-	menuEventToAbort = [LASendEventWithName(LAEventNameMenuHoldShort) retain];
+	LAEvent *event = LASendEventWithName(LAEventNameMenuHoldShort);
+	menuEventToAbort = event.handled ? [event retain] : nil;
 }
 
 static NSUInteger lastVolumeEvent;
