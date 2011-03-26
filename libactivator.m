@@ -10,6 +10,7 @@
 
 #include <objc/runtime.h>
 #include <sys/stat.h>
+#include <sys/sysctl.h>
 #include <execinfo.h>
 #include <dlfcn.h>
 
@@ -465,20 +466,29 @@ static UIAlertView *inCydiaAlert;
 	return [NSString stringWithFormat:@"<LAActivator listenerCount=%d eventCount=%d %p>", [[self availableListenerNames] count], [[self availableEventNames] count], self];
 }
 
-- (NSURL *)moreActionsURL
+static inline NSURL *URLWithDeviceData(NSString *format)
 {
 	UIDevice *device = [UIDevice currentDevice];
 	NSInteger idiom = [device respondsToSelector:@selector(idiom)] ? [device idiom] : 0;
-	NSString *url = [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/actions/?udid=%@&idiom=%d&version=%@&activator=%d", device.uniqueIdentifier, idiom, device.systemVersion, self.version];
+	size_t size = 0;
+	sysctlbyname("hw.machine", NULL, &size, NULL, 0);
+	char machine[size+1];
+	if (sysctlbyname("hw.machine", machine, &size, NULL, 0) != 0)
+		machine[0] = '\0';
+	NSString *url = [NSString stringWithFormat:format, device.uniqueIdentifier, idiom, device.systemVersion, LASharedActivator.version, machine];
 	return [NSURL URLWithString:url];
+}
+
+#define URLWithDeviceData(baseURL) URLWithDeviceData(baseURL"?udid=%@&idiom=%d&version=%@&activator=%d&machine=%s")
+
+- (NSURL *)moreActionsURL
+{
+	return URLWithDeviceData(@"http://rpetri.ch/cydia/activator/actions/");
 }
 
 - (NSURL *)adPaneURL
 {
-	UIDevice *device = [UIDevice currentDevice];
-	NSInteger idiom = [device respondsToSelector:@selector(idiom)] ? [device idiom] : 0;
-	NSString *url = [NSString stringWithFormat:@"http://rpetri.ch/cydia/activator/ads/?udid=%@&idiom=%d&version=%@&activator=%d", device.uniqueIdentifier, idiom, device.systemVersion, self.version];
-	return [NSURL URLWithString:url];
+	return URLWithDeviceData(@"http://rpetri.ch/cydia/activator/ads/");
 }
 
 @end
