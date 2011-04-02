@@ -208,7 +208,7 @@ static UIAlertView *inCydiaAlert;
 - (void)sendEventToListener:(LAEvent *)event
 {
 	NSString *listenerName = [self assignedListenerNameForEvent:event];
-	if ([self listenerWithName:listenerName isCompatibleWithEventName:[event name]]) {
+	if (listenerName && [self listenerWithName:listenerName isCompatibleWithEventName:[event name]]) {
 		if ([self isDangerousToSendEvents]) {
 			if (![[event name] isEqualToString:LAEventNameMenuPressSingle] &&
 				![[event name] isEqualToString:LAEventNameMenuPressDouble]
