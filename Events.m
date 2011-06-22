@@ -139,9 +139,13 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 - (NSDictionary *)_currentIcons;
 @end
 
+
+#if __IPHONE_OS_VERSION_MAX_ALLOWED < __IPHONE_3_2
+// Workaround to compile with 3.0 SDK
 @interface SBVolumeHUDView : UIView {
 }
 @end
+#endif
 
 @interface SBRemoteLocalNotificationAlert : SBAlertItem {
 }
