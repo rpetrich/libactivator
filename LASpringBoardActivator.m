@@ -19,6 +19,7 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 @end
 
 CHDeclareClass(SBApplicationController);
+CHDeclareClass(SBAwayController);
 
 @implementation LASpringBoardActivator
 
@@ -77,6 +78,7 @@ static void NewCydiaStatusChanged()
 			CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (void *)NewCydiaStatusChanged, CFSTR("com.saurik.Cydia.status"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 		}
 		CHLoadLateClass(SBApplicationController);
+		CHLoadLateClass(SBAwayController);
 	}
 	return self;
 }
@@ -344,7 +346,7 @@ static void NewCydiaStatusChanged()
 
 - (NSString *)currentEventMode
 {
-	if ([(SpringBoard *)[UIApplication sharedApplication] isLocked])
+	if ([(SpringBoard *)[UIApplication sharedApplication] isLocked] || [[CHClass(SBAwayController) sharedAwayController] isMakingEmergencyCall])
 		return LAEventModeLockScreen;
 	/*if ([[CHSharedInstance(SBIconController) contentView] window])
 		return LAEventModeSpringBoard;
