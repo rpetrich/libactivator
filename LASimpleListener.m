@@ -35,6 +35,10 @@ static LASimpleListener *sharedSimpleListener;
 - (void)_toggleSwitcher;
 @end
 
+@interface SBUIController (iOS50)
+- (void)lockFromSource:(int)source;
+@end
+
 @interface SBMediaController (OS4)
 - (id)mediaControlsDestinationApp;
 @end
@@ -219,7 +223,10 @@ static LASimpleListener *sharedSimpleListener;
 - (BOOL)showLockScreen
 {
 	SBUIController *controller = CHSharedInstance(SBUIController);
-	[controller lock];
+	if ([controller respondsToSelector:@selector(lock)])
+		[controller lock];
+	if ([controller respondsToSelector:@selector(lockFromSource:)])
+		[controller lockFromSource:0];
 	[controller wakeUp:nil];
 	return YES;
 }
