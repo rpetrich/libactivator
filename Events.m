@@ -1514,7 +1514,9 @@ CHConstructor
 		CHHook(2, SBIconScrollView, touchesBegan, withEvent);
 		CHHook(1, SBIconScrollView, handlePinch);
 		
-		CHLoadLateClass(SBIcon);
+		CHClass(SBIcon) = objc_getClass("SBIconView") ?: objc_getClass("SBIcon");
+		CHMetaClass(SBIcon) = object_getClass(CHClass(SBIcon));
+		CHSuperClass(SBIcon) = class_getSuperclass(CHClass(SBIcon));
 		CHHook(0, SBIcon, initWithDefaultSize);
 		CHHook(2, SBIcon, touchesBegan, withEvent);
 		CHHook(2, SBIcon, touchesMoved, withEvent);
