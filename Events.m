@@ -567,8 +567,7 @@ CHOptimizedMethod(0, self, BOOL, SpringBoard, allowMenuDoubleTap)
 
 CHOptimizedMethod(0, self, void, SpringBoard, handleMenuDoubleTap)
 {
-	SEL selector = [self respondsToSelector:@selector(canShowNowPlayingHUD)] ? @selector(canShowNowPlayingHUD) : @selector(canShowNowPlayingControls);
-	if (objc_msgSend(self, selector)) {
+	if ([self respondsToSelector:@selector(canShowNowPlayingHUD)] && [self canShowNowPlayingHUD]) {
 		shouldAddNowPlayingButton = YES;
 		CHSuper(0, SpringBoard, handleMenuDoubleTap);
 		shouldAddNowPlayingButton = NO;
