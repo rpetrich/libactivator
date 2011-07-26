@@ -5,6 +5,8 @@
 		"iPadAppIcon.png",
 		"icon.png",
 		"icon@2x.png",
+		"icon-Small.png",
+		"icon-Small@2x.png",
 	);
 	CFBundleIdentifier = "libactivator";
 	"CFBundleInfoDictionaryVersion" = "6.0";
