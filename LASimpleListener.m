@@ -26,6 +26,7 @@ static LASimpleListener *sharedSimpleListener;
 
 @interface SBIconController (OS40)
 @property (nonatomic, readonly) SBSearchController *searchController;
+- (void)closeFolderAnimated:(BOOL)animated;
 @end
 
 @interface SBUIController (OS40Switcher)
@@ -330,6 +331,37 @@ static LASimpleListener *sharedSimpleListener;
 	return YES;
 }
 
+- (BOOL)firstSpringBoardPage
+{
+	SBIconController *ic = CHSharedInstance(SBIconController);
+	SBUIController *uic = CHSharedInstance(SBUIController);
+	BOOL result = NO;
+	if ([uic respondsToSelector:@selector(isSwitcherShowing)] && [uic isSwitcherShowing]) {
+		[uic dismissSwitcher];
+		result = YES;
+	}
+	if ([(SpringBoard *)[UIApplication sharedApplication] _accessibilityFrontMostApplication]) {
+		if ([ic respondsToSelector:@selector(closeFolderAnimated:)])
+			[ic closeFolderAnimated:NO];
+		[ic scrollToIconListAtIndex:0 animate:NO];
+		[uic clickedMenuButton];
+		return YES;
+	}
+	if ([ic isEditing]) {
+		[ic setIsEditing:NO];
+		result = YES;
+	}
+	if ([ic respondsToSelector:@selector(closeFolderAnimated:)]) {
+		[ic closeFolderAnimated:YES];
+		result = YES;
+	}
+	if ([ic currentIconListIndex]) {
+		[ic scrollToIconListAtIndex:0 animate:YES];
+		result = YES;
+	}
+	return result;
+}
+
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
 	NSString *selector = [activator infoDictionaryValueOfKey:@"selector" forListenerWithName:listenerName];
@@ -370,6 +402,7 @@ static LASimpleListener *sharedSimpleListener;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.spotlight"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.take-screenshot"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.nothing"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.first-springboard-page"];
 		if ([CHClass(SBVoiceControlAlert) shouldEnterVoiceControl])
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
 		if (GSSystemHasCapability(CFSTR("multitasking"))) {

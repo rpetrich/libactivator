@@ -1,0 +1,7 @@
+{
+	title = "First SpringBoard Page";
+	description = "Jump to first page of icons";
+	group = "System Actions";
+	"compatible-modes" = ("springboard", "application");
+	selector = "firstSpringBoardPage";
+}
