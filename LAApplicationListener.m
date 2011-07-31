@@ -234,6 +234,24 @@ static NSArray *ignoredDisplayIdentifiers;
 
 @end
 
+CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdentifier, webClip, id, webClip, path, NSString *, path, bundle, id, bundle, infoDictionary, NSDictionary *, infoDictionary, isSystemApplication, BOOL, isSystemApplication, signerIdentity, id, signerIdentity, provisioningProfileValidated, BOOL, validated)
+{
+	if ((self = CHSuper(8, SBApplication, initWithBundleIdentifier, bundleIdentifier, webClip, webClip, path, path, bundle, bundle, infoDictionary, infoDictionary, isSystemApplication, isSystemApplication, signerIdentity, signerIdentity, provisioningProfileValidated, validated))) {
+		NSString *listenerName = [self displayIdentifier];
+		if (isSystemApplication) {
+			if ([ignoredDisplayIdentifiers containsObject:listenerName]) {
+				return self;
+			}
+			if (![[NSFileManager defaultManager] fileExistsAtPath:[bundle executablePath]]) {
+				return self;
+			}
+		}
+		if (![LASharedActivator listenerForName:listenerName])
+			[LASharedActivator registerListener:sharedApplicationListener forName:listenerName ignoreHasSeen:YES];
+	}
+	return self;
+}
+
 CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdentifier, roleIdentifier, NSString *, roleIdentifier, path, NSString *, path, bundle, id, bundle, infoDictionary, NSDictionary *, infoDictionary, isSystemApplication, BOOL, isSystemApplication, signerIdentity, id, signerIdentity, provisioningProfileValidated, BOOL, validated)
 {
 	if ((self = CHSuper(8, SBApplication, initWithBundleIdentifier, bundleIdentifier, roleIdentifier, roleIdentifier, path, path, bundle, bundle, infoDictionary, infoDictionary, isSystemApplication, isSystemApplication, signerIdentity, signerIdentity, provisioningProfileValidated, validated))) {
@@ -280,6 +298,7 @@ CHConstructor {
 		ignoredDisplayIdentifiers = [[NSArray alloc] initWithObjects:@"com.apple.DemoApp", @"com.apple.fieldtest", @"com.apple.springboard", @"com.apple.AdSheet", @"com.apple.iphoneos.iPodOut", @"com.apple.TrustMe", @"com.apple.DataActivation", @"com.apple.WebSheet", @"com.apple.AdSheetPhone", @"com.apple.AdSheetPad", @"com.apple.iosdiagnostics", nil];
 		displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
 		CHLoadLateClass(SBApplication);
+		CHHook(8, SBApplication, initWithBundleIdentifier, webClip, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
 		CHHook(8, SBApplication, initWithBundleIdentifier, roleIdentifier, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
 		CHHook(0, SBApplication, dealloc);
 		CHLoadLateClass(SBDisplayStack);
