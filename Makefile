@@ -23,7 +23,7 @@ APPLICATION_NAME = Activator
 Activator_FILES = Activator.m
 Activator_LDFLAGS = -L$(FW_OBJ_DIR) -lactivator
 
-ADDITIONAL_CFLAGS = -std=c99
+ADDITIONAL_CFLAGS = -std=c99 -fomit-frame-pointer
 OPTFLAG = -Os
 TARGET_IPHONEOS_DEPLOYMENT_VERSION = 3.0
 
