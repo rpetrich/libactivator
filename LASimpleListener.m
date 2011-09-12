@@ -38,6 +38,7 @@ static LASimpleListener *sharedSimpleListener;
 
 @interface SBUIController (iOS50)
 - (void)lockFromSource:(int)source;
+- (void)dismissSwitcherAnimated:(BOOL)animated;
 @end
 
 @interface SBMediaController (OS4)
@@ -188,7 +189,10 @@ static LASimpleListener *sharedSimpleListener;
 {
 	SBUIController *sharedController = CHSharedInstance(SBUIController);
 	if ([sharedController isSwitcherShowing]) {
-		[sharedController dismissSwitcher];
+		if ([sharedController respondsToSelector:@selector(dismissSwitcherAnimated:)])
+			[sharedController dismissSwitcherAnimated:YES];
+		else
+			[sharedController dismissSwitcher];
 		return NO;
 	}
 	[sharedController _toggleSwitcher];
@@ -211,7 +215,10 @@ static LASimpleListener *sharedSimpleListener;
 		UIScrollView *scrollView = CHIvar(CHIvar(CHSharedInstance(SBAppSwitcherController), _bottomBar, id), _scrollView, UIScrollView *);
 		CGPoint contentOffset = scrollView.contentOffset;
 		if (contentOffset.x == 0.0f) {
-			[sharedController dismissSwitcher];
+			if ([sharedController respondsToSelector:@selector(dismissSwitcherAnimated:)])
+				[sharedController dismissSwitcherAnimated:YES];
+			else
+				[sharedController dismissSwitcher];
 			return NO;
 		} else {
 			contentOffset.x = 0.0f;
@@ -344,7 +351,10 @@ static LASimpleListener *sharedSimpleListener;
 	SBUIController *uic = CHSharedInstance(SBUIController);
 	BOOL result = NO;
 	if ([uic respondsToSelector:@selector(isSwitcherShowing)] && [uic isSwitcherShowing]) {
-		[uic dismissSwitcher];
+		if ([uic respondsToSelector:@selector(dismissSwitcherAnimated:)])
+			[uic dismissSwitcherAnimated:YES];
+		else
+			[uic dismissSwitcher];
 		result = YES;
 	}
 	if ([(SpringBoard *)[UIApplication sharedApplication] _accessibilityFrontMostApplication]) {
