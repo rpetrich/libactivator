@@ -361,7 +361,13 @@ static LASimpleListener *sharedSimpleListener;
 		if ([ic respondsToSelector:@selector(closeFolderAnimated:)])
 			[ic closeFolderAnimated:NO];
 		[ic scrollToIconListAtIndex:0 animate:NO];
-		[uic clickedMenuButton];
+		static BOOL inside;
+		if (!inside) {
+			inside = YES;
+			[uic clickedMenuButton];
+			inside = NO;
+		}
+		[ic scrollToIconListAtIndex:0 animate:NO];
 		return YES;
 	}
 	if ([ic isEditing]) {
