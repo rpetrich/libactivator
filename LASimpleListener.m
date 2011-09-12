@@ -146,8 +146,14 @@ static LASimpleListener *sharedSimpleListener;
 {
 	[[LAApplicationListener sharedInstance] activateApplication:nil];
 	[CHSharedInstance(SBIconController) scrollToIconListAtIndex:-1 animate:NO];
-	SBSearchController *searchController;
-	if ([CHClass(SBSearchController) respondsToSelector:@selector(sharedInstance)])
+
+    SBUIController *sharedController = CHSharedInstance(SBUIController);
+	if ([sharedController isSwitcherShowing]) {
+		[sharedController dismissSwitcher];
+	}
+
+    SBSearchController *searchController;
+    if ([CHClass(SBSearchController) respondsToSelector:@selector(sharedInstance)])
 		searchController = CHSharedInstance(SBSearchController);
 	else
 		searchController = [CHSharedInstance(SBIconController) searchController];
@@ -429,4 +435,4 @@ static LASimpleListener *sharedSimpleListener;
 	}
 }
 
-@end 
+@end
