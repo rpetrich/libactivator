@@ -18,10 +18,15 @@ static NSMutableArray *displayStacks;
 static NSArray *allEventModesExceptLockScreen;
 static NSArray *ignoredDisplayIdentifiers;
 
-#define SBWPreActivateDisplayStack        (SBDisplayStack *)[displayStacks objectAtIndex:0]
-#define SBWActiveDisplayStack             (SBDisplayStack *)[displayStacks objectAtIndex:1]
-#define SBWSuspendingDisplayStack         (SBDisplayStack *)[displayStacks objectAtIndex:2]
-#define SBWSuspendedEventOnlyDisplayStack (SBDisplayStack *)[displayStacks objectAtIndex:3]
+static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
+{
+	return index < [displayStacks count] ? [displayStacks objectAtIndex:index] : nil;
+}
+
+#define SBWPreActivateDisplayStack        SBWGetDisplayStackAtIndex(0)
+#define SBWActiveDisplayStack             SBWGetDisplayStackAtIndex(1)
+#define SBWSuspendingDisplayStack         SBWGetDisplayStackAtIndex(2)
+#define SBWSuspendedEventOnlyDisplayStack SBWGetDisplayStackAtIndex(3)
 
 #define SBApp(dispId) [CHSharedInstance(SBApplicationController) applicationWithDisplayIdentifier:dispId]
 
