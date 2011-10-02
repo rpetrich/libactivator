@@ -290,22 +290,27 @@ CHOptimizedMethod(0, self, void, SBDisplayStack, dealloc)
 	CHSuper(0, SBDisplayStack, dealloc);
 }
 
+CHOptimizedMethod(0, self, id, SBApplicationController, init)
+{
+	CHHook(8, SBApplication, initWithBundleIdentifier, webClip, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
+	CHHook(8, SBApplication, initWithBundleIdentifier, roleIdentifier, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
+	CHHook(0, SBApplication, dealloc);
+	return CHSuper(0, SBApplicationController, init);
+}
+
 CHConstructor {
 	CHAutoreleasePoolForScope();
 	if (CHLoadLateClass(SBApplicationController)) {
+		CHHook(0, SBApplicationController, init);
 		sharedApplicationListener = [[LAApplicationListener alloc] init];
 		allEventModesExceptLockScreen = [[NSArray alloc] initWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil];
 		ignoredDisplayIdentifiers = [[NSArray alloc] initWithObjects:@"com.apple.DemoApp", @"com.apple.fieldtest", @"com.apple.springboard", @"com.apple.AdSheet", @"com.apple.iphoneos.iPodOut", @"com.apple.TrustMe", @"com.apple.DataActivation", @"com.apple.WebSheet", @"com.apple.AdSheetPhone", @"com.apple.AdSheetPad", @"com.apple.iosdiagnostics", @"com.apple.purplebuddy", nil];
 		displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
-		CHLoadLateClass(SBApplication);
-		CHHook(8, SBApplication, initWithBundleIdentifier, webClip, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
-		CHHook(8, SBApplication, initWithBundleIdentifier, roleIdentifier, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
-		CHHook(0, SBApplication, dealloc);
-		CHLoadLateClass(SBDisplayStack);
 		CHHook(0, SBDisplayStack, init);
 		CHHook(0, SBDisplayStack, dealloc);
 		CHLoadLateClass(SBIconModel);
 		CHLoadLateClass(SBAwayController);
 		CHLoadLateClass(SBUIController);
+		CHLoadLateClass(SBApplication);
 	}
 }
