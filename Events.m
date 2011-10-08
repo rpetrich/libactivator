@@ -994,13 +994,13 @@ CHOptimizedMethod(0, self, BOOL, SBUIController, clickedMenuButton)
 	[LASharedActivator sendDeactivateEventToListeners:event];
 	if ([event isHandled])
 		return YES;
-	SBIconController *iconController = CHSharedInstance(SBIconController);
-	if (([iconController isEditing]) || 
-		([iconController respondsToSelector:@selector(currentFolderIconList)] && [iconController currentFolderIconList]) ||
-		([CHClass(SBUIController) instancesRespondToSelector:@selector(isSwitcherShowing)] && [CHSharedInstance(SBUIController) isSwitcherShowing]))
-	{
-		return CHSuper(0, SBUIController, clickedMenuButton);
+	if (mode == LAEventModeSpringBoard) {
+		SBIconController *iconController = CHSharedInstance(SBIconController);
+		if ([iconController isEditing] || ([iconController respondsToSelector:@selector(currentFolderIconList)] && [iconController currentFolderIconList]))
+			return CHSuper(0, SBUIController, clickedMenuButton);
 	}
+	if ([CHClass(SBUIController) instancesRespondToSelector:@selector(isSwitcherShowing)] && [CHSharedInstance(SBUIController) isSwitcherShowing])
+		return CHSuper(0, SBUIController, clickedMenuButton);
 	[LASharedActivator sendEventToListener:event];
 	if (![event isHandled])
 		return CHSuper(0, SBUIController, clickedMenuButton);
