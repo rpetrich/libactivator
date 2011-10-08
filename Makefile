@@ -36,7 +36,7 @@ ifeq ($(DEBUG),1)
 endif
 
 LOCALIZATION_PROJECT_NAME = libactivator
-LOCALIZATION_DEST_PATH = /Library/Activator/
+LOCALIZATION_DEST_PATH = /Library/Activator
 
 TARGET_IPHONEOS_DEPLOYMENT_VERSION := 3.0
 
@@ -55,5 +55,8 @@ internal-stage::
 
 internal-after-install::
 	install.exec "sbreload || respring || killall -9 SpringBoard"
+
+stage::
+	$(ECHO_NOTHING)./symlink_localizations.sh "$(FW_PROJECT_DIR)/Localization/$(LOCALIZATION_PROJECT_NAME)" "$(LOCALIZATION_DEST_PATH)" "$(FW_STAGING_DIR)/Applications/Activator.app"$(ECHO_END)
 
 endif
