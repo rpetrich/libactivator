@@ -168,6 +168,10 @@ __attribute__((visibility("hidden")))
 
 @end
 
+@interface LASettingsViewController ()
++ (void)updateAdSettings;
+@end
+
 
 __attribute__((visibility("hidden")))
 NSMutableDictionary *listenerData;

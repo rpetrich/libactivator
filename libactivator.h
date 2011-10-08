@@ -160,6 +160,7 @@ extern LAActivator *LASharedActivator;
 @private
 	UITableView *_tableView;
 	id<LASettingsViewControllerDelegate> _delegate;
+	UINavigationController *_savedNavigationController;
 }
 
 + (id)controller;

@@ -12,7 +12,7 @@ libactivator_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
 
 # LibActivator.bundle (/System/Library/PreferenceBundles)
 BUNDLE_NAME = LibActivator
-LibActivator_FILES = Preferences.m ActivatorAdController.m
+LibActivator_FILES = Preferences.m
 LibActivator_INSTALL_PATH = /System/Library/PreferenceBundles
 LibActivator_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 LibActivator_PRIVATE_FRAMEWORKS = Preferences

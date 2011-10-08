@@ -3,13 +3,18 @@
 
 #import "libactivator.h"
 #import "libactivator-private.h"
-#import "ActivatorAdController.h"
 
 // TODO: figure out the proper way to store this in headers
 @interface PSViewController (OS32)
 @property (nonatomic, retain) PSSpecifier *specifier;
 @property (nonatomic, retain) UIView *view;
 - (void)viewDidLoad;
+- (void)viewWillAppear:(BOOL)animated;
+- (void)viewDidAppear:(BOOL)animated;
+- (void)viewWillDisappear:(BOOL)animated;
+- (void)viewDidDisappear:(BOOL)animated;
+- (void)willResignActive;
+- (void)willBecomeActive;
 @end
 
 @interface UIDevice (OS32)
@@ -60,6 +65,7 @@ __attribute__((visibility("hidden")))
 - (void)setSettingsController:(LASettingsViewController *)settingsController
 {
 	if (_settingsController != settingsController) {
+		[_settingsController viewDidDisappear:NO];
 		_settingsController.delegate = nil;
 		[_settingsController release];
 		_settingsController = [settingsController retain];
@@ -114,22 +120,38 @@ __attribute__((visibility("hidden")))
 	UIView *subview = _settingsController.view;
 	subview.frame = view.bounds;
 	[view addSubview:subview];
+	[super viewWillAppear:animated];
 	[_settingsController viewWillAppear:animated];
 }
 
 - (void)viewDidAppear:(BOOL)animated
 {
+	[super viewDidAppear:animated];
 	[_settingsController viewDidAppear:animated];
 }
 
 - (void)viewWillDisappear:(BOOL)animated
 {
+	[super viewWillDisappear:animated];
 	[_settingsController viewWillDisappear:animated];
 }
 
 - (void)viewDidDisappear:(BOOL)animated
 {
+	[super viewDidDisappear:animated];
 	[_settingsController viewDidDisappear:animated];
+}
+
+- (void)willResignActive
+{
+	[super willResignActive];
+	[_settingsController viewDidDisappear:NO];
+}
+
+- (void)willBecomeActive
+{
+	[super willBecomeActive];
+	[_settingsController viewWillAppear:NO];
 }
 
 - (void)loadFromSpecifier:(PSSpecifier *)specifier
@@ -160,7 +182,6 @@ __attribute__((visibility("hidden")))
 			break;
 		[navigationController popViewControllerAnimated:NO];
 	}
-	[[ActivatorAdController sharedInstance] hideAnimated:NO];
 }
 
 + (void)initialize
@@ -171,19 +192,10 @@ __attribute__((visibility("hidden")))
 @end
 
 __attribute__((visibility("hidden")))
-@interface ActivatorSettingsController : ActivatorPSViewControllerHost<ActivatorAdControllerDelegate> {
-@private
-	BOOL shouldShowAds;
-}
+@interface ActivatorSettingsController : ActivatorPSViewControllerHost
 @end
 
 @implementation ActivatorSettingsController
-
-- (void)dealloc
-{
-	[ActivatorAdController sharedInstance].delegate = nil;
-	[super dealloc];
-}
 
 - (void)loadFromSpecifier:(PSSpecifier *)specifier
 {
@@ -195,26 +207,13 @@ __attribute__((visibility("hidden")))
 		LAListenerSettingsViewController *lsvc = [LAListenerSettingsViewController controller];
 		sc = lsvc;
 		lsvc.listenerName = listenerName;
-		NSString *title = [[specifier propertyForKey:@"activatorTitle"]?:[specifier name] copy];
+		NSString *title = [specifier propertyForKey:@"activatorTitle"] ?: [specifier name];
 		if ([title length])
 			lsvc.navigationItem.title = title;
-		shouldShowAds = NO;
 	} else {
 		sc = [LARootSettingsController controller];
-		shouldShowAds = ![[LASharedActivator _getObjectForPreference:@"LAHideAds"] boolValue];
 	}
 	self.settingsController = sc;
-}
-
-- (void)viewDidBecomeVisible
-{
-	[super viewDidBecomeVisible];
-	if (shouldShowAds) {
-		ActivatorAdController *aac = [ActivatorAdController sharedInstance];
-		[aac setURL:[LASharedActivator adPaneURL]];
-		[aac setDelegate:self];
-		[aac display];
-	}
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -222,40 +221,6 @@ __attribute__((visibility("hidden")))
 	if (!self.settingsController)
 		[self loadFromSpecifier:nil];
 	[super viewWillAppear:animated];
-	if (shouldShowAds) {
-		ActivatorAdController *aac = [ActivatorAdController sharedInstance];
-		[aac setURL:[LASharedActivator adPaneURL]];
-		[aac setDelegate:self];
-		[aac display];
-	}
-}
-
-- (void)viewWillDisappear:(BOOL)animated
-{
-	[super viewWillDisappear:animated];
-	UIViewController *rootController = [[(UIViewController *)self navigationController].viewControllers objectAtIndex:0];
-	UIView *view = rootController.view;
-	view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-	view = [[view subviews] lastObject];
-	view.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
-}
-
-- (void)viewDidDisappear:(BOOL)animated
-{
-	[super viewDidDisappear:animated];
-	if (![(UIViewController *)self navigationController])
-		[[ActivatorAdController sharedInstance] hideAnimated:YES];
-}
-
-- (BOOL)popControllerWithAnimation:(BOOL)animation
-{
-	[[ActivatorAdController sharedInstance] hideAnimated:YES];
-	return [super popControllerWithAnimation:animation];
-}
-
-- (UIView *)activatorAdControllerRequiresTarget:(ActivatorAdController *)ac
-{
-	return [[self view] superview];
 }
 
 @end

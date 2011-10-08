@@ -1,5 +1,4 @@
 #import "libactivator-private.h"
-#import "ActivatorAdController.h"
 #import "LAMenuSettingsController.h"
 
 @interface LARootSettingsController () <UIAlertViewDelegate>
@@ -123,7 +122,7 @@
 				case 1:
 					// Hide ads and show donation form
 					[LASharedActivator _setObject:(id)kCFBooleanTrue forPreference:@"LAHideAds"];
-					[[objc_getClass("ActivatorAdController") sharedInstance] hideAnimated:NO];
+					[LASettingsViewController updateAdSettings];
 					[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"http://rpetri.ch/cydia/activator/donate/"]];
 					return;
 				case 2:

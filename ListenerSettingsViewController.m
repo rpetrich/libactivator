@@ -217,5 +217,9 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 	[self release];
 }
 
+- (BOOL)showsAd
+{
+	return NO;
+}
 
 @end
