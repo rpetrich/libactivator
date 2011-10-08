@@ -185,7 +185,10 @@ __attribute__((visibility("default")))
 - (BOOL)spotlight
 {
 	[[LAApplicationListener sharedInstance] activateApplication:nil];
-	[CHSharedInstance(SBIconController) scrollToIconListAtIndex:-1 animate:NO];
+	SBIconController *iconController = CHSharedInstance(SBIconController);
+	[iconController scrollToIconListAtIndex:-1 animate:NO];
+	if ([iconController respondsToSelector:@selector(closeFolderAnimated:)])
+		[iconController closeFolderAnimated:YES];
 	SBSearchController *searchController;
 	if ([CHClass(SBSearchController) respondsToSelector:@selector(sharedInstance)])
 		searchController = CHSharedInstance(SBSearchController);
