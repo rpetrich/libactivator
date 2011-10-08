@@ -1,7 +1,10 @@
 #import "libactivator-private.h"
 #import "LAMenuSettingsController.h"
+#include <dlfcn.h>
+#include <notify.h>
 
 @interface LARootSettingsController () <UIAlertViewDelegate>
+@property (nonatomic, assign) void *libhide;
 @end
 
 @implementation LARootSettingsController
@@ -10,9 +13,12 @@
 {
 	if ((self = [super init])) {
 		self.navigationItem.title = [LASharedActivator localizedStringForKey:@"ACTIVATOR" value:@"Activator"];
+		self.libhide = dlopen("/usr/lib/hide.dylib", RTLD_LAZY);
 	}
 	return self;
 }
+
+@synthesize libhide;
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
@@ -29,7 +35,7 @@
 		case 2:
 			return 3;
 		case 3:
-			return 1;
+			return libhide ? 2 : 1;
 		default:
 			return 0;
 	}
@@ -87,9 +93,18 @@
 			}
 			break;
 		case 3:
-			cell.textLabel.text = [LASharedActivator localizedStringForKey:@"RESET_SETTINGS" value:@"Reset Settings"];
-			cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"RESET_SETTINGS_DETAIL" value:@"Return all settings to the default values"];
-			cell.accessoryType = UITableViewCellAccessoryNone;
+			switch (indexPath.row) {
+				case 0:
+					cell.textLabel.text = [LASharedActivator localizedStringForKey:@"RESET_SETTINGS" value:@"Reset Settings"];
+					cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"RESET_SETTINGS_DETAIL" value:@"Return all settings to the default values"];
+					cell.accessoryType = UITableViewCellAccessoryNone;
+					break;
+				case 1:
+					cell.textLabel.text = [LASharedActivator localizedStringForKey:@"SHOW_ICON" value:@"Show Icon"];
+					cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"SHOW_ACTIVATOR_ICON_ON_SPRINGBOARD" value:@"Show Activator Icon on SpringBoard"];
+					cell.accessoryType = [[LASharedActivator _getObjectForPreference:@"LAHideIcon"] boolValue] ? UITableViewCellAccessoryNone : UITableViewCellAccessoryCheckmark;
+					break;
+			}
 			break;
 	}
 	return cell;
@@ -132,12 +147,26 @@
 					return;
 			}
 			break;
-		default: {
-			UIAlertView *av = [[UIAlertView alloc] initWithTitle:[LASharedActivator localizedStringForKey:@"RESET_ALERT_TITLE" value:@"Reset Activator Settings"] message:[LASharedActivator localizedStringForKey:@"RESET_ALERT_MESSAGE" value:@"Are you sure you wish to reset Activator settings to defaults?\nYour device will respring if you continue."] delegate:self cancelButtonTitle:[LASharedActivator localizedStringForKey:@"RESET_ALERT_CANCEL" value:@"Cancel"] otherButtonTitles:[LASharedActivator localizedStringForKey:@"RESET_ALERT_CONTINUE" value:@"Reset"], nil];
-			[av show];
-			[av release];
-			return;
-		}
+		default: 
+			switch (indexPath.row) {
+				case 0: {
+					UIAlertView *av = [[UIAlertView alloc] initWithTitle:[LASharedActivator localizedStringForKey:@"RESET_ALERT_TITLE" value:@"Reset Activator Settings"] message:[LASharedActivator localizedStringForKey:@"RESET_ALERT_MESSAGE" value:@"Are you sure you wish to reset Activator settings to defaults?\nYour device will respring if you continue."] delegate:self cancelButtonTitle:[LASharedActivator localizedStringForKey:@"RESET_ALERT_CANCEL" value:@"Cancel"] otherButtonTitles:[LASharedActivator localizedStringForKey:@"RESET_ALERT_CONTINUE" value:@"Reset"], nil];
+					[av show];
+					[av release];
+					return;
+				}
+				default: {
+					BOOL newValue = ![[LASharedActivator _getObjectForPreference:@"LAHideIcon"] boolValue];
+					[LASharedActivator _setObject:newValue ? (id)kCFBooleanTrue : (id)kCFBooleanFalse forPreference:@"LAHideIcon"];
+					[tableView cellForRowAtIndexPath:indexPath].accessoryType = newValue ? UITableViewCellAccessoryNone : UITableViewCellAccessoryCheckmark;
+					BOOL (*libhideFunction)(NSString *) = dlsym(libhide, newValue ? "HideIconViaDisplayId" : "UnHideIconViaDisplayId");
+					if (libhideFunction) {
+						libhideFunction(@"libactivator");
+						notify_post("com.libhide.hiddeniconschanged");
+					}
+					return;
+				}
+			}
 	}
 	[self pushSettingsController:vc];
 	[vc release];
