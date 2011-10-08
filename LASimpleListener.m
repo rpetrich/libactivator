@@ -21,6 +21,7 @@ CHDeclareClass(SBMediaController);
 CHDeclareClass(SBApplicationController);
 CHDeclareClass(SBSoundPreferences);
 CHDeclareClass(SBAppSwitcherController);
+CHDeclareClass(SBBulletinListController);
 
 static LASimpleListener *sharedSimpleListener;
 
@@ -95,6 +96,13 @@ static LASimpleListener *sharedSimpleListener;
 
 @interface SBAlertItemsController (iOS42)
 - (BOOL)hasAlertOfClass:(Class)alertClass;
+@end
+
+@interface SBBulletinListController : NSObject
++ (SBBulletinListController *)sharedInstance;
+- (void)showListViewAnimated:(BOOL)animated;
+- (void)hideListViewAnimated:(BOOL)animated;
+- (BOOL)listViewIsActive;
 @end
 
 @implementation LASimpleListener
@@ -385,6 +393,16 @@ static LASimpleListener *sharedSimpleListener;
 	return result;
 }
 
+- (BOOL)activateNotificationCenter
+{
+	SBBulletinListController *blc = CHSharedInstance(SBBulletinListController);
+	if (blc && ![blc listViewIsActive]) {
+		[blc showListViewAnimated:YES];
+		return YES;
+	}
+	return NO;
+}
+
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
 	NSString *selector = [activator infoDictionaryValueOfKey:@"selector" forListenerWithName:listenerName];
@@ -431,6 +449,9 @@ static LASimpleListener *sharedSimpleListener;
 		if (GSSystemHasCapability(CFSTR("multitasking"))) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-switcher"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.show-now-playing-bar"];
+		}
+		if (CHLoadLateClass(SBBulletinListController)) {
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-notification-center"];
 		}
 		// Lock Screen
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.dismiss"];

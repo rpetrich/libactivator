@@ -1,0 +1,7 @@
+{
+	title = "Activate Notification Center";
+	description = "Pull down notification center";
+	group = "System Actions";
+	"compatible-modes" = ("springboard", "application");
+	selector = "activateNotificationCenter";
+}
