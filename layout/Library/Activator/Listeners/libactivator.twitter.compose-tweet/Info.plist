@@ -1,0 +1,7 @@
+{
+	title = "Compose Tweet";
+	description = "Launch modal tweet composer";
+	group = "System Actions";
+	"compatible-modes" = ("springboard", "application");
+	selector = "composeTweet";
+}

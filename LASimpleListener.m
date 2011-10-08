@@ -1,7 +1,7 @@
 #import "libactivator.h"
 #import "libactivator-private.h"
 #import "LAApplicationListener.h"
-#import <UIKit/UIKit.h>
+#import <UIKit/UIKit2.h>
 #import <SpringBoard/SpringBoard.h>
 #import <GraphicsServices/GraphicsServices.h>
 #import <CaptainHook/CaptainHook.h>
@@ -22,6 +22,7 @@ CHDeclareClass(SBApplicationController);
 CHDeclareClass(SBSoundPreferences);
 CHDeclareClass(SBAppSwitcherController);
 CHDeclareClass(SBBulletinListController);
+CHDeclareClass(TWTweetComposeViewController);
 
 static LASimpleListener *sharedSimpleListener;
 
@@ -103,6 +104,32 @@ static LASimpleListener *sharedSimpleListener;
 - (void)showListViewAnimated:(BOOL)animated;
 - (void)hideListViewAnimated:(BOOL)animated;
 - (BOOL)listViewIsActive;
+@end
+
+@interface TWTweetComposeViewController : UIViewController
+@property (nonatomic, copy) id completionHandler;
+@end
+
+@interface UIViewController (iOS5)
+@property (nonatomic, readwrite, assign) UIInterfaceOrientation interfaceOrientation;
+@end
+
+void UIKeyboardEnableAutomaticAppearance();
+void UIKeyboardDisableAutomaticAppearance();
+
+__attribute__((visibility("default")))
+@interface ActivatorEmptyViewController : UIViewController
+// So empty inside…
+@end
+
+@implementation ActivatorEmptyViewController
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
+{
+	return (interfaceOrientation != UIInterfaceOrientationPortraitUpsideDown)
+		|| ([UIDevice instancesRespondToSelector:@selector(userInterfaceIdiom)] && ([UIDevice currentDevice].userInterfaceIdiom == UIUserInterfaceIdiomPad));
+}
+
 @end
 
 @implementation LASimpleListener
@@ -403,6 +430,59 @@ static LASimpleListener *sharedSimpleListener;
 	return NO;
 }
 
+static TWTweetComposeViewController *tweetComposer;
+static UIWindow *tweetWindow;
+static UIWindow *tweetFormerKeyWindow;
+
+- (void)hideTweetWindow
+{
+	tweetWindow.hidden = YES;
+	[tweetWindow release];
+	tweetWindow = nil;
+}
+
+- (BOOL)composeTweet
+{
+	if (tweetComposer) {
+		[tweetWindow.firstResponder resignFirstResponder];
+		[tweetFormerKeyWindow makeKeyWindow];
+		[tweetFormerKeyWindow release];
+		tweetFormerKeyWindow = nil;
+		[self performSelector:@selector(hideTweetWindow) withObject:nil afterDelay:0.5];
+		[tweetWindow.rootViewController dismissModalViewControllerAnimated:YES];
+		[tweetComposer release];
+		tweetComposer = nil;
+	} else {
+		tweetComposer = [CHAlloc(TWTweetComposeViewController) init];
+		if (!tweetComposer)
+			return NO;
+		if (tweetWindow)
+			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(hideTweetWindow) object:nil];
+		else
+			tweetWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
+		tweetWindow.windowLevel = UIWindowLevelStatusBar;
+		[tweetFormerKeyWindow release];
+		tweetFormerKeyWindow = [[UIWindow keyWindow] retain];
+		UIViewController *vc = [[ActivatorEmptyViewController alloc] init];
+		vc.interfaceOrientation = [(SpringBoard *)[UIApplication sharedApplication] activeInterfaceOrientation];
+		tweetWindow.rootViewController = vc;
+		tweetComposer.completionHandler = ^(int result) {
+			[tweetWindow.firstResponder resignFirstResponder];
+			[tweetFormerKeyWindow makeKeyWindow];
+			[tweetFormerKeyWindow release];
+			tweetFormerKeyWindow = nil;
+			[self performSelector:@selector(hideTweetWindow) withObject:nil afterDelay:0.5];
+			[vc dismissModalViewControllerAnimated:YES];
+			[tweetComposer release];
+			tweetComposer = nil;
+		};
+		[tweetWindow makeKeyAndVisible];
+		[vc presentModalViewController:tweetComposer animated:YES];
+		[vc release];
+	}
+	return YES;
+}
+
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
 	NSString *selector = [activator infoDictionaryValueOfKey:@"selector" forListenerWithName:listenerName];
@@ -413,6 +493,13 @@ static LASimpleListener *sharedSimpleListener;
 + (LASimpleListener *)sharedInstance
 {
 	return sharedSimpleListener;
+}
+
+CHDeclareClass(TWSession)
+
+CHOptimizedMethod(0, self, void, TWSession, showTwitterSettingsIfNeeded)
+{
+	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"prefs:root=TWITTER"]];
 }
 
 + (void)initialize
@@ -452,6 +539,12 @@ static LASimpleListener *sharedSimpleListener;
 		}
 		if (CHLoadLateClass(SBBulletinListController)) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-notification-center"];
+		}
+		// Twitter
+		if (CHLoadLateClass(TWTweetComposeViewController)) {
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.twitter.compose-tweet"];
+			CHLoadLateClass(TWSession);
+			CHHook(0, TWSession, showTwitterSettingsIfNeeded);
 		}
 		// Lock Screen
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.dismiss"];
