@@ -12,8 +12,7 @@
 - (id)init
 {
 	if ((self = [super init])) {
-		NSDictionary *settings = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/libactivator.menu.plist"];
-		menus = [[settings objectForKey:@"menus"] mutableCopy] ?: [[NSMutableDictionary alloc] init];
+		menus = [[LASharedActivator _getObjectForPreference:@"LAMenuSettings"] mutableCopy] ?: [[NSMutableDictionary alloc] init];
 		sortedMenus = [[menus allKeys] mutableCopy];
 		self.navigationItem.title = [LASharedActivator localizedStringForKey:@"MENUS" value:@"Menus"];
 	}
@@ -32,7 +31,7 @@
 
 - (void)saveSettings
 {
-	[[NSDictionary dictionaryWithObject:menus forKey:@"menus"] writeToFile:@"/var/mobile/Library/Preferences/libactivator.menu.plist" atomically:YES];
+	[LASharedActivator _setObject:menus forPreference:@"LAMenuSettings"];
 	notify_post("libactivator.menu/settingschanged");
 }
 
@@ -97,7 +96,8 @@
 	[menus removeObjectForKey:key];
 	[sortedMenus removeObjectAtIndex:indexPath.row];
 	[tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationLeft];
-	[self saveSettings];
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(saveSettings) object:nil];
+	[self performSelector:@selector(saveSettings) withObject:nil afterDelay:0.0];
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -151,7 +151,8 @@
 		[menus setObject:menu forKey:newKey];
 		[sortedMenus addObject:newKey];
 		[self.tableView insertRowsAtIndexPaths:[NSArray arrayWithObject:[NSIndexPath indexPathForRow:[sortedMenus count] - 1 inSection:0]] withRowAnimation:UITableViewRowAnimationLeft];
-		[self saveSettings];
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(saveSettings) object:nil];
+		[self performSelector:@selector(saveSettings) withObject:nil afterDelay:0.0];
 	}
 }
 
@@ -162,7 +163,8 @@
 	[menuData setObject:items forKey:@"items"];
 	[menus setObject:menuData forKey:selectedMenu];
 	[menuData release];
-	[self saveSettings];
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(saveSettings) object:nil];
+	[self performSelector:@selector(saveSettings) withObject:nil afterDelay:0.0];
 }
 
 @end

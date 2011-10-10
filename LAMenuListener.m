@@ -39,6 +39,11 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 {
 	if ((self = [super init])) {
 		CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), self, NotificationCallback, CFSTR("libactivator.menu/settingschanged"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+		NSDictionary *legacyConfiguration = [NSDictionary dictionaryWithContentsOfFile:@"/var/mobile/Library/Preferences/libactivator.menu.plist"];
+		if (legacyConfiguration) {
+			[LASharedActivator _setObject:[legacyConfiguration objectForKey:@"menus"] forPreference:@"LAMenuSettings"];
+			unlink("/var/mobile/Library/Preferences/libactivator.menu.plist");
+		}
 		[self refreshConfiguration];
 	}
 	return self;
@@ -62,16 +67,14 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 	if (LASharedActivator.runningInsideSpringBoard)
 		for (NSString *menuKey in [menus allKeys])
 			[LASharedActivator unregisterListenerWithName:menuKey];
+	[menus release];
 	menus = nil;
-	[configuration release];
-	configuration = nil;
 }
 
 - (void)refreshConfiguration
 {
 	[self unloadConfiguration];
-	configuration = [[NSDictionary alloc] initWithContentsOfFile:@"/var/mobile/Library/Preferences/libactivator.menu.plist"];
-	menus = [configuration objectForKey:@"menus"];
+	menus = [[LASharedActivator _getObjectForPreference:@"LAMenuSettings"] retain];
 	if (LASharedActivator.runningInsideSpringBoard)
 		for (NSString *menuKey in [menus allKeys])
 			[LASharedActivator registerListener:self forName:menuKey ignoreHasSeen:YES];
