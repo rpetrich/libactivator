@@ -249,7 +249,7 @@ static void NewCydiaStatusChanged()
 - (void)_eventModeChanged
 {
 	NSString *eventMode = [self currentEventMode];
-	for (id<LAListener> listener in [_listeners allValues])
+	for (id<LAListener> listener in (NSSet *)_listenerInstances)
 		[listener activator:self didChangeToEventMode:eventMode];
 }
 
