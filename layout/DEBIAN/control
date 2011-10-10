@@ -1,5 +1,5 @@
 Package: libactivator
-Depends: mobilesubstrate (>= 0.9.3228), preferenceloader (>= 2.0.2), firmware (>= 3.0)
+Depends: mobilesubstrate (>= 0.9.3228), preferenceloader (>= 2.0.2.99), firmware (>= 3.0)
 Name: Activator
 Version: 1.5.6
 Priority: optional
