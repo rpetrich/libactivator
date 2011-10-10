@@ -74,7 +74,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 		springBoard = nil;
 	if (!application)
 		application = springBoard;
-    SBApplication *oldApplication = [SBWActiveDisplayStack topApplication] ?: springBoard;
+    SBApplication *oldApplication = [self topApplication] ?: springBoard;
     if (oldApplication == application)
     	return NO;
 	SBIcon *icon;
@@ -116,7 +116,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 
 - (SBApplication *)topApplication
 {
-	return [SBWActiveDisplayStack topApplication];
+	return [UIApp respondsToSelector:@selector(_accessibilityFrontMostApplication)] ? [(SpringBoard *)UIApp _accessibilityFrontMostApplication] : [SBWActiveDisplayStack topApplication];
 }
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
