@@ -395,7 +395,7 @@ __attribute__((visibility("hidden")))
 			[uic dismissSwitcher];
 		result = YES;
 	}
-	if ([(SpringBoard *)[UIApplication sharedApplication] _accessibilityFrontMostApplication]) {
+	if ([[LAApplicationListener sharedInstance] topApplication]) {
 		if ([ic respondsToSelector:@selector(closeFolderAnimated:)])
 			[ic closeFolderAnimated:NO];
 		[ic scrollToIconListAtIndex:0 animate:NO];
