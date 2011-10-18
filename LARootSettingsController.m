@@ -3,8 +3,11 @@
 #include <dlfcn.h>
 #include <notify.h>
 
+typedef BOOL (*libhideIsHiddenFunction)(NSString *);
+
 @interface LARootSettingsController () <UIAlertViewDelegate>
 @property (nonatomic, assign) void *libhide;
+@property (nonatomic, assign) libhideIsHiddenFunction libhideIsHidden;
 @end
 
 @implementation LARootSettingsController
@@ -13,12 +16,15 @@
 {
 	if ((self = [super init])) {
 		self.navigationItem.title = [LASharedActivator localizedStringForKey:@"ACTIVATOR" value:@"Activator"];
-		self.libhide = dlopen("/usr/lib/hide.dylib", RTLD_LAZY);
+		void *lh = dlopen("/usr/lib/hide.dylib", RTLD_LAZY);
+		self.libhide = lh;
+		self.libhideIsHidden = dlsym(lh, "IsIconHiddenDisplayId");
 	}
 	return self;
 }
 
 @synthesize libhide;
+@synthesize libhideIsHidden;
 
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
@@ -35,7 +41,7 @@
 		case 2:
 			return 3;
 		case 3:
-			return libhide ? 2 : 1;
+			return libhideIsHidden ? 2 : 1;
 		default:
 			return 0;
 	}
@@ -102,7 +108,7 @@
 				case 1:
 					cell.textLabel.text = [LASharedActivator localizedStringForKey:@"SHOW_ICON" value:@"Show Icon"];
 					cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"SHOW_ACTIVATOR_ICON_ON_SPRINGBOARD" value:@"Show Activator Icon on SpringBoard"];
-					cell.accessoryType = [[LASharedActivator _getObjectForPreference:@"LAHideIcon"] boolValue] ? UITableViewCellAccessoryNone : UITableViewCellAccessoryCheckmark;
+					cell.accessoryType = libhideIsHidden(@"libactivator") ? UITableViewCellAccessoryNone : UITableViewCellAccessoryCheckmark;
 					break;
 			}
 			break;
@@ -156,7 +162,7 @@
 					return;
 				}
 				default: {
-					BOOL newValue = ![[LASharedActivator _getObjectForPreference:@"LAHideIcon"] boolValue];
+					BOOL newValue = !libhideIsHidden(@"libactivator");
 					[LASharedActivator _setObject:newValue ? (id)kCFBooleanTrue : (id)kCFBooleanFalse forPreference:@"LAHideIcon"];
 					[tableView cellForRowAtIndexPath:indexPath].accessoryType = newValue ? UITableViewCellAccessoryNone : UITableViewCellAccessoryCheckmark;
 					BOOL (*libhideFunction)(NSString *) = dlsym(libhide, newValue ? "HideIconViaDisplayId" : "UnHideIconViaDisplayId");
