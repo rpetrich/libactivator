@@ -227,7 +227,16 @@ __attribute__((visibility("hidden")))
 		pendingLoad = NO;
 		[self addToToolbar];
 		[navigationController setToolbarHidden:NO animated:YES];
+	} else {
+		CGSize size = [self sizeForAd];
+		CGRect frame = self.bounds;
+		frame.origin.x = (long)(frame.size.width - size.width) / 2;
+		frame.origin.y = (long)(frame.size.height - size.height) / 2;
+		frame.size = size;
+		webView.frame = frame;
 	}
+	if ([navigationController respondsToSelector:@selector(_updateBarsForCurrentInterfaceOrientation)])
+		[navigationController _updateBarsForCurrentInterfaceOrientation];
 	[self performSelector:@selector(reload) withObject:nil afterDelay:30.0];
 }
 
@@ -279,6 +288,11 @@ __attribute__((visibility("hidden")))
 - (void)webViewDidFinishLoad:(UIWebView *)webView
 {
 	[self performSelector:@selector(didFinishLoad) withObject:nil afterDelay:0.5];
+}
+
+- (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error
+{
+	[self performSelector:@selector(reload) withObject:nil afterDelay:30.0];
 }
 
 @end
