@@ -134,6 +134,10 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 - (BOOL)isSwitcherShowing;
 @end
 
+@interface SBUIController (OS50)
+- (void)lockFromSource:(int)source;
+@end
+
 @interface SBAppSwitcherController : NSObject {
 }
 - (NSDictionary *)_currentIcons;
@@ -669,7 +673,11 @@ CHOptimizedMethod(1, self, void, SpringBoard, lockButtonUp, GSEventRef, event)
 					[self undim];
 			} else {
 				shouldSuppressLockSound = YES;
-				[CHSharedInstance(SBUIController) lock];
+				SBUIController *uic = CHSharedInstance(SBUIController);
+				if ([uic respondsToSelector:@selector(lockFromSource:)])
+					[uic lockFromSource:0];
+				else
+					[uic lock];
 				shouldSuppressLockSound = NO;
 				CHSuper(1, SpringBoard, lockButtonUp, event);
 			}
@@ -1042,6 +1050,13 @@ CHOptimizedMethod(1, self, void, SBUIController, restoreIconList, BOOL, animate)
 CHOptimizedMethod(0, self, void, SBUIController, lock)
 {
 	CHSuper(0, SBUIController, lock);
+	[LASlideGestureWindow updateVisibility];
+	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
+}
+
+CHOptimizedMethod(1, self, void, SBUIController, lockFromSource, int, source)
+{
+	CHSuper(1, SBUIController, lockFromSource, source);
 	[LASlideGestureWindow updateVisibility];
 	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
 }
@@ -1499,6 +1514,7 @@ CHConstructor
 		CHHook(0, SBUIController, tearDownIconListAndBar);
 		CHHook(1, SBUIController, restoreIconList);
 		CHHook(0, SBUIController, lock);
+		CHHook(1, SBUIController, lockFromSource);
 		CHHook(0, SBUIController, _toggleSwitcher);
 		CHHook(0, SBUIController, ACPowerChanged);
 	
