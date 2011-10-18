@@ -117,7 +117,7 @@ static LASimpleListener *sharedSimpleListener;
 void UIKeyboardEnableAutomaticAppearance();
 void UIKeyboardDisableAutomaticAppearance();
 
-__attribute__((visibility("default")))
+__attribute__((visibility("hidden")))
 @interface ActivatorEmptyViewController : UIViewController
 // So empty inside…
 @end
