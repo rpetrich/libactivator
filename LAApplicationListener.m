@@ -64,6 +64,13 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 	return sharedApplicationListener;
 }
 
+#ifdef DEBUG
+- (SBDisplayStack *)displayStackAtIndex:(NSInteger)index
+{
+	return SBWGetDisplayStackAtIndex(index);
+}
+#endif
+
 - (BOOL)activateApplication:(SBApplication *)application;
 {
 	SBApplication *springBoard;
@@ -311,6 +318,7 @@ CHConstructor {
 		allEventModesExceptLockScreen = [[NSArray alloc] initWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil];
 		ignoredDisplayIdentifiers = [[NSArray alloc] initWithObjects:@"com.apple.DemoApp", @"com.apple.fieldtest", @"com.apple.springboard", @"com.apple.AdSheet", @"com.apple.iphoneos.iPodOut", @"com.apple.TrustMe", @"com.apple.DataActivation", @"com.apple.WebSheet", @"com.apple.AdSheetPhone", @"com.apple.AdSheetPad", @"com.apple.iosdiagnostics", @"com.apple.purplebuddy", nil];
 		displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
+		CHLoadLateClass(SBDisplayStack);
 		CHHook(0, SBDisplayStack, init);
 		CHHook(0, SBDisplayStack, dealloc);
 		CHLoadLateClass(SBIconModel);
