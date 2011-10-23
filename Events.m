@@ -1471,6 +1471,21 @@ CHOptimizedMethod(0, super, void, SBVolumeHUDView, didMoveToWindow)
 	CHSuper(0, SBVolumeHUDView, didMoveToWindow);
 }
 
+CHDeclareClass(UIFenceController)
+
+CHOptimizedMethod(0, self, NSSet *, UIFenceController, _fenceableWindows)
+{
+	// Don't fence our slider windows that way rotation animation will be immediate
+	NSMutableSet *result = [[CHSuper(0, UIFenceController, _fenceableWindows) mutableCopy] autorelease];
+	if (leftSlideGestureWindow)
+		[result removeObject:leftSlideGestureWindow];
+	if (middleSlideGestureWindow)
+		[result removeObject:middleSlideGestureWindow];
+	if (rightSlideGestureWindow)
+		[result removeObject:rightSlideGestureWindow];
+	return result;
+}
+
 CHConstructor
 {
 	CHAutoreleasePoolForScope();
@@ -1572,6 +1587,9 @@ CHConstructor
 		CHLoadLateClass(iHome);
 		if (CHClass(iHome))
 			CHHook(0, iHome, inject);
+
+		CHLoadLateClass(UIFenceController);
+		CHHook(0, UIFenceController, _fenceableWindows);
 			
 		CHLoadLateClass(SBAppSwitcherController);
 		
