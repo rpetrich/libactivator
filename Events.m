@@ -11,6 +11,7 @@
 NSString * const LAEventNameMenuPressAtSpringBoard = @"libactivator.menu.press.at-springboard";
 NSString * const LAEventNameMenuPressSingle        = @"libactivator.menu.press.single";
 NSString * const LAEventNameMenuPressDouble        = @"libactivator.menu.press.double";
+NSString * const LAEventNameMenuPressTriple        = @"libactivator.menu.press.triple";
 NSString * const LAEventNameMenuHoldShort          = @"libactivator.menu.hold.short";
 
 NSString * const LAEventNameLockHoldShort          = @"libactivator.lock.hold.short";
@@ -550,7 +551,7 @@ CHOptimizedMethod(0, self, void, SpringBoard, _handleMenuButtonEvent)
 CHOptimizedMethod(1, self, BOOL, SpringBoard, respondImmediatelyToMenuSingleTapAllowingDoubleTap, BOOL *, allowDoubleTap)
 {
 	// 3.2
-	if (LAListenerForEventWithName(LAEventNameMenuPressDouble)) {
+	if (LAListenerForEventWithName(LAEventNameMenuPressDouble) || LAListenerForEventWithName(LAEventNameMenuPressTriple)) {
 		CHSuper(1, SpringBoard, respondImmediatelyToMenuSingleTapAllowingDoubleTap, allowDoubleTap);
 		if (allowDoubleTap)
 			*allowDoubleTap = YES;
@@ -563,7 +564,7 @@ CHOptimizedMethod(1, self, BOOL, SpringBoard, respondImmediatelyToMenuSingleTapA
 CHOptimizedMethod(0, self, BOOL, SpringBoard, allowMenuDoubleTap)
 {
 	// 3.0/3.1
-	if (LAListenerForEventWithName(LAEventNameMenuPressDouble)) {
+	if (LAListenerForEventWithName(LAEventNameMenuPressDouble) || LAListenerForEventWithName(LAEventNameMenuPressTriple)) {
 		CHSuper(0, SpringBoard, allowMenuDoubleTap);
 		return YES;
 	} else {
@@ -571,15 +572,42 @@ CHOptimizedMethod(0, self, BOOL, SpringBoard, allowMenuDoubleTap)
 	}
 }
 
+static CFRunLoopTimerRef menuTripleTapTimer;
+
+static void DestroyMenuTripleTapTimer()
+{
+	if (menuTripleTapTimer) {
+		CFRunLoopRemoveTimer(CFRunLoopGetCurrent(), menuTripleTapTimer, kCFRunLoopCommonModes);
+		CFRelease(menuTripleTapTimer);
+		menuTripleTapTimer = NULL;
+	}
+}
+
+static void MenuTripleTapTimeoutCallback(CFRunLoopTimerRef timer, void *info);
+
 CHOptimizedMethod(0, self, void, SpringBoard, handleMenuDoubleTap)
 {
 	if ([self respondsToSelector:@selector(canShowNowPlayingHUD)] && [self canShowNowPlayingHUD]) {
 		shouldAddNowPlayingButton = YES;
 		CHSuper(0, SpringBoard, handleMenuDoubleTap);
 		shouldAddNowPlayingButton = NO;
-	} else if ([LASendEventWithName(LAEventNameMenuPressDouble) isHandled]) {
+	} else if (LAListenerForEventWithName(LAEventNameMenuPressTriple)) {
+		shouldSuppressMenuReleases = YES;
+		DestroyMenuTripleTapTimer();
+		menuTripleTapTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kButtonHoldDelay, 0.0, 0, 0, MenuTripleTapTimeoutCallback, NULL);
+		CFRunLoopAddTimer(CFRunLoopGetCurrent(), menuTripleTapTimer, kCFRunLoopCommonModes);
+	} else if (LASendEventWithName(LAEventNameMenuPressDouble).handled) {
 		shouldSuppressMenuReleases = YES;
 	} else {
+		CHSuper(0, SpringBoard, handleMenuDoubleTap);
+	}
+}
+
+static void MenuTripleTapTimeoutCallback(CFRunLoopTimerRef timer, void *info)
+{
+	DestroyMenuTripleTapTimer();
+	if (!LASendEventWithName(LAEventNameMenuPressDouble).handled) {
+		SpringBoard *self = (SpringBoard *)UIApp;
 		CHSuper(0, SpringBoard, handleMenuDoubleTap);
 	}
 }
@@ -757,7 +785,16 @@ CHOptimizedMethod(1, self, void, SpringBoard, menuButtonDown, GSEventRef, event)
 CHOptimizedMethod(1, self, void, SpringBoard, menuButtonUp, GSEventRef, event)
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorMenuButtonTimerCompleted) object:nil];
-	if (justTookScreenshot) {
+	if (menuTripleTapTimer) {
+		DestroyMenuTripleTapTimer();
+		LASendEventWithName(LAEventNameMenuPressTriple);
+		NSTimer **timer = CHIvarRef(self, _menuButtonTimer, NSTimer *);
+		if (timer) {
+			[*timer invalidate];
+			[*timer release];
+			*timer = nil;
+		}
+	} else if (justTookScreenshot) {
 		LAAbortEvent(menuEventToAbort);
 		[menuEventToAbort release];
 		menuEventToAbort = nil;

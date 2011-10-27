@@ -1,0 +1,5 @@
+{
+	title = "Triple Press";
+	group = "Home Button";
+	description = "Press home button three times";
+}
