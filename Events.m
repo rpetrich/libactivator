@@ -52,7 +52,7 @@ NSString * const LAEventNamePowerDisconnected      = @"libactivator.power.discon
 
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
-#define kButtonHoldDelay                   0.8f
+#define kButtonHoldDelay                   0.5f
 #define kStatusBarHorizontalSwipeThreshold 50.0f
 #define kStatusBarVerticalSwipeThreshold   10.0f
 #define kStatusBarHoldDelay                0.5f
