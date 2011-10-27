@@ -243,6 +243,8 @@ extern NSString * const LAEventNameVolumeDisplayTap;
 extern NSString * const LAEventNameVolumeToggleMuteTwice;
 extern NSString * const LAEventNameVolumeDownHoldShort;
 extern NSString * const LAEventNameVolumeUpHoldShort;
+extern NSString * const LAEventNameVolumeDownPress;
+extern NSString * const LAEventNameVolumeUpPress;
 extern NSString * const LAEventNameVolumeBothPress;
 
 extern NSString * const LAEventNameSlideInFromBottom;

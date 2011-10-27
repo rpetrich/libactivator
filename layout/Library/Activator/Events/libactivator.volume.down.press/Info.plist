@@ -1,0 +1,5 @@
+{
+	title = "Down Press";
+	group = "Volume Buttons";
+	description = "Press down volume button";
+}

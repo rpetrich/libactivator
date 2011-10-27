@@ -50,7 +50,7 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (BOOL)groupAtIndexIsLarge:(NSInteger)index
 {
-	return [[self groupAtIndex:index] count] > 7;
+	return [[self groupAtIndex:index] count] > 9;
 }
 
 - (NSString *)eventNameForIndexPath:(NSIndexPath *)indexPath
