@@ -248,7 +248,33 @@ __attribute__((visibility("hidden")))
 		[sharedController _toggleSwitcher];
 		// Repeatedly attempt to Activate switcher
 		// Apple bug--will not activate if taps are active
-		[self performSelector:@selector(showNowPlayingBar) withObject:nil afterDelay:0.05f];
+		[self performSelector:@selector(showNowPlayingBar) withObject:nil afterDelay:0.0];
+	} else {
+		UIScrollView *scrollView = CHIvar(CHIvar(CHSharedInstance(SBAppSwitcherController), _bottomBar, id), _scrollView, UIScrollView *);
+		CGPoint contentOffset = scrollView.contentOffset;
+		CGFloat desiredOffset = (kCFCoreFoundationVersionNumber <= kCFCoreFoundationVersionNumber_iOS_4_2) ? 0.0f : scrollView.bounds.size.width;
+		if (contentOffset.x == desiredOffset) {
+			if ([sharedController respondsToSelector:@selector(dismissSwitcherAnimated:)])
+				[sharedController dismissSwitcherAnimated:YES];
+			else
+				[sharedController dismissSwitcher];
+			return NO;
+		} else {
+			contentOffset.x = desiredOffset;
+			[scrollView setContentOffset:contentOffset animated:NO];
+		}
+	}
+	return YES;
+}
+
+- (BOOL)showVolumeBar
+{
+	SBUIController *sharedController = CHSharedInstance(SBUIController);
+	if (![sharedController isSwitcherShowing]) {
+		[sharedController _toggleSwitcher];
+		// Repeatedly attempt to Activate switcher
+		// Apple bug--will not activate if taps are active
+		[self performSelector:@selector(showVolumeBar) withObject:nil afterDelay:0.0];
 	} else {
 		UIScrollView *scrollView = CHIvar(CHIvar(CHSharedInstance(SBAppSwitcherController), _bottomBar, id), _scrollView, UIScrollView *);
 		CGPoint contentOffset = scrollView.contentOffset;
@@ -260,7 +286,7 @@ __attribute__((visibility("hidden")))
 			return NO;
 		} else {
 			contentOffset.x = 0.0f;
-			[scrollView setContentOffset:contentOffset animated:YES];
+			[scrollView setContentOffset:contentOffset animated:NO];
 		}
 	}
 	return YES;
@@ -539,6 +565,9 @@ CHOptimizedMethod(0, self, void, TWSession, showTwitterSettingsIfNeeded)
 		if (GSSystemHasCapability(CFSTR("multitasking"))) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-switcher"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.show-now-playing-bar"];
+			if ((kCFCoreFoundationVersionNumber > kCFCoreFoundationVersionNumber_iOS_4_2) && !GSSystemHasCapability(CFSTR("ipad"))) {
+				[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.audio.show-volume-bar"];
+			}
 		}
 		if (CHLoadLateClass(SBBulletinListController)) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-notification-center"];
