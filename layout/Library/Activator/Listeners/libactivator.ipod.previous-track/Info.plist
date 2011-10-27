@@ -1,6 +1,6 @@
 {
 	title = "Previous Track";
 	description = "Returns to previous song";
-	group = "iPod";
+	group = "Audio";
 	selector = "previousTrack";
 }
