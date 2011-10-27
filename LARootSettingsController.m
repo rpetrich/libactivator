@@ -26,6 +26,16 @@ typedef BOOL (*libhideIsHiddenFunction)(NSString *);
 @synthesize libhide;
 @synthesize libhideIsHidden;
 
+- (void)loadView
+{
+	if (!LASharedActivator.alive) {
+		UIAlertView *av = [[UIAlertView alloc] initWithTitle:[LASharedActivator localizedStringForKey:@"SAFE_MODE_TITLE" value:@"In Safe Mode"] message:[LASharedActivator localizedStringForKey:@"SAFE_MODE_MESSAGE" value:@"Your device is currently running in Safe Mode. Most features of Activator are disabled while the device is in safe mode. Restart SpringBoard to return to the normal mode."] delegate:self cancelButtonTitle:[LASharedActivator localizedStringForKey:@"SAFE_MODE_CANCEL" value:@"Cancel"] otherButtonTitles:[LASharedActivator localizedStringForKey:@"SAFE_MODE_RESTART" value:@"Restart"], nil];
+		[av show];
+		[av release];
+	}
+	[super loadView];
+}
+
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
 	return 5;
@@ -118,8 +128,12 @@ typedef BOOL (*libhideIsHiddenFunction)(NSString *);
 
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
 {
-	if (buttonIndex != alertView.cancelButtonIndex)
-		[LASharedActivator _resetPreferences];
+	if (buttonIndex != alertView.cancelButtonIndex) {
+		if (LASharedActivator.alive)
+			[LASharedActivator _resetPreferences];
+		else
+			system("killall SpringBoard");
+	}
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath

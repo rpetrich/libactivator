@@ -50,6 +50,7 @@ static void NewCydiaStatusChanged()
 		[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];			
 		// Remote messages to LAActivator
+		[messagingCenter registerForMessageName:@"isAlive" target:self selector:@selector(_handleRemoteIsAlive)];
 		[messagingCenter registerForMessageName:@"_cachedAndSortedListeners" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
@@ -91,6 +92,16 @@ static void NewCydiaStatusChanged()
 	[_preferences release];
 	[_listeners release];
 	[super dealloc];
+}
+
+- (NSDictionary *)_handleRemoteIsAlive
+{
+	return [NSDictionary dictionaryWithObject:(id)kCFBooleanTrue forKey:@"result"];
+}
+
+- (BOOL)isAlive
+{
+	return YES;
 }
 
 - (void)didReceiveMemoryWarning

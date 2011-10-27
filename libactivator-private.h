@@ -7,6 +7,7 @@
 
 @interface LAActivator ()
 
+@property (nonatomic, readonly, getter=isAlive) BOOL alive;
 @property (nonatomic, readonly) NSString *settingsFilePath;
 
 - (void)didReceiveMemoryWarning;

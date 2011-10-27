@@ -184,6 +184,11 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 	return [response objectForKey:@"result"];
 }
 
+- (BOOL)isAlive
+{
+	return [[self _performRemoteMessage:_cmd withObject:nil] boolValue];
+}
+
 // Sending Events
 
 - (BOOL)isDangerousToSendEvents
