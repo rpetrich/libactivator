@@ -452,9 +452,12 @@ __attribute__((visibility("hidden")))
 - (BOOL)activateNotificationCenter
 {
 	SBBulletinListController *blc = CHSharedInstance(SBBulletinListController);
-	if (blc && ![blc listViewIsActive]) {
-		[blc showListViewAnimated:YES];
-		return YES;
+	if (blc) {
+		if ([blc listViewIsActive]) {
+			[blc showListViewAnimated:YES];
+			return YES;
+		}
+		[blc hideListViewAnimated:YES];
 	}
 	return NO;
 }
