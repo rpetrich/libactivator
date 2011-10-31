@@ -24,6 +24,7 @@ NSString * const LAEventNameStatusBarSwipeRight    = @"libactivator.statusbar.sw
 NSString * const LAEventNameStatusBarSwipeLeft     = @"libactivator.statusbar.swipe.left";
 NSString * const LAEventNameStatusBarSwipeDown     = @"libactivator.statusbar.swipe.down";
 NSString * const LAEventNameStatusBarTapDouble     = @"libactivator.statusbar.tap.double";
+NSString * const LAEventNameStatusBarTapSingle     = @"libactivator.statusbar.tap.single";
 NSString * const LAEventNameStatusBarHold          = @"libactivator.statusbar.hold";
 
 NSString * const LAEventNameVolumeDownUp           = @"libactivator.volume.down-up";
@@ -56,6 +57,7 @@ NSString * const LAEventNamePowerDisconnected      = @"libactivator.power.discon
 #define kStatusBarHorizontalSwipeThreshold 50.0f
 #define kStatusBarVerticalSwipeThreshold   10.0f
 #define kStatusBarHoldDelay                0.5f
+#define kStatusBarTapDelay                 0.33f
 #define kSlideGestureWindowHeight          13.0f
 #define kWindowLevelTransparentTopMost     9999.0f
 #define kShakeIgnoreTimeout                2.0
@@ -1217,6 +1219,7 @@ CHOptimizedMethod(2, self, void, SBIcon, touchesMoved, NSSet *, touches, withEve
 static CGPoint statusBarTouchDown;
 static BOOL hasSentStatusBarEvent;
 static CFRunLoopTimerRef statusBarHoldTimer;
+static CFRunLoopTimerRef statusBarTapTimer;
 
 static void DestroyCurrentStatusBarHoldTimer()
 {
@@ -1236,9 +1239,29 @@ static void StatusBarHeldCallback(CFRunLoopTimerRef timer, void *info)
 	}
 }
 
+static void DestroyCurrentStatusBarTapTimer()
+{
+	if (statusBarTapTimer) {
+		CFRunLoopRemoveTimer(CFRunLoopGetCurrent(), statusBarTapTimer, kCFRunLoopCommonModes);
+		CFRelease(statusBarTapTimer);
+		statusBarTapTimer = NULL;
+	}
+}
+
+static void StatusBarTapCallback(CFRunLoopTimerRef timer, void *info)
+{
+	DestroyCurrentStatusBarTapTimer();
+	if (!hasSentStatusBarEvent) {
+		hasSentStatusBarEvent = YES;
+		LASendEventWithName(LAEventNameStatusBarTapSingle);
+	}
+}
+
+
 CHOptimizedMethod(2, self, void, SBStatusBar, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	DestroyCurrentStatusBarHoldTimer();
+	DestroyCurrentStatusBarTapTimer();
 	statusBarHoldTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarHoldDelay, 0.0, 0, 0, StatusBarHeldCallback, NULL);
 	CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarHoldTimer, kCFRunLoopCommonModes);
 	statusBarTouchDown = [[touches anyObject] locationInView:self];
@@ -1250,6 +1273,7 @@ CHOptimizedMethod(2, self, void, SBStatusBar, touchesMoved, NSSet *, touches, wi
 {
 	if (!hasSentStatusBarEvent) {
 		DestroyCurrentStatusBarHoldTimer();
+		DestroyCurrentStatusBarTapTimer();
 		CGPoint currentPosition = [[touches anyObject] locationInView:self];
 		CGFloat deltaX = currentPosition.x - statusBarTouchDown.x;
 		CGFloat deltaY = currentPosition.y - statusBarTouchDown.y;
@@ -1274,15 +1298,22 @@ CHOptimizedMethod(2, self, void, SBStatusBar, touchesMoved, NSSet *, touches, wi
 CHOptimizedMethod(2, self, void, SBStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	DestroyCurrentStatusBarHoldTimer();
-	if (!hasSentStatusBarEvent)
+	DestroyCurrentStatusBarTapTimer();
+	if (!hasSentStatusBarEvent) {
 		if ([[touches anyObject] tapCount] == 2)
 			LASendEventWithName(LAEventNameStatusBarTapDouble);
+		else {
+			statusBarTapTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarTapDelay, 0.0, 0, 0, StatusBarTapCallback, NULL);
+			CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarTapTimer, kCFRunLoopCommonModes);
+		}
+	}
 	CHSuper(2, SBStatusBar, touchesEnded, touches, withEvent, event);
 }
 
 CHOptimizedMethod(2, super, void, UIStatusBar, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	DestroyCurrentStatusBarHoldTimer();
+	DestroyCurrentStatusBarTapTimer();
 	statusBarHoldTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarHoldDelay, 0.0, 0, 0, StatusBarHeldCallback, NULL);
 	CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarHoldTimer, kCFRunLoopCommonModes);
 	statusBarTouchDown = [[touches anyObject] locationInView:self];
@@ -1293,6 +1324,7 @@ CHOptimizedMethod(2, super, void, UIStatusBar, touchesMoved, NSSet *, touches, w
 {
 	if (!hasSentStatusBarEvent) {
 		DestroyCurrentStatusBarHoldTimer();
+		DestroyCurrentStatusBarTapTimer();
 		CGPoint currentPosition = [[touches anyObject] locationInView:self];
 		CGFloat deltaX = currentPosition.x - statusBarTouchDown.x;
 		CGFloat deltaY = currentPosition.y - statusBarTouchDown.y;
@@ -1316,10 +1348,13 @@ CHOptimizedMethod(2, super, void, UIStatusBar, touchesMoved, NSSet *, touches, w
 CHOptimizedMethod(2, self, void, UIStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
 {
 	DestroyCurrentStatusBarHoldTimer();
+	DestroyCurrentStatusBarTapTimer();
 	if (!hasSentStatusBarEvent) {
 		if ([[touches anyObject] tapCount] == 2)
 			LASendEventWithName(LAEventNameStatusBarTapDouble);
 		else {
+			statusBarTapTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarTapDelay, 0.0, 0, 0, StatusBarTapCallback, NULL);
+			CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarTapTimer, kCFRunLoopCommonModes);
 			CHSuper(2, UIStatusBar, touchesBegan, touches, withEvent, event);
 			CHSuper(2, UIStatusBar, touchesEnded, touches, withEvent, event);
 		}

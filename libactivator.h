@@ -236,6 +236,7 @@ extern NSString * const LAEventNameStatusBarSwipeRight;
 extern NSString * const LAEventNameStatusBarSwipeLeft;
 extern NSString * const LAEventNameStatusBarSwipeDown;
 extern NSString * const LAEventNameStatusBarTapDouble;
+extern NSString * const LAEventNameStatusBarTapSingle;
 extern NSString * const LAEventNameStatusBarHold;
 
 extern NSString * const LAEventNameVolumeDownUp;
