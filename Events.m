@@ -122,6 +122,10 @@ static id<LAListener> LAListenerForEventWithName(NSString *eventName)
 - (void)resetIdleTimerAndUndim;
 @end
 
+@interface SpringBoard (OS50)
+- (NSArray *)appsRegisteredForVolumeEvents;
+@end
+
 @interface SBAwayController (OS40)
 - (void)_unlockWithSound:(BOOL)sound isAutoUnlock:(BOOL)unlock;
 @end
@@ -927,6 +931,12 @@ static BOOL justSuppressedNotificationSound;
 
 CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
 {
+	if ([self respondsToSelector:@selector(appsRegisteredForVolumeEvents)]) {
+		if ([[self appsRegisteredForVolumeEvents] count]) {
+			CHSuper(1, SpringBoard, volumeChanged, gsEvent);
+			return;
+		}
+	}
 	// Suppress ringtone
 	if ([CHClass(SBAlert) respondsToSelector:@selector(alertWindow)]) {
 		id alertWindow = [CHClass(SBAlert) alertWindow];
