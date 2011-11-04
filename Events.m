@@ -53,11 +53,12 @@ NSString * const LAEventNamePowerDisconnected      = @"libactivator.power.discon
 
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
-#define kButtonHoldDelay                   0.5f
+#define kButtonHoldDelay                   0.3
+#define kVolumeRepeatDelay                 0.15
 #define kStatusBarHorizontalSwipeThreshold 50.0f
 #define kStatusBarVerticalSwipeThreshold   10.0f
-#define kStatusBarHoldDelay                0.5f
-#define kStatusBarTapDelay                 0.33f
+#define kStatusBarHoldDelay                0.5
+#define kStatusBarTapDelay                 0.33
 #define kSlideGestureWindowHeight          13.0f
 #define kWindowLevelTransparentTopMost     9999.0f
 #define kShakeIgnoreTimeout                2.0
@@ -848,6 +849,23 @@ static CFAbsoluteTime volumeChordBeganTime;
 static BOOL suppressVolumeButtonUp;
 static CFRunLoopTimerRef volumeButtonUpTimer;
 static BOOL isVolumeButtonDown;
+static BOOL performedFirstHoldEvent;
+
+static inline void IncreaseVolumeStep(VolumeControl *volumeControl)
+{
+	if ([volumeControl respondsToSelector:@selector(_changeVolumeBy:)])
+		[volumeControl _changeVolumeBy:[CHClass(VolumeControl) volumeStep]];
+	else
+		[volumeControl increaseVolume];
+}
+
+static inline void DecreaseVolumeStep(VolumeControl *volumeControl)
+{
+	if ([volumeControl respondsToSelector:@selector(_changeVolumeBy:)])
+		[volumeControl _changeVolumeBy:-[CHClass(VolumeControl) volumeStep]];
+	else
+		[volumeControl decreaseVolume];
+}
 
 static void DestroyCurrentVolumeButtonUpTimer()
 {
@@ -858,28 +876,51 @@ static void DestroyCurrentVolumeButtonUpTimer()
 	}
 }
 
-static void VolumeUpButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
+static void SetupVolumeRepeatTimer(CFRunLoopTimerCallBack callback, void *info, NSTimeInterval timeInterval)
 {
 	DestroyCurrentVolumeButtonUpTimer();
+	CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
+	volumeButtonUpTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, currentTime + timeInterval, 0.0, 0, 0, callback, info);
+	CFRunLoopAddTimer(CFRunLoopGetCurrent(), volumeButtonUpTimer, kCFRunLoopCommonModes);
+}
+
+static void StandardVolumeUpRepeat(CFRunLoopTimerRef timer, void *info)
+{
+	IncreaseVolumeStep([CHClass(VolumeControl) sharedVolumeControl]);
+	SetupVolumeRepeatTimer(StandardVolumeUpRepeat, info, kVolumeRepeatDelay);
+}
+
+static void VolumeUpButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
+{
+	performedFirstHoldEvent = YES;
 	VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
 	if ([LASendEventWithName(LAEventNameVolumeUpHoldShort) isHandled]) {
 		suppressVolumeButtonUp = YES;
 		HideVolumeHUD(volumeControl);
 	} else {
-		[volumeControl increaseVolume];
+		IncreaseVolumeStep(volumeControl);
 	}
+	SetupVolumeRepeatTimer(StandardVolumeUpRepeat, info, kVolumeRepeatDelay);
+}
+
+static void StandardVolumeDownRepeat(CFRunLoopTimerRef timer, void *info)
+{
+	DecreaseVolumeStep([CHClass(VolumeControl) sharedVolumeControl]);
+	SetupVolumeRepeatTimer(StandardVolumeDownRepeat, info, kVolumeRepeatDelay);
 }
 
 static void VolumeDownButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
 {
+	performedFirstHoldEvent = YES;
 	DestroyCurrentVolumeButtonUpTimer();
 	VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
 	if ([LASendEventWithName(LAEventNameVolumeDownHoldShort) isHandled]) {
 		suppressVolumeButtonUp = YES;
 		HideVolumeHUD(volumeControl);
 	} else {
-		[volumeControl decreaseVolume];
+		DecreaseVolumeStep(volumeControl);
 	}
+	SetupVolumeRepeatTimer(StandardVolumeDownRepeat, info, kVolumeRepeatDelay);
 }
 
 static BOOL justSuppressedNotificationSound;
@@ -909,16 +950,14 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			}
 			isVolumeButtonDown = YES;
 			suppressVolumeButtonUp = NO;
-			CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
-			volumeButtonUpTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, currentTime + kButtonHoldDelay, 0.0, 0, 0, VolumeUpButtonHeldCallback, NULL);
-			CFRunLoopAddTimer(CFRunLoopGetCurrent(), volumeButtonUpTimer, kCFRunLoopCommonModes);
+			performedFirstHoldEvent = NO;
+			SetupVolumeRepeatTimer(VolumeUpButtonHeldCallback, NULL, kButtonHoldDelay);
 			break;
 		}
 		case kGSEventVolumeUpButtonUp: {
 			isVolumeButtonDown = NO;
 			if (suppressVolumeButtonUp) {
 				DestroyCurrentVolumeButtonUpTimer();
-				[volumeControl cancelVolumeEvent];
 				volumeChordBeganTime = 0.0;
 				HideVolumeHUD(volumeControl);
 				break;
@@ -928,20 +967,19 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			if ((currentTime - volumeChordBeganTime) > kButtonHoldDelay) {
 				lastVolumeEvent = kGSEventVolumeUpButtonUp;
 				volumeChordBeganTime = currentTime;
-				if (volumeButtonUpTimer) {
+				if (!performedFirstHoldEvent) {
 					if (!LASendEventWithName(LAEventNameVolumeUpPress).handled)
-						[volumeControl increaseVolume];
+						IncreaseVolumeStep(volumeControl);
 				}
 			} else if (lastVolumeEvent == kGSEventVolumeDownButtonUp) {
 				lastVolumeEvent = 0;
 				LASendEventWithName(LAEventNameVolumeDownUp);
 			} else {
 				lastVolumeEvent = 0;
-				if (volumeButtonUpTimer)
-					[volumeControl increaseVolume];
+				if (!performedFirstHoldEvent)
+					IncreaseVolumeStep(volumeControl);
 			}
 			DestroyCurrentVolumeButtonUpTimer();
-			[volumeControl cancelVolumeEvent];
 			break;
 		}
 		case kGSEventVolumeDownButtonDown: {
@@ -964,9 +1002,8 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			}
 			isVolumeButtonDown = YES;
 			suppressVolumeButtonUp = NO;
-			CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
-			volumeButtonUpTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, currentTime + kButtonHoldDelay, 0.0, 0, 0, VolumeDownButtonHeldCallback, NULL);
-			CFRunLoopAddTimer(CFRunLoopGetCurrent(), volumeButtonUpTimer, kCFRunLoopCommonModes);
+			performedFirstHoldEvent = NO;
+			SetupVolumeRepeatTimer(VolumeDownButtonHeldCallback, NULL, kButtonHoldDelay);
 			break;
 		}
 		case kGSEventVolumeDownButtonUp: {
@@ -977,7 +1014,6 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			isVolumeButtonDown = NO;
 			if (suppressVolumeButtonUp) {
 				DestroyCurrentVolumeButtonUpTimer();
-				[volumeControl cancelVolumeEvent];
 				volumeChordBeganTime = 0.0;
 				HideVolumeHUD(volumeControl);
 				break;
@@ -987,20 +1023,19 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			if ((currentTime - volumeChordBeganTime) > kButtonHoldDelay) {
 				lastVolumeEvent = kGSEventVolumeDownButtonUp;
 				volumeChordBeganTime = currentTime;
-				if (volumeButtonUpTimer) {
+				if (!performedFirstHoldEvent) {
 					if (!LASendEventWithName(LAEventNameVolumeDownPress).handled)
-						[volumeControl decreaseVolume];
+						DecreaseVolumeStep(volumeControl);
 				}
 			} else if (lastVolumeEvent == kGSEventVolumeUpButtonUp) {
 				lastVolumeEvent = 0;
 				LASendEventWithName(LAEventNameVolumeUpDown);
 			} else {
 				lastVolumeEvent = 0;
-				if (volumeButtonUpTimer)
-					[volumeControl decreaseVolume];
+				if (!performedFirstHoldEvent)
+					DecreaseVolumeStep(volumeControl);
 			}
 			DestroyCurrentVolumeButtonUpTimer();
-			[volumeControl cancelVolumeEvent];
 			break;
 		}
 		default:
