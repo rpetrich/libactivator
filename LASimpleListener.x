@@ -7,22 +7,7 @@
 #import <CaptainHook/CaptainHook.h>
 #import <MediaPlayer/MediaPlayer.h>
 
-CHDeclareClass(SBIconController);
-CHDeclareClass(SBSearchController);
-CHDeclareClass(SBAlertItemsController);
-CHDeclareClass(SBNowPlayingAlertItem);
-CHDeclareClass(SBScreenShotter);
-CHDeclareClass(SBVoiceControlAlert);
-CHDeclareClass(SBAwayController);
-CHDeclareClass(SBUIController);
-CHDeclareClass(SBStatusBarController);
-CHDeclareClass(SBStatusBarDataManager);
-CHDeclareClass(SBMediaController);
-CHDeclareClass(SBApplicationController);
-CHDeclareClass(SBSoundPreferences);
-CHDeclareClass(SBAppSwitcherController);
-CHDeclareClass(SBBulletinListController);
-CHDeclareClass(TWTweetComposeViewController);
+%config(generator=internal);
 
 static LASimpleListener *sharedSimpleListener;
 
@@ -185,22 +170,22 @@ __attribute__((visibility("hidden")))
 - (BOOL)spotlight
 {
 	[[LAApplicationListener sharedInstance] activateApplication:nil];
-	SBIconController *iconController = CHSharedInstance(SBIconController);
+	SBIconController *iconController = (SBIconController *)[%c(SBIconController) sharedInstance];
 	[iconController scrollToIconListAtIndex:-1 animate:NO];
 	if ([iconController respondsToSelector:@selector(closeFolderAnimated:)])
 		[iconController closeFolderAnimated:YES];
 	SBSearchController *searchController;
-	if ([CHClass(SBSearchController) respondsToSelector:@selector(sharedInstance)])
-		searchController = CHSharedInstance(SBSearchController);
+	if ([%c(SBSearchController) respondsToSelector:@selector(sharedInstance)])
+		searchController = (SBSearchController *)[%c(SBSearchController) sharedInstance];
 	else
-		searchController = [CHSharedInstance(SBIconController) searchController];
+		searchController = [(SBIconController *)[%c(SBIconController) sharedInstance] searchController];
 	[[searchController searchView] setShowsKeyboard:YES animated:YES];
 	return YES;
 }
 
 - (BOOL)takeScreenshot
 {
-	SBScreenShotter *screenShotter = CHSharedInstance(SBScreenShotter);
+	SBScreenShotter *screenShotter = (SBScreenShotter *)[%c(SBScreenShotter) sharedInstance];
 	if (screenShotter.writingScreenshot)
 		return NO;
 	[screenShotter saveScreenshot:YES];
@@ -209,13 +194,13 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)voiceControl
 {
-	SBVoiceControlAlert *alert = [CHClass(SBVoiceControlAlert) pendingOrActiveAlert];
+	SBVoiceControlAlert *alert = [%c(SBVoiceControlAlert) pendingOrActiveAlert];
 	if (alert) {
 		[alert cancel];
 		return YES;
 	}
-	if ([CHClass(SBVoiceControlAlert) shouldEnterVoiceControl]) {
-		alert = [CHAlloc(SBVoiceControlAlert) initFromMenuButton];
+	if ([%c(SBVoiceControlAlert) shouldEnterVoiceControl]) {
+		alert = [[%c(SBVoiceControlAlert) alloc] initFromMenuButton];
 		[alert _workspaceActivate];
 		[alert release];
 		return YES;
@@ -225,7 +210,7 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)activateSwitcher
 {
-	SBUIController *sharedController = CHSharedInstance(SBUIController);
+	SBUIController *sharedController = (SBUIController *)[%c(SBUIController) sharedInstance];
 	if ([sharedController isSwitcherShowing]) {
 		if ([sharedController respondsToSelector:@selector(dismissSwitcherAnimated:)])
 			[sharedController dismissSwitcherAnimated:YES];
@@ -243,14 +228,14 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)showNowPlayingBar
 {
-	SBUIController *sharedController = CHSharedInstance(SBUIController);
+	SBUIController *sharedController = (SBUIController *)[%c(SBUIController) sharedInstance];
 	if (![sharedController isSwitcherShowing]) {
 		[sharedController _toggleSwitcher];
 		// Repeatedly attempt to Activate switcher
 		// Apple bug--will not activate if taps are active
 		[self performSelector:@selector(showNowPlayingBar) withObject:nil afterDelay:0.0];
 	} else {
-		UIScrollView *scrollView = CHIvar(CHIvar(CHSharedInstance(SBAppSwitcherController), _bottomBar, id), _scrollView, UIScrollView *);
+		UIScrollView *scrollView = CHIvar(CHIvar((SBAppSwitcherController *)[%c(SBAppSwitcherController) sharedInstance], _bottomBar, id), _scrollView, UIScrollView *);
 		CGPoint contentOffset = scrollView.contentOffset;
 		CGFloat desiredOffset = (kCFCoreFoundationVersionNumber <= kCFCoreFoundationVersionNumber_iOS_4_2) ? 0.0f : scrollView.bounds.size.width;
 		if (contentOffset.x == desiredOffset) {
@@ -269,14 +254,14 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)showVolumeBar
 {
-	SBUIController *sharedController = CHSharedInstance(SBUIController);
+	SBUIController *sharedController = (SBUIController *)[%c(SBUIController) sharedInstance];
 	if (![sharedController isSwitcherShowing]) {
 		[sharedController _toggleSwitcher];
 		// Repeatedly attempt to Activate switcher
 		// Apple bug--will not activate if taps are active
 		[self performSelector:@selector(showVolumeBar) withObject:nil afterDelay:0.0];
 	} else {
-		UIScrollView *scrollView = CHIvar(CHIvar(CHSharedInstance(SBAppSwitcherController), _bottomBar, id), _scrollView, UIScrollView *);
+		UIScrollView *scrollView = CHIvar(CHIvar((SBAppSwitcherController *)[%c(SBAppSwitcherController) sharedInstance], _bottomBar, id), _scrollView, UIScrollView *);
 		CGPoint contentOffset = scrollView.contentOffset;
 		if (contentOffset.x == 0.0f) {
 			if ([sharedController respondsToSelector:@selector(dismissSwitcherAnimated:)])
@@ -294,7 +279,7 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)showLockScreen
 {
-	SBUIController *controller = CHSharedInstance(SBUIController);
+	SBUIController *controller = (SBUIController *)[%c(SBUIController) sharedInstance];
 	if ([controller respondsToSelector:@selector(lock)])
 		[controller lock];
 	if ([controller respondsToSelector:@selector(lockFromSource:)])
@@ -310,16 +295,16 @@ __attribute__((visibility("hidden")))
 
 - (void)fixStatusBarTime
 {
-	[[CHClass(SBStatusBarDataManager) sharedDataManager] enableLock:NO time:YES];
+	[[%c(SBStatusBarDataManager) sharedDataManager] enableLock:NO time:YES];
 }
 
 - (BOOL)dismissLockScreen
 {
-	[[CHClass(SBAwayController) sharedAwayController] unlockWithSound:objc_msgSend(CHClass(SBSoundPreferences), @selector(playLockSound)) != nil];
-	if (CHClass(SBStatusBarController))
-		[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
-	else if (CHClass(SBStatusBarDataManager)) {
-		[[CHClass(SBStatusBarDataManager) sharedDataManager] enableLock:NO time:YES];
+	[[%c(SBAwayController) sharedAwayController] unlockWithSound:objc_msgSend(%c(SBSoundPreferences), @selector(playLockSound)) != nil];
+	if (%c(SBStatusBarController))
+		[[%c(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
+	else if (%c(SBStatusBarDataManager)) {
+		[[%c(SBStatusBarDataManager) sharedDataManager] enableLock:NO time:YES];
 		[self performSelector:@selector(fixStatusBarTime) withObject:nil afterDelay:0.3];
 	}
 	return YES;
@@ -327,53 +312,53 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)toggleLockScreen
 {
-	return [[CHClass(SBAwayController) sharedAwayController] isLocked]
+	return [[%c(SBAwayController) sharedAwayController] isLocked]
 		? [self dismissLockScreen]
 		: [self showLockScreen];
 }
 
 - (BOOL)togglePlayback
 {
-	[CHSharedInstance(SBMediaController) togglePlayPause];
+	[(SBMediaController *)[%c(SBMediaController) sharedInstance] togglePlayPause];
 	return YES;
 }
 
 - (BOOL)previousTrack
 {
-	[CHSharedInstance(SBMediaController) changeTrack:-1];
+	[(SBMediaController *)[%c(SBMediaController) sharedInstance] changeTrack:-1];
 	return YES;
 }
 
 - (BOOL)nextTrack
 {
-	[CHSharedInstance(SBMediaController) changeTrack:1];
+	[(SBMediaController *)[%c(SBMediaController) sharedInstance] changeTrack:1];
 	return YES;
 }
 
 - (BOOL)musicControls
 {
-	SBAlertItemsController *controller = CHSharedInstance(SBAlertItemsController);
+	SBAlertItemsController *controller = (SBAlertItemsController *)[%c(SBAlertItemsController) sharedInstance];
 	if ([controller respondsToSelector:@selector(hasAlertOfClass:)]) {
-		if ([controller hasAlertOfClass:CHClass(SBNowPlayingAlertItem)]) {
-			[controller deactivateAlertItemsOfClass:CHClass(SBNowPlayingAlertItem)];
+		if ([controller hasAlertOfClass:%c(SBNowPlayingAlertItem)]) {
+			[controller deactivateAlertItemsOfClass:%c(SBNowPlayingAlertItem)];
 			return NO;
 		}
-	} else if ([controller isShowingAlertOfClass:CHClass(SBNowPlayingAlertItem)]) {
-		[controller deactivateAlertItemsOfClass:CHClass(SBNowPlayingAlertItem)];
+	} else if ([controller isShowingAlertOfClass:%c(SBNowPlayingAlertItem)]) {
+		[controller deactivateAlertItemsOfClass:%c(SBNowPlayingAlertItem)];
 		return NO;
 	}
-	if ([CHClass(SBAwayController) instancesRespondToSelector:@selector(toggleMediaControls)]) {
-		SBAwayController *ac = [CHClass(SBAwayController) sharedAwayController];
+	if ([%c(SBAwayController) instancesRespondToSelector:@selector(toggleMediaControls)]) {
+		SBAwayController *ac = [%c(SBAwayController) sharedAwayController];
 		if ([ac isLocked])
 			return [ac toggleMediaControls];
 	}
-	SBMediaController *mc = CHSharedInstance(SBMediaController);
+	SBMediaController *mc = (SBMediaController *)[%c(SBMediaController) sharedInstance];
 	if ([mc respondsToSelector:@selector(mediaControlsDestinationApp)] && ![mc mediaControlsDestinationApp]) {
-		SBApplication *application = [CHSharedInstance(SBApplicationController) applicationWithDisplayIdentifier:@"com.apple.mobileipod"];
+		SBApplication *application = [(SBApplicationController *)[%c(SBApplicationController) sharedInstance] applicationWithDisplayIdentifier:@"com.apple.mobileipod"];
 		return [[LAApplicationListener sharedInstance] activateApplication:application];
 	}
 	shouldAddNowPlayingButton = NO;
-	SBNowPlayingAlertItem *newAlert = [CHAlloc(SBNowPlayingAlertItem) init];
+	SBNowPlayingAlertItem *newAlert = [[%c(SBNowPlayingAlertItem) alloc] init];
 	[controller activateAlertItem:newAlert];
 	[newAlert release];
 	return YES;
@@ -411,8 +396,8 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)firstSpringBoardPage
 {
-	SBIconController *ic = CHSharedInstance(SBIconController);
-	SBUIController *uic = CHSharedInstance(SBUIController);
+	SBIconController *ic = (SBIconController *)[%c(SBIconController) sharedInstance];
+	SBUIController *uic = (SBUIController *)[%c(SBUIController) sharedInstance];
 	BOOL result = NO;
 	if ([uic respondsToSelector:@selector(isSwitcherShowing)] && [uic isSwitcherShowing]) {
 		if ([uic respondsToSelector:@selector(dismissSwitcherAnimated:)])
@@ -451,7 +436,7 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)activateNotificationCenter
 {
-	SBBulletinListController *blc = CHSharedInstance(SBBulletinListController);
+	SBBulletinListController *blc = (SBBulletinListController *)[%c(SBBulletinListController) sharedInstance];
 	if (blc) {
 		if ([blc listViewIsActive]) {
 			[blc showListViewAnimated:YES];
@@ -485,7 +470,7 @@ static UIWindow *tweetFormerKeyWindow;
 		[tweetComposer release];
 		tweetComposer = nil;
 	} else {
-		tweetComposer = [CHAlloc(TWTweetComposeViewController) init];
+		tweetComposer = [[%c(TWTweetComposeViewController) alloc] init];
 		if (!tweetComposer)
 			return NO;
 		if (tweetWindow)
@@ -527,30 +512,19 @@ static UIWindow *tweetFormerKeyWindow;
 	return sharedSimpleListener;
 }
 
-CHDeclareClass(TWSession)
+%hook TWSession
 
-CHOptimizedMethod(0, self, void, TWSession, showTwitterSettingsIfNeeded)
+- (void)showTwitterSettingsIfNeeded
 {
-	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"prefs:root=TWITTER"]];
+	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:@"prefs:root=TWITTER"]];
 }
+
+%end
 
 + (void)initialize
 {
 	if ((self == [LASimpleListener class]) && LASharedActivator.runningInsideSpringBoard) {
-		CHLoadLateClass(SBIconController);
-		CHLoadLateClass(SBSearchController);
-		CHLoadLateClass(SBAlertItemsController);
-		CHLoadLateClass(SBNowPlayingAlertItem);
-		CHLoadLateClass(SBScreenShotter);
-		CHLoadLateClass(SBVoiceControlAlert);
-		CHLoadLateClass(SBAwayController);
-		CHLoadLateClass(SBUIController);
-		CHLoadLateClass(SBStatusBarController);
-		CHLoadLateClass(SBStatusBarDataManager);
-		CHLoadLateClass(SBMediaController);
-		CHLoadLateClass(SBApplicationController);
-		CHLoadLateClass(SBSoundPreferences);
-		CHLoadLateClass(SBAppSwitcherController);
+		%init;
 		sharedSimpleListener = [[self alloc] init];
 		// System
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.homebutton"];
@@ -563,7 +537,7 @@ CHOptimizedMethod(0, self, void, TWSession, showTwitterSettingsIfNeeded)
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.take-screenshot"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.nothing"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.first-springboard-page"];
-		if ([CHClass(SBVoiceControlAlert) shouldEnterVoiceControl])
+		if ([%c(SBVoiceControlAlert) shouldEnterVoiceControl])
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
 		if (GSSystemHasCapability(CFSTR("multitasking"))) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-switcher"];
@@ -572,14 +546,12 @@ CHOptimizedMethod(0, self, void, TWSession, showTwitterSettingsIfNeeded)
 				[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.audio.show-volume-bar"];
 			}
 		}
-		if (CHLoadLateClass(SBBulletinListController)) {
+		if (%c(SBBulletinListController)) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-notification-center"];
 		}
 		// Twitter
-		if (CHLoadLateClass(TWTweetComposeViewController)) {
+		if (%c(TWTweetComposeViewController)) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.twitter.compose-tweet"];
-			CHLoadLateClass(TWSession);
-			CHHook(0, TWSession, showTwitterSettingsIfNeeded);
 		}
 		// Lock Screen
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.dismiss"];

@@ -4,14 +4,8 @@
 
 #import <Foundation/Foundation.h>
 #import <SpringBoard/SpringBoard.h>
-#import <CaptainHook/CaptainHook.h>
 
-CHDeclareClass(SBApplicationController);
-CHDeclareClass(SBApplication);
-CHDeclareClass(SBDisplayStack);
-CHDeclareClass(SBIconModel);
-CHDeclareClass(SBAwayController);
-CHDeclareClass(SBUIController);
+%config(generator=internal);
 
 static LAApplicationListener *sharedApplicationListener;
 static NSMutableArray *displayStacks;
@@ -28,7 +22,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 #define SBWSuspendingDisplayStack         SBWGetDisplayStackAtIndex(2)
 #define SBWSuspendedEventOnlyDisplayStack SBWGetDisplayStackAtIndex(3)
 
-#define SBApp(dispId) [CHSharedInstance(SBApplicationController) applicationWithDisplayIdentifier:dispId]
+#define SBApp(dispId) [(SBApplicationController *)[%c(SBApplicationController) sharedInstance] applicationWithDisplayIdentifier:dispId]
 
 // TODO: Figure out the proper way to put this in the headers
 #if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_3_2
@@ -74,7 +68,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 - (BOOL)activateApplication:(SBApplication *)application;
 {
 	SBApplication *springBoard;
-	SBApplicationController *applicationController = CHSharedInstance(SBApplicationController);
+	SBApplicationController *applicationController = (SBApplicationController *)%c[(SBApplicationController) sharedInstance];
 	if ([applicationController respondsToSelector:@selector(springBoard)])
 		springBoard = [applicationController springBoard];
 	else
@@ -85,7 +79,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
     if (oldApplication == application)
     	return NO;
 	SBIcon *icon;
-    SBIconModel *iconModel = CHSharedInstance(SBIconModel);
+    SBIconModel *iconModel = (SBIconModel *)[%c(SBIconModel) sharedInstance];
     if ([iconModel respondsToSelector:@selector(leafIconForIdentifier:)])
 		icon = [iconModel leafIconForIdentifier:[application displayIdentifier]];
 	else
@@ -94,8 +88,8 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 		[icon launch];
 	else {
 		if (oldApplication == springBoard) {
-			if ([CHClass(SBUIController) instancesRespondToSelector:@selector(activateApplicationAnimated:)]) {
-				[CHSharedInstance(SBUIController) activateApplicationAnimated:application];
+			if ([%c(SBUIController) instancesRespondToSelector:@selector(activateApplicationAnimated:)]) {
+				[(SBUIController *)[%c(SBUIController) sharedInstance] activateApplicationAnimated:application];
 				return YES;
 			}
 			[application setDisplaySetting:0x4 flag:YES];
@@ -105,8 +99,8 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 			[SBWActiveDisplayStack popDisplay:oldApplication];
 			[SBWSuspendingDisplayStack pushDisplay:oldApplication];
 		} else {
-			if ([CHClass(SBUIController) instancesRespondToSelector:@selector(activateApplicationFromSwitcher:)]) {
-				[CHSharedInstance(SBUIController) activateApplicationFromSwitcher:application];
+			if ([%c(SBUIController) instancesRespondToSelector:@selector(activateApplicationFromSwitcher:)]) {
+				[(SBUIController *)[%c(SBUIController) sharedInstance] activateApplicationFromSwitcher:application];
 				return YES;
 			}
 			[application setDisplaySetting:0x4 flag:YES];
@@ -134,7 +128,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 		[self performSelector:@selector(activateApplication:) withObject:application afterDelay:0.0f];
 		[event setHandled:YES];
 	} else if (eventMode == LAEventModeLockScreen) {
-		SBAwayController *awayController = [CHClass(SBAwayController) sharedAwayController];
+		SBAwayController *awayController = [%c(SBAwayController) sharedAwayController];
 		if (![awayController isPasswordProtected]) {
 			[awayController unlockWithSound:NO];
 			[self performSelector:@selector(activateApplication:) withObject:application afterDelay:0.0f];
@@ -165,7 +159,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 
 - (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)name
 {
-	if ([[CHClass(SBAwayController) sharedAwayController] isPasswordProtected])
+	if ([[%c(SBAwayController) sharedAwayController] isPasswordProtected])
 		return allEventModesExceptLockScreen;
 	else
 		return activator.availableEventModes;
@@ -174,7 +168,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
 	SBIcon *icon;
-	SBIconModel *iconModel = CHSharedInstance(SBIconModel);
+	SBIconModel *iconModel = (SBIconModel *)[%c(SBIconModel) sharedInstance];
 	if ([iconModel respondsToSelector:@selector(leafIconForIdentifier:)])
 		icon = [iconModel leafIconForIdentifier:listenerName];
 	else
@@ -202,7 +196,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
 	SBIcon *icon;
-	SBIconModel *iconModel = CHSharedInstance(SBIconModel);
+	SBIconModel *iconModel = (SBIconModel *)[%c(SBIconModel) sharedInstance];
 	if ([iconModel respondsToSelector:@selector(leafIconForIdentifier:)])
 		icon = [iconModel leafIconForIdentifier:listenerName];
 	else
@@ -246,9 +240,13 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 
 @end
 
-CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdentifier, webClip, id, webClip, path, NSString *, path, bundle, id, bundle, infoDictionary, NSDictionary *, infoDictionary, isSystemApplication, BOOL, isSystemApplication, signerIdentity, id, signerIdentity, provisioningProfileValidated, BOOL, validated)
+%group WithAppController
+
+%hook SBApplication
+
+- (id)initWithBundleIdentifier:(NSString *)bundleIdentifier webClip:(id)webClip path:(NSString *)path bundle:(id)bundle infoDictionary:(NSDictionary *)infoDictionary isSystemApplication:(BOOL)isSystemApplication signerIdentity:(id)signerIdentity provisioningProfileValidated:(BOOL)validated
 {
-	if ((self = CHSuper(8, SBApplication, initWithBundleIdentifier, bundleIdentifier, webClip, webClip, path, path, bundle, bundle, infoDictionary, infoDictionary, isSystemApplication, isSystemApplication, signerIdentity, signerIdentity, provisioningProfileValidated, validated))) {
+	if ((self = %orig)) {
 		NSString *listenerName = [self displayIdentifier];
 		if (isSystemApplication) {
 			if ([ignoredDisplayIdentifiers containsObject:listenerName]) {
@@ -264,9 +262,9 @@ CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString
 	return self;
 }
 
-CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString *, bundleIdentifier, roleIdentifier, NSString *, roleIdentifier, path, NSString *, path, bundle, id, bundle, infoDictionary, NSDictionary *, infoDictionary, isSystemApplication, BOOL, isSystemApplication, signerIdentity, id, signerIdentity, provisioningProfileValidated, BOOL, validated)
+- (id)initWithBundleIdentifier:(NSString *)bundleIdentifier roleIdentifier:(NSString *)roleIdentifier path:(NSString *)path bundle:(id)bundle infoDictionary:(NSDictionary *)infoDictionary isSystemApplication:(BOOL)isSystemApplication signerIdentity:(id)signerIdentity provisioningProfileValidated:(BOOL)validated
 {
-	if ((self = CHSuper(8, SBApplication, initWithBundleIdentifier, bundleIdentifier, roleIdentifier, roleIdentifier, path, path, bundle, bundle, infoDictionary, infoDictionary, isSystemApplication, isSystemApplication, signerIdentity, signerIdentity, provisioningProfileValidated, validated))) {
+	if ((self = %orig)) {
 		NSString *listenerName = [self displayIdentifier];
 		if (isSystemApplication) {
 			if ([ignoredDisplayIdentifiers containsObject:listenerName]) {
@@ -282,48 +280,53 @@ CHOptimizedMethod(8, self, id, SBApplication, initWithBundleIdentifier, NSString
 	return self;
 }
 
-CHOptimizedMethod(0, self, void, SBApplication, dealloc)
+- (void)dealloc
 {
 	[LASharedActivator unregisterListenerWithName:[self displayIdentifier]];
-	CHSuper(0, SBApplication, dealloc);
+	%orig;
 }
 
-CHOptimizedMethod(0, self, id, SBDisplayStack, init)
+%end
+
+%end
+
+%hook SBDisplayStack
+
+- (id)init
 {
-	if ((self = CHSuper(0, SBDisplayStack, init))) {
+	if ((self = %orig)) {
 		[displayStacks addObject:self];
 	}
 	return self;
 }
 
-CHOptimizedMethod(0, self, void, SBDisplayStack, dealloc)
+- (void)dealloc
 {
 	[displayStacks removeObject:self];
-	CHSuper(0, SBDisplayStack, dealloc);
+	%orig;
 }
 
-CHOptimizedMethod(0, self, id, SBApplicationController, init)
+%end
+
+%hook SBApplicationController
+
+- (id)init
 {
-	CHHook(8, SBApplication, initWithBundleIdentifier, webClip, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
-	CHHook(8, SBApplication, initWithBundleIdentifier, roleIdentifier, path, bundle, infoDictionary, isSystemApplication, signerIdentity, provisioningProfileValidated);
-	CHHook(0, SBApplication, dealloc);
-	return CHSuper(0, SBApplicationController, init);
+	%init(WithAppController);
+	return %orig;
 }
 
-CHConstructor {
-	CHAutoreleasePoolForScope();
-	if (CHLoadLateClass(SBApplicationController)) {
-		CHHook(0, SBApplicationController, init);
+%end
+
+%ctor
+{
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	if (objc_getClass("SBApplicationController")) {
+		%init;
 		sharedApplicationListener = [[LAApplicationListener alloc] init];
 		allEventModesExceptLockScreen = [[NSArray alloc] initWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil];
 		ignoredDisplayIdentifiers = [[NSArray alloc] initWithObjects:@"com.apple.DemoApp", @"com.apple.fieldtest", @"com.apple.springboard", @"com.apple.AdSheet", @"com.apple.iphoneos.iPodOut", @"com.apple.TrustMe", @"com.apple.DataActivation", @"com.apple.WebSheet", @"com.apple.AdSheetPhone", @"com.apple.AdSheetPad", @"com.apple.iosdiagnostics", @"com.apple.purplebuddy", nil];
 		displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
-		CHLoadLateClass(SBDisplayStack);
-		CHHook(0, SBDisplayStack, init);
-		CHHook(0, SBDisplayStack, dealloc);
-		CHLoadLateClass(SBIconModel);
-		CHLoadLateClass(SBAwayController);
-		CHLoadLateClass(SBUIController);
-		CHLoadLateClass(SBApplication);
 	}
+	[pool drain];
 }

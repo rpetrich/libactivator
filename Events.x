@@ -3,6 +3,8 @@
 #import "LAToggleListener.h"
 #import "LAMenuListener.h"
 
+%config(generator=internal);
+
 #import <CaptainHook/CaptainHook.h>
 #import <SpringBoard/SpringBoard.h>
 
@@ -64,27 +66,6 @@ NSString * const LAEventNamePowerDisconnected      = @"libactivator.power.discon
 #define kShakeIgnoreTimeout                2.0
 #define kAlmostTransparentColor            [[UIColor grayColor] colorWithAlphaComponent:(2.0f / 255.0f)]
 
-CHDeclareClass(SpringBoard);
-CHDeclareClass(iHome);
-CHDeclareClass(SBUIController);
-CHDeclareClass(SBScreenShotter);
-CHDeclareClass(SBIconController);
-CHDeclareClass(SBIconScrollView);
-CHDeclareClass(SBIcon);
-CHDeclareClass(SBStatusBar);
-CHDeclareClass(UIStatusBar);
-CHDeclareClass(SBNowPlayingAlertItem);
-CHDeclareClass(SBVoiceControlAlert);
-CHDeclareClass(SBAwayController);
-CHDeclareClass(SBAwayDateView);
-CHDeclareClass(VolumeControl);
-CHDeclareClass(SBVolumeHUDView);
-CHDeclareClass(SBStatusBarController);
-CHDeclareClass(SBAppSwitcherController);
-CHDeclareClass(SBRemoteLocalNotificationAlert);
-CHDeclareClass(SBAlertItemsController);
-CHDeclareClass(SBAlert);
-
 //static BOOL isInSleep;
 
 static BOOL shouldInterceptMenuPresses;
@@ -98,22 +79,22 @@ static LASlideGestureWindow *rightSlideGestureWindow;
 static LAQuickDoDelegate *sharedQuickDoDelegate;
 static UIButton *quickDoButton;
 
-CHInline
-static LAEvent *LASendEventWithName(NSString *eventName)
+__attribute__((always_inline))
+static inline LAEvent *LASendEventWithName(NSString *eventName)
 {
 	LAEvent *event = [[[LAEvent alloc] initWithName:eventName mode:[LASharedActivator currentEventMode]] autorelease];
 	[LASharedActivator sendEventToListener:event];
 	return event;
 }
 
-CHInline
-static void LAAbortEvent(LAEvent *event)
+__attribute__((always_inline))
+static inline void LAAbortEvent(LAEvent *event)
 {
 	[LASharedActivator sendAbortToListener:event];
 }
 
-CHInline
-static id<LAListener> LAListenerForEventWithName(NSString *eventName)
+__attribute__((always_inline))
+static inline id<LAListener> LAListenerForEventWithName(NSString *eventName)
 {
 	return [LASharedActivator listenerForEvent:[LAEvent eventWithName:eventName mode:[LASharedActivator currentEventMode]]];
 }
@@ -233,8 +214,8 @@ typedef enum {
 	}
 	// Try to determine if we're locked, but be very careful not to call private APIs if they don't exist
 	BOOL showMoreInfo = NO;
-	if ([CHClass(SBAwayController) respondsToSelector:@selector(sharedAwayController)]) {
-		SBAwayController *awayController = [CHClass(SBAwayController) sharedAwayController];
+	if ([%c(SBAwayController) respondsToSelector:@selector(sharedAwayController)]) {
+		SBAwayController *awayController = [%c(SBAwayController) sharedAwayController];
 		if ([awayController respondsToSelector:@selector(isLocked)]) {
 			if ([awayController isLocked]) {
 				[self performSelector:@selector(checkVersion) withObject:nil afterDelay:0.1];
@@ -472,62 +453,52 @@ static void HideVolumeTapWindow()
 {
 	HideVolumeTapWindow();
 	if ([LASendEventWithName(LAEventNameVolumeDisplayTap) isHandled])
-		HideVolumeHUD([CHClass(VolumeControl) sharedVolumeControl]);
+		HideVolumeHUD([%c(VolumeControl) sharedVolumeControl]);
 }
 
 @end
 
 static CFAbsoluteTime lastRingerChangedTime;
 
-CHOptimizedMethod(1, self, void, SpringBoard, ringerChanged, int, newState)
+%hook SpringBoard
+
+- (void)ringerChanged:(int)newState
 {
 	CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
 	BOOL shouldSendEvent = (currentTime - lastRingerChangedTime) < 1.0;
 	lastRingerChangedTime = currentTime;
 	if (shouldSendEvent) {
-		CHSuper(1, SpringBoard, ringerChanged, newState);
+		%orig;
 		LASendEventWithName(LAEventNameVolumeToggleMuteTwice);
 	} else {
-		CHSuper(1, SpringBoard, ringerChanged, newState);
+		%orig;
 	}
 }
 
-/*CHOptimizedMethod(0, self, void, SpringBoard, systemWillSleep)
-{
-	isInSleep = YES;
-	CHSuper(0, SpringBoard, systemWillSleep);
-}
-
-CHOptimizedMethod(0, self, void, SpringBoard, undim)
-{
-	isInSleep = NO;
-	CHSuper(0, SpringBoard, undim);
-}*/
-
 static BOOL ignoreHeadsetButtonUp;
 
-CHOptimizedMethod(0, self, void, SpringBoard, _performDelayedHeadsetAction)
+- (void)_performDelayedHeadsetAction
 {
 	if (LASendEventWithName(LAEventNameHeadsetButtonHoldShort).handled)
 		ignoreHeadsetButtonUp = YES;
 	else
-		CHSuper(0, SpringBoard, _performDelayedHeadsetAction);
+		%orig;
 }
 
-CHOptimizedMethod(1, self, void, SpringBoard, headsetButtonDown, GSEventRef, gsEvent)
+- (void)headsetButtonDown:(GSEventRef)gsEvent
 {
 	ignoreHeadsetButtonUp = NO;
 	if (LAListenerForEventWithName(LAEventNameHeadsetButtonHoldShort)) {
-		CHSuper(1, SpringBoard, headsetButtonDown, gsEvent);
+		%orig;
 		// Require _performDelayedHeadsetAction timer, event when Voice Control isn't available
 		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_performDelayedHeadsetAction) object:nil];
 		[self performSelector:@selector(_performDelayedHeadsetAction) withObject:nil afterDelay:0.8];
 	} else {
-		CHSuper(1, SpringBoard, headsetButtonDown, gsEvent);
+		%orig;
 	}
 }
 
-CHOptimizedMethod(1, self, void, SpringBoard, headsetButtonUp, GSEventRef, gsEvent)
+- (void)headsetButtonUp:(GSEventRef)gsEvent
 {
 	if (!ignoreHeadsetButtonUp) {
 		LAEvent *event = [LAEvent eventWithName:LAEventNameHeadsetButtonPressSingle mode:[LASharedActivator currentEventMode]];
@@ -535,7 +506,7 @@ CHOptimizedMethod(1, self, void, SpringBoard, headsetButtonUp, GSEventRef, gsEve
 		if (!event.handled) {
 			[LASharedActivator sendEventToListener:event];
 			if (!event.handled) {
-				CHSuper(1, SpringBoard, headsetButtonUp, gsEvent);
+				%orig;
 				return;
 			}
 		}
@@ -545,37 +516,37 @@ CHOptimizedMethod(1, self, void, SpringBoard, headsetButtonUp, GSEventRef, gsEve
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_performDelayedHeadsetClickTimeout) object:nil];
 }
 
-CHOptimizedMethod(0, self, void, SpringBoard, _handleMenuButtonEvent)
+- (void)_handleMenuButtonEvent
 {
 	if (!shouldSuppressMenuReleases) {
 		// Unfortunately there isn't a better way of doing this :(
 		shouldInterceptMenuPresses = YES;
-		CHSuper(0, SpringBoard, _handleMenuButtonEvent);
+		%orig;
 		shouldInterceptMenuPresses = NO;
 	}
 }
 
-CHOptimizedMethod(1, self, BOOL, SpringBoard, respondImmediatelyToMenuSingleTapAllowingDoubleTap, BOOL *, allowDoubleTap)
+- (BOOL)respondImmediatelyToMenuSingleTapAllowingDoubleTap:(BOOL *)allowDoubleTap
 {
 	// 3.2
 	if (LAListenerForEventWithName(LAEventNameMenuPressDouble) || LAListenerForEventWithName(LAEventNameMenuPressTriple)) {
-		CHSuper(1, SpringBoard, respondImmediatelyToMenuSingleTapAllowingDoubleTap, allowDoubleTap);
+		%orig;
 		if (allowDoubleTap)
 			*allowDoubleTap = YES;
 		return NO;
 	} else {
-		return CHSuper(1, SpringBoard, respondImmediatelyToMenuSingleTapAllowingDoubleTap, allowDoubleTap);
+		return %orig;
 	}
 }
 
-CHOptimizedMethod(0, self, BOOL, SpringBoard, allowMenuDoubleTap)
+- (BOOL)allowMenuDoubleTap
 {
 	// 3.0/3.1
 	if (LAListenerForEventWithName(LAEventNameMenuPressDouble) || LAListenerForEventWithName(LAEventNameMenuPressTriple)) {
-		CHSuper(0, SpringBoard, allowMenuDoubleTap);
+		%orig;
 		return YES;
 	} else {
-		return CHSuper(0, SpringBoard, allowMenuDoubleTap);
+		return %orig;
 	}
 }
 
@@ -592,11 +563,16 @@ static void DestroyMenuTripleTapTimer()
 
 static void MenuTripleTapTimeoutCallback(CFRunLoopTimerRef timer, void *info);
 
-CHOptimizedMethod(0, self, void, SpringBoard, handleMenuDoubleTap)
+static BOOL triplePressTimedOut;
+
+- (void)handleMenuDoubleTap
 {
-	if ([self respondsToSelector:@selector(canShowNowPlayingHUD)] && [self canShowNowPlayingHUD]) {
+	if (triplePressTimedOut) {
+		triplePressTimedOut = NO;
+		%orig;
+	} else if ([self respondsToSelector:@selector(canShowNowPlayingHUD)] && [self canShowNowPlayingHUD]) {
 		shouldAddNowPlayingButton = YES;
-		CHSuper(0, SpringBoard, handleMenuDoubleTap);
+		%orig;
 		shouldAddNowPlayingButton = NO;
 	} else if (LAListenerForEventWithName(LAEventNameMenuPressTriple)) {
 		shouldSuppressMenuReleases = YES;
@@ -606,7 +582,7 @@ CHOptimizedMethod(0, self, void, SpringBoard, handleMenuDoubleTap)
 	} else if (LASendEventWithName(LAEventNameMenuPressDouble).handled) {
 		shouldSuppressMenuReleases = YES;
 	} else {
-		CHSuper(0, SpringBoard, handleMenuDoubleTap);
+		%orig;
 	}
 }
 
@@ -614,8 +590,8 @@ static void MenuTripleTapTimeoutCallback(CFRunLoopTimerRef timer, void *info)
 {
 	DestroyMenuTripleTapTimer();
 	if (!LASendEventWithName(LAEventNameMenuPressDouble).handled) {
-		SpringBoard *self = (SpringBoard *)UIApp;
-		CHSuper(0, SpringBoard, handleMenuDoubleTap);
+		triplePressTimedOut = YES;
+		[(SpringBoard *)UIApp handleMenuDoubleTap];
 	}
 }
 
@@ -624,17 +600,17 @@ static BOOL isWaitingForLockDoubleTap;
 static NSString *formerLockEventMode;
 static BOOL suppressIsLocked;
 
-CHOptimizedMethod(0, self, BOOL, SpringBoard, isLocked)
+- (BOOL)isLocked
 {
 	if (suppressIsLocked) {
-		CHSuper(0, SpringBoard, isLocked);
+		%orig;
 		return NO;
 	} else {
-		return CHSuper(0, SpringBoard, isLocked);
+		return %orig;
 	}
 }
 
-CHOptimizedMethod(1, self, void, SpringBoard, lockButtonDown, GSEventRef, event)
+- (void)lockButtonDown:(GSEventRef)event
 {
 	[self performSelector:@selector(activatorLockButtonHoldCompleted) withObject:nil afterDelay:kButtonHoldDelay];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonDoubleTapAborted) object:nil];
@@ -642,20 +618,21 @@ CHOptimizedMethod(1, self, void, SpringBoard, lockButtonDown, GSEventRef, event)
 		[formerLockEventMode release];
 		formerLockEventMode = [[LASharedActivator currentEventMode] copy];
 	}
-	CHSuper(1, SpringBoard, lockButtonDown, event);
+	%orig;
 }
 
-CHOptimizedMethod(0, new, void, SpringBoard, activatorFixStatusBar)
+%new
+- (void)activatorFixStatusBar
 {
-	[[CHClass(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
+	[[%c(SBStatusBarController) sharedStatusBarController] setIsLockVisible:NO isTimeVisible:YES];
 }
 
 static BOOL ignoreResetIdleTimerAndUndim;
 
-CHOptimizedMethod(1, self, void, SpringBoard, resetIdleTimerAndUndim, BOOL, something)
+- (void)resetIdleTimerAndUndim:(BOOL)something
 {
 	if (!ignoreResetIdleTimerAndUndim)
-		CHSuper(1, SpringBoard, resetIdleTimerAndUndim, something);
+		%orig;
 }
 
 static void DisableLockTimer(SpringBoard *springBoard)
@@ -672,7 +649,7 @@ static void DisableLockTimer(SpringBoard *springBoard)
 	}
 }
 
-CHOptimizedMethod(1, self, void, SpringBoard, lockButtonUp, GSEventRef, event)
+- (void)lockButtonUp:(GSEventRef)event
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorLockButtonHoldCompleted) object:nil];
 	if (lockHoldEventToAbort) {
@@ -683,12 +660,12 @@ CHOptimizedMethod(1, self, void, SpringBoard, lockButtonUp, GSEventRef, event)
 		isWaitingForLockDoubleTap = NO;
 		LAEvent *activatorEvent = [[[LAEvent alloc] initWithName:LAEventNameLockPressDouble mode:formerLockEventMode] autorelease];
 		if ([LASharedActivator assignedListenerNameForEvent:activatorEvent] == nil)
-			CHSuper(1, SpringBoard, lockButtonUp, event);
+			%orig;
 		else {
 			if (![formerLockEventMode isEqualToString:LAEventModeLockScreen]) {
 				BOOL oldAnimationsEnabled = [UIView areAnimationsEnabled];
 				[UIView setAnimationsEnabled:NO];
-				SBAwayController *awayController = [CHClass(SBAwayController) sharedAwayController];
+				SBAwayController *awayController = [%c(SBAwayController) sharedAwayController];
 				[awayController setDeviceLocked:NO];
 				ignoreResetIdleTimerAndUndim = YES;
 				if ([awayController respondsToSelector:@selector(_unlockWithSound:isAutoUnlock:)])
@@ -710,33 +687,34 @@ CHOptimizedMethod(1, self, void, SpringBoard, lockButtonUp, GSEventRef, event)
 					[self undim];
 			} else {
 				shouldSuppressLockSound = YES;
-				SBUIController *uic = CHSharedInstance(SBUIController);
+				SBUIController *uic = (SBUIController *)[%c(SBUIController) sharedInstance];
 				if ([uic respondsToSelector:@selector(lockFromSource:)])
 					[uic lockFromSource:0];
 				else
 					[uic lock];
 				shouldSuppressLockSound = NO;
-				CHSuper(1, SpringBoard, lockButtonUp, event);
+				%orig;
 			}
 		} 
 	} else {
 		[self performSelector:@selector(activatorLockButtonDoubleTapAborted) withObject:nil afterDelay:kButtonHoldDelay];
 		isWaitingForLockDoubleTap = YES;
-		CHSuper(1, SpringBoard, lockButtonUp, event);
+		%orig;
 	}
 }
 
-CHOptimizedMethod(0, self, void, SpringBoard, lockButtonWasHeld)
+- (void)lockButtonWasHeld
 {
 	if (lockHoldEventToAbort) {
 		LAAbortEvent(lockHoldEventToAbort);
 		[lockHoldEventToAbort release];
 		lockHoldEventToAbort = nil;
 	}
-	CHSuper(0, SpringBoard, lockButtonWasHeld);
+	%orig;
 }
 
-CHOptimizedMethod(0, new, void, SpringBoard, activatorLockButtonHoldCompleted)
+%new
+- (void)activatorLockButtonHoldCompleted
 {
 	[lockHoldEventToAbort release];
 	lockHoldEventToAbort = nil;
@@ -745,14 +723,15 @@ CHOptimizedMethod(0, new, void, SpringBoard, activatorLockButtonHoldCompleted)
 		lockHoldEventToAbort = [event retain];
 }
 
-CHOptimizedMethod(0, new, void, SpringBoard, activatorLockButtonDoubleTapAborted)
+%new
+- (void)activatorLockButtonDoubleTapAborted
 {
 	isWaitingForLockDoubleTap = NO;
 }
 
 static CFAbsoluteTime lastShakeEventSentAt;
 
-CHOptimizedMethod(0, self, void, SpringBoard, _showEditAlertView)
+- (void)_showEditAlertView
 {
 	// iOS3.x
 	CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
@@ -762,10 +741,10 @@ CHOptimizedMethod(0, self, void, SpringBoard, _showEditAlertView)
 			return;
 		}
 	}
-	CHSuper(0, SpringBoard, _showEditAlertView);
+	%orig;
 }
 
-CHOptimizedMethod(1, super, void, SpringBoard, _sendMotionEnded, int, subtype)
+- (void)_sendMotionEnded:(int)subtype
 {
 	// iOS4.0+
 	CFAbsoluteTime now = CFAbsoluteTimeGetCurrent();
@@ -775,21 +754,21 @@ CHOptimizedMethod(1, super, void, SpringBoard, _sendMotionEnded, int, subtype)
 			return;
 		}
 	}
-	CHSuper(1, SpringBoard, _sendMotionEnded, subtype);
+	%orig;
 }
 
 static LAEvent *menuEventToAbort;
 static BOOL justTookScreenshot;
 
-CHOptimizedMethod(1, self, void, SpringBoard, menuButtonDown, GSEventRef, event)
+- (void)menuButtonDown:(GSEventRef)event
 {
 	[self performSelector:@selector(activatorMenuButtonTimerCompleted) withObject:nil afterDelay:kButtonHoldDelay];
 	justTookScreenshot = NO;
 	shouldSuppressMenuReleases = NO;
-	CHSuper(1, SpringBoard, menuButtonDown, event);
+	%orig;
 }
 
-CHOptimizedMethod(1, self, void, SpringBoard, menuButtonUp, GSEventRef, event)
+- (void)menuButtonUp:(GSEventRef)event
 {
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(activatorMenuButtonTimerCompleted) object:nil];
 	if (menuTripleTapTimer) {
@@ -805,7 +784,7 @@ CHOptimizedMethod(1, self, void, SpringBoard, menuButtonUp, GSEventRef, event)
 		LAAbortEvent(menuEventToAbort);
 		[menuEventToAbort release];
 		menuEventToAbort = nil;
-		CHSuper(1, SpringBoard, menuButtonUp, event);
+		%orig;
 		justTookScreenshot = NO;
 	} else if (menuEventToAbort || shouldSuppressMenuReleases) {
 		[menuEventToAbort release];
@@ -817,31 +796,32 @@ CHOptimizedMethod(1, self, void, SpringBoard, menuButtonUp, GSEventRef, event)
 			*timer = nil;
 		}
 	} else {
-		CHSuper(1, SpringBoard, menuButtonUp, event);
+		%orig;
 	}
 }
 
-CHOptimizedMethod(0, self, void, SpringBoard, menuButtonWasHeld)
+- (void)menuButtonWasHeld
 {
 	if (menuEventToAbort) {
 		LAAbortEvent(menuEventToAbort);
 		[menuEventToAbort release];
 		menuEventToAbort = nil;
 	}
-	CHSuper(0, SpringBoard, menuButtonWasHeld);
+	%orig;
 }
 
-CHOptimizedMethod(0, self, void, SpringBoard, _menuButtonWasHeld)
+- (void)_menuButtonWasHeld
 {
 	if (menuEventToAbort) {
 		LAAbortEvent(menuEventToAbort);
 		[menuEventToAbort release];
 		menuEventToAbort = nil;
 	}
-	CHSuper(0, SpringBoard, _menuButtonWasHeld);
+	%orig;
 }
 
-CHOptimizedMethod(0, new, void, SpringBoard, activatorMenuButtonTimerCompleted)
+%new
+- (void)activatorMenuButtonTimerCompleted
 {
 	[menuEventToAbort release];
 	LAEvent *event = LASendEventWithName(LAEventNameMenuHoldShort);
@@ -858,7 +838,7 @@ static BOOL performedFirstHoldEvent;
 static inline void IncreaseVolumeStep(VolumeControl *volumeControl)
 {
 	if ([volumeControl respondsToSelector:@selector(_changeVolumeBy:)])
-		[volumeControl _changeVolumeBy:[CHClass(VolumeControl) volumeStep]];
+		[volumeControl _changeVolumeBy:[%c(VolumeControl) volumeStep]];
 	else
 		[volumeControl increaseVolume];
 }
@@ -866,7 +846,7 @@ static inline void IncreaseVolumeStep(VolumeControl *volumeControl)
 static inline void DecreaseVolumeStep(VolumeControl *volumeControl)
 {
 	if ([volumeControl respondsToSelector:@selector(_changeVolumeBy:)])
-		[volumeControl _changeVolumeBy:-[CHClass(VolumeControl) volumeStep]];
+		[volumeControl _changeVolumeBy:-[%c(VolumeControl) volumeStep]];
 	else
 		[volumeControl decreaseVolume];
 }
@@ -890,14 +870,14 @@ static void SetupVolumeRepeatTimer(CFRunLoopTimerCallBack callback, void *info, 
 
 static void StandardVolumeUpRepeat(CFRunLoopTimerRef timer, void *info)
 {
-	IncreaseVolumeStep([CHClass(VolumeControl) sharedVolumeControl]);
+	IncreaseVolumeStep([%c(VolumeControl) sharedVolumeControl]);
 	SetupVolumeRepeatTimer(StandardVolumeUpRepeat, info, kVolumeRepeatDelay);
 }
 
 static void VolumeUpButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
 {
 	performedFirstHoldEvent = YES;
-	VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
+	VolumeControl *volumeControl = [%c(VolumeControl) sharedVolumeControl];
 	if ([LASendEventWithName(LAEventNameVolumeUpHoldShort) isHandled]) {
 		suppressVolumeButtonUp = YES;
 		HideVolumeHUD(volumeControl);
@@ -909,7 +889,7 @@ static void VolumeUpButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
 
 static void StandardVolumeDownRepeat(CFRunLoopTimerRef timer, void *info)
 {
-	DecreaseVolumeStep([CHClass(VolumeControl) sharedVolumeControl]);
+	DecreaseVolumeStep([%c(VolumeControl) sharedVolumeControl]);
 	SetupVolumeRepeatTimer(StandardVolumeDownRepeat, info, kVolumeRepeatDelay);
 }
 
@@ -917,7 +897,7 @@ static void VolumeDownButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
 {
 	performedFirstHoldEvent = YES;
 	DestroyCurrentVolumeButtonUpTimer();
-	VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
+	VolumeControl *volumeControl = [%c(VolumeControl) sharedVolumeControl];
 	if ([LASendEventWithName(LAEventNameVolumeDownHoldShort) isHandled]) {
 		suppressVolumeButtonUp = YES;
 		HideVolumeHUD(volumeControl);
@@ -929,17 +909,17 @@ static void VolumeDownButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
 
 static BOOL justSuppressedNotificationSound;
 
-CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent)
+- (void)volumeChanged:(GSEventRef)gsEvent
 {
 	if ([self respondsToSelector:@selector(appsRegisteredForVolumeEvents)]) {
 		if ([[self appsRegisteredForVolumeEvents] count]) {
-			CHSuper(1, SpringBoard, volumeChanged, gsEvent);
+			%orig;
 			return;
 		}
 	}
 	// Suppress ringtone
-	if ([CHClass(SBAlert) respondsToSelector:@selector(alertWindow)]) {
-		id alertWindow = [CHClass(SBAlert) alertWindow];
+	if ([%c(SBAlert) respondsToSelector:@selector(alertWindow)]) {
+		id alertWindow = [%c(SBAlert) alertWindow];
 		if ([alertWindow respondsToSelector:@selector(currentDisplay)]) {
 			id alertDisplay = [alertWindow currentDisplay];
 			if ([alertDisplay respondsToSelector:@selector(handleVolumeEvent:)]) {
@@ -948,7 +928,7 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			}
 		}
 	}
-	VolumeControl *volumeControl = [CHClass(VolumeControl) sharedVolumeControl];
+	VolumeControl *volumeControl = [%c(VolumeControl) sharedVolumeControl];
 	switch (GSEventGetType(gsEvent)) {
 		case kGSEventVolumeUpButtonDown: {
 			if (isVolumeButtonDown) {
@@ -972,7 +952,7 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 				HideVolumeHUD(volumeControl);
 				break;
 			}
-			CHSuper(1, SpringBoard, volumeChanged, gsEvent);
+			%orig;
 			CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
 			if ((currentTime - volumeChordBeganTime) > kButtonHoldDelay) {
 				lastVolumeEvent = kGSEventVolumeUpButtonUp;
@@ -994,11 +974,11 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 		}
 		case kGSEventVolumeDownButtonDown: {
 			// Suppress notification alert sounds
-			if ([CHClass(SBRemoteLocalNotificationAlert) respondsToSelector:@selector(isPlayingRingtone)] && [CHClass(SBRemoteLocalNotificationAlert) isPlayingRingtone]) {
-				NSArray *notificationAlerts = [CHSharedInstance(SBAlertItemsController) alertItemsOfClass:CHClass(SBRemoteLocalNotificationAlert)];
+			if ([%c(SBRemoteLocalNotificationAlert) respondsToSelector:@selector(isPlayingRingtone)] && [%c(SBRemoteLocalNotificationAlert) isPlayingRingtone]) {
+				NSArray *notificationAlerts = [(SBAlertItemsController *)[%c(SBAlertItemsController) sharedInstance] alertItemsOfClass:%c(SBRemoteLocalNotificationAlert)];
 				[notificationAlerts makeObjectsPerformSelector:@selector(snoozeIfPossible)];
-				if ([CHClass(SBRemoteLocalNotificationAlert) respondsToSelector:@selector(stopPlayingAlertSoundOrRingtone)]) {
-					[CHClass(SBRemoteLocalNotificationAlert) stopPlayingAlertSoundOrRingtone];
+				if ([%c(SBRemoteLocalNotificationAlert) respondsToSelector:@selector(stopPlayingAlertSoundOrRingtone)]) {
+					[%c(SBRemoteLocalNotificationAlert) stopPlayingAlertSoundOrRingtone];
 				}
 				justSuppressedNotificationSound = YES;
 				break;
@@ -1028,7 +1008,7 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 				HideVolumeHUD(volumeControl);
 				break;
 			}
-			CHSuper(1, SpringBoard, volumeChanged, gsEvent);
+			%orig;
 			CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
 			if ((currentTime - volumeChordBeganTime) > kButtonHoldDelay) {
 				lastVolumeEvent = kGSEventVolumeDownButtonUp;
@@ -1049,36 +1029,16 @@ CHOptimizedMethod(1, self, void, SpringBoard, volumeChanged, GSEventRef, gsEvent
 			break;
 		}
 		default:
-			CHSuper(1, SpringBoard, volumeChanged, gsEvent);
+			%orig;
 			break;
 	}
 }
 
-CHOptimizedMethod(0, self, void, iHome, inject)
-{
-	CHSuper(0, iHome, inject);
-	[quickDoButton release];
-	UIButton **buttonRef = CHIvarRef(self, touchButton, UIButton *);
-	if (buttonRef) {
-		quickDoButton = [*buttonRef retain];
-		if (quickDoButton) {
-			UIWindow *window = [quickDoButton window];
-			if (window) {
-				CGRect windowFrame = [window frame];
-				CGRect screenBounds = [[UIScreen mainScreen] bounds];
-				if (windowFrame.origin.y > screenBounds.origin.y + screenBounds.size.height / 2.0f) {
-					[LASlideGestureWindow updateVisibility];
-					[[LAQuickDoDelegate sharedInstance] acceptEventsFromControl:quickDoButton];
-					return;
-				}
-			}
-		}
-	} else {
-		quickDoButton = nil;
-	}
-}
+%end
 
-CHOptimizedMethod(0, self, BOOL, SBUIController, clickedMenuButton)
+%hook SBUIController
+
+- (BOOL)clickedMenuButton
 {
 	if (menuEventToAbort || justTookScreenshot)
 		return YES;
@@ -1088,115 +1048,122 @@ CHOptimizedMethod(0, self, BOOL, SBUIController, clickedMenuButton)
 	if ([event isHandled])
 		return YES;
 	if (mode == LAEventModeSpringBoard) {
-		SBIconController *iconController = CHSharedInstance(SBIconController);
+		SBIconController *iconController = (SBIconController *)[%c(SBIconController) sharedInstance];
 		if ([iconController isEditing] || ([iconController respondsToSelector:@selector(currentFolderIconList)] && [iconController currentFolderIconList]))
-			return CHSuper(0, SBUIController, clickedMenuButton);
+			return %orig;
 	}
-	if ([CHClass(SBUIController) instancesRespondToSelector:@selector(isSwitcherShowing)] && [CHSharedInstance(SBUIController) isSwitcherShowing])
-		return CHSuper(0, SBUIController, clickedMenuButton);
+	if ([%c(SBUIController) instancesRespondToSelector:@selector(isSwitcherShowing)] && [(SBUIController *)[%c(SBUIController) sharedInstance] isSwitcherShowing])
+		return %orig;
 	[LASharedActivator sendEventToListener:event];
 	if (![event isHandled])
-		return CHSuper(0, SBUIController, clickedMenuButton);
+		return %orig;
 	if ([mode isEqualToString:LAEventModeApplication]) {
 		NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
 		if (![[LASharedActivator infoDictionaryValueOfKey:@"receives-raw-events" forListenerWithName:listenerName] boolValue])
-			CHSuper(0, SBUIController, clickedMenuButton);
+			%orig;
 	}
 	return YES;
 }
 
-CHOptimizedMethod(0, self, void, SBUIController, finishLaunching)
+- (void)finishLaunching
 {
-	if (!CHClass(iHome)) {
-		CHLoadLateClass(iHome);
-		CHHook(0, iHome, inject);
-	}
 	[LASimpleListener sharedInstance];
 	[LAToggleListener sharedInstance];
 	[LAMenuListener sharedMenuListener];
-	CHSuper(0, SBUIController, finishLaunching);
+	%orig;
 	[LASlideGestureWindow performSelector:@selector(updateVisibility) withObject:nil afterDelay:1.0];
 }
 
-CHOptimizedMethod(0, self, void, SBUIController, tearDownIconListAndBar)
+- (void)tearDownIconListAndBar
 {
-	CHSuper(0, SBUIController, tearDownIconListAndBar);
+	%orig;
 	[LASlideGestureWindow updateVisibility];
 	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
 }
 
-CHOptimizedMethod(1, self, void, SBUIController, restoreIconList, BOOL, animate)
+- (void)restoreIconList:(BOOL)animate
 {
-	CHSuper(1, SBUIController, restoreIconList, animate);
+	%orig;
 	[LASlideGestureWindow updateVisibility];
 	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
 }
 
-CHOptimizedMethod(0, self, void, SBUIController, lock)
+- (void)lock
 {
-	CHSuper(0, SBUIController, lock);
+	%orig;
 	[LASlideGestureWindow updateVisibility];
 	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
 }
 
-CHOptimizedMethod(1, self, void, SBUIController, lockFromSource, int, source)
+- (void)lockFromSource:(int)source
 {
-	CHSuper(1, SBUIController, lockFromSource, source);
+	%orig;
 	[LASlideGestureWindow updateVisibility];
 	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
 }
 
-CHOptimizedMethod(0, self, void, SBUIController, _toggleSwitcher)
+- (void)_toggleSwitcher
 {
 	if (![self isSwitcherShowing]) {
 		LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressSingle mode:LASharedActivator.currentEventMode];
 		[LASharedActivator sendDeactivateEventToListeners:event];
 	}
-	CHSuper(0, SBUIController, _toggleSwitcher);
+	%orig;
 }
 
-CHOptimizedMethod(0, self, void, SBUIController, ACPowerChanged)
+- (void)ACPowerChanged
 {
-	CHSuper(0, SBUIController, ACPowerChanged);
+	%orig;
 	if ([self respondsToSelector:@selector(isOnAC)])
 		LASendEventWithName([self isOnAC] ? LAEventNamePowerConnected : LAEventNamePowerDisconnected);
 }
 
-CHOptimizedMethod(1, self, void, SBScreenShotter, saveScreenshot, BOOL, something)
+%end
+
+%hook SBScreenShotter
+
+- (void)saveScreenshot:(BOOL)something
 {
 	justTookScreenshot = YES;
-	CHSuper(1, SBScreenShotter, saveScreenshot, something);
+	%orig;
 }
 
-CHOptimizedMethod(2, self, void, SBIconController, scrollToIconListAtIndex, NSInteger, index, animate, BOOL, animate)
+%end
+
+%hook SBIconController
+
+- (void)scrollToIconListAtIndex:(NSInteger)index animate:(BOOL)animate
 {
 	if (shouldInterceptMenuPresses) {
 		shouldInterceptMenuPresses = NO;
 		if ([LASendEventWithName(LAEventNameMenuPressSingle) isHandled])
 			return;
 	}
-	CHSuper(2, SBIconController, scrollToIconListAtIndex, index, animate, animate);
+	%orig;
 }
+
+%end
 
 static BOOL hasSentPinchSpread;
 
+%hook SBIconScrollView
 
-CHOptimizedMethod(1, super, id, SBIconScrollView, initWithFrame, CGRect, frame)
+- (id)initWithFrame:(CGRect)frame
 {
-	if ((self = CHSuper(1, SBIconScrollView, initWithFrame, frame))) {
+	if ((self = %orig)) {
 		// Add Pinch Gesture by allowing a nonstandard zoom (reuse the existing gesture)
 		[self setMinimumZoomScale:0.95f];
 	}
 	return self;
 }
 
-CHOptimizedMethod(2, super, void, SBIconScrollView, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	hasSentPinchSpread = NO;
-	CHSuper(2, SBIconScrollView, touchesBegan, touches, withEvent, event);
+	%orig;
 }
 
-CHOptimizedMethod(1, super, void, SBIconScrollView, handlePinch, UIPinchGestureRecognizer *, pinchGesture)
+- (void)handlePinch:(UIPinchGestureRecognizer *)pinchGesture
 {
 	if (!hasSentPinchSpread) {
 		CGFloat scale = [pinchGesture scale];
@@ -1210,11 +1177,14 @@ CHOptimizedMethod(1, super, void, SBIconScrollView, handlePinch, UIPinchGestureR
 	}
 }
 
+%end
 
-CHOptimizedMethod(0, self, id, SBIcon, initWithDefaultSize)
+%hook SBIcon
+
+- (id)initWithDefaultSize
 {
 	// Enable multitouch
-	if ((self = CHSuper(0, SBIcon, initWithDefaultSize))) {
+	if ((self = %orig)) {
 		[self setMultipleTouchEnabled:YES];
 	}
 	return self;
@@ -1224,15 +1194,15 @@ CHOptimizedMethod(0, self, id, SBIcon, initWithDefaultSize)
 static NSInteger lastTouchesCount;
 static CGFloat startingDistanceSquared;
 
-CHOptimizedMethod(2, self, void, SBIcon, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	lastTouchesCount = 1;
-	NSArray *switcherIcons = [[CHSharedInstance(SBAppSwitcherController) _currentIcons] allValues];
+	NSArray *switcherIcons = [[(SBAppSwitcherController *)[%c(SBAppSwitcherController) sharedInstance] _currentIcons] allValues];
 	hasSentPinchSpread = switcherIcons && ([switcherIcons indexOfObjectIdenticalTo:self] != NSNotFound);
-	CHSuper(2, SBIcon, touchesBegan, touches, withEvent, event);
+	%orig;
 }
 
-CHOptimizedMethod(2, self, void, SBIcon, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	if (!hasSentPinchSpread) {
 		NSArray *allTouches = [[event allTouches] allObjects];
@@ -1258,8 +1228,10 @@ CHOptimizedMethod(2, self, void, SBIcon, touchesMoved, NSSet *, touches, withEve
 		}
 		lastTouchesCount = allTouchesCount;
 	}
-	CHSuper(2, SBIcon, touchesMoved, touches, withEvent, event);
+	%orig;
 }
+
+%end
 
 static CGPoint statusBarTouchDown;
 static BOOL hasSentStatusBarEvent;
@@ -1302,8 +1274,9 @@ static void StatusBarTapCallback(CFRunLoopTimerRef timer, void *info)
 	}
 }
 
+%hook SBStatusBar
 
-CHOptimizedMethod(2, self, void, SBStatusBar, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	DestroyCurrentStatusBarHoldTimer();
 	DestroyCurrentStatusBarTapTimer();
@@ -1311,10 +1284,10 @@ CHOptimizedMethod(2, self, void, SBStatusBar, touchesBegan, NSSet *, touches, wi
 	CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarHoldTimer, kCFRunLoopCommonModes);
 	statusBarTouchDown = [[touches anyObject] locationInView:self];
 	hasSentStatusBarEvent = NO;
-	CHSuper(2, SBStatusBar, touchesBegan, touches, withEvent, event);
+	%orig;
 }
 
-CHOptimizedMethod(2, self, void, SBStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	if (!hasSentStatusBarEvent) {
 		DestroyCurrentStatusBarHoldTimer();
@@ -1337,10 +1310,10 @@ CHOptimizedMethod(2, self, void, SBStatusBar, touchesMoved, NSSet *, touches, wi
 			}
 		}
 	}
-	CHSuper(2, SBStatusBar, touchesMoved, touches, withEvent, event);
+	%orig;
 }
 
-CHOptimizedMethod(2, self, void, SBStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	DestroyCurrentStatusBarHoldTimer();
 	DestroyCurrentStatusBarTapTimer();
@@ -1352,20 +1325,31 @@ CHOptimizedMethod(2, self, void, SBStatusBar, touchesEnded, NSSet *, touches, wi
 			CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarTapTimer, kCFRunLoopCommonModes);
 		}
 	}
-	CHSuper(2, SBStatusBar, touchesEnded, touches, withEvent, event);
+	%orig;
 }
 
-CHOptimizedMethod(2, super, void, UIStatusBar, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
+%end
+
+%hook UIStatusBar
+
+static BOOL passThroughStatusBar;
+
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
-	DestroyCurrentStatusBarHoldTimer();
-	DestroyCurrentStatusBarTapTimer();
-	statusBarHoldTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarHoldDelay, 0.0, 0, 0, StatusBarHeldCallback, NULL);
-	CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarHoldTimer, kCFRunLoopCommonModes);
-	statusBarTouchDown = [[touches anyObject] locationInView:self];
-	hasSentStatusBarEvent = NO;
+	if (passThroughStatusBar) {
+		passThroughStatusBar = NO;
+		%orig;
+	} else {
+		DestroyCurrentStatusBarHoldTimer();
+		DestroyCurrentStatusBarTapTimer();
+		statusBarHoldTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarHoldDelay, 0.0, 0, 0, StatusBarHeldCallback, NULL);
+		CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarHoldTimer, kCFRunLoopCommonModes);
+		statusBarTouchDown = [[touches anyObject] locationInView:self];
+		hasSentStatusBarEvent = NO;
+	}
 }
 
-CHOptimizedMethod(2, super, void, UIStatusBar, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	if (!hasSentStatusBarEvent) {
 		DestroyCurrentStatusBarHoldTimer();
@@ -1390,7 +1374,7 @@ CHOptimizedMethod(2, super, void, UIStatusBar, touchesMoved, NSSet *, touches, w
 	}
 }
 
-CHOptimizedMethod(2, self, void, UIStatusBar, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	DestroyCurrentStatusBarHoldTimer();
 	DestroyCurrentStatusBarTapTimer();
@@ -1400,27 +1384,32 @@ CHOptimizedMethod(2, self, void, UIStatusBar, touchesEnded, NSSet *, touches, wi
 		else {
 			statusBarTapTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarTapDelay, 0.0, 0, 0, StatusBarTapCallback, NULL);
 			CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarTapTimer, kCFRunLoopCommonModes);
-			CHSuper(2, UIStatusBar, touchesBegan, touches, withEvent, event);
-			CHSuper(2, UIStatusBar, touchesEnded, touches, withEvent, event);
+			passThroughStatusBar = YES;
+			[self touchesBegan:touches withEvent:event];
+			%orig;
 		}
 	}
 }
+
+%end
 
 static NSInteger nowPlayingButtonIndex;
 
-CHOptimizedMethod(0, super, UIAlertView *, SBNowPlayingAlertItem, createFrontAlertSheet)
+%hook SBNowPlayingAlertItem
+
+- (UIAlertView *)createFrontAlertSheet
 {
 	nowPlayingButtonIndex = -1000;
-	return CHSuper(0, SBNowPlayingAlertItem, createFrontAlertSheet);
+	return %orig;
 }
 
-CHOptimizedMethod(2, super, void, SBNowPlayingAlertItem, configure, BOOL, front, requirePasscodeForActions, BOOL, requirePasscode)
+- (void)configure:(BOOL)front requirePasscodeForActions:(BOOL)requirePasscode
 {
 	if (shouldAddNowPlayingButton && nowPlayingButtonIndex == -1000) {
 		LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
 		NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
 		if (listenerName && ![listenerName isEqualToString:@"libactivator.ipod.music-controls"]) {
-			CHSuper(2, SBNowPlayingAlertItem, configure, front, requirePasscodeForActions, requirePasscode);
+			%orig;
 			NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
 			NSString *title = [LASharedActivator localizedTitleForListenerName:listenerName];
 			id alertSheet = [self alertSheet];
@@ -1436,20 +1425,20 @@ CHOptimizedMethod(2, super, void, SBNowPlayingAlertItem, configure, BOOL, front,
 	}
 	nowPlayingButtonIndex = -1000;
 	if ([[LASharedActivator currentEventMode] isEqualToString:LAEventModeLockScreen]) {
-		CHSuper(2, SBNowPlayingAlertItem, configure, front, requirePasscodeForActions, requirePasscode);
+		%orig;
 		[[[[self alertSheet] buttons] objectAtIndex:1] setHidden:YES];
 	} else {
-		CHSuper(2, SBNowPlayingAlertItem, configure, front, requirePasscodeForActions, requirePasscode);
+		%orig;
 	}
 }
 
-CHOptimizedMethod(2, super, void, SBNowPlayingAlertItem, configureFront, BOOL, front, requirePasscodeForActions, BOOL, requirePasscode)
+- (void)configureFront:(BOOL)front requirePasscodeForActions:(BOOL)requirePasscode
 {
 	if (shouldAddNowPlayingButton && nowPlayingButtonIndex == -1000) {
 		LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressDouble];
 		NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
 		if (listenerName && ![listenerName isEqualToString:@"libactivator.ipod.music-controls"]) {
-			CHSuper(2, SBNowPlayingAlertItem, configureFront, front, requirePasscodeForActions, requirePasscode);
+			%orig;
 			NSString *listenerName = [LASharedActivator assignedListenerNameForEvent:event];
 			NSString *title = [LASharedActivator localizedTitleForListenerName:listenerName];
 			id alertSheet = [self alertSheet];
@@ -1465,38 +1454,46 @@ CHOptimizedMethod(2, super, void, SBNowPlayingAlertItem, configureFront, BOOL, f
 	}
 	nowPlayingButtonIndex = -1000;
 	if ([[LASharedActivator currentEventMode] isEqualToString:LAEventModeLockScreen]) {
-		CHSuper(2, SBNowPlayingAlertItem, configureFront, front, requirePasscodeForActions, requirePasscode);
+		%orig;
 		[[[[self alertSheet] buttons] objectAtIndex:1] setHidden:YES];
 	} else {
-		CHSuper(2, SBNowPlayingAlertItem, configureFront, front, requirePasscodeForActions, requirePasscode);
+		%orig;
 	}
 }
 
-CHOptimizedMethod(2, self, void, SBNowPlayingAlertItem, alertSheet, id, sheet, buttonClicked, NSInteger, buttonIndex)
+- (void)alertSheet:(id)sheet buttonClicked:(NSInteger)buttonIndex
 {
 	if (buttonIndex == nowPlayingButtonIndex + 1)
 		LASendEventWithName(LAEventNameMenuPressDouble);
 	else
-		CHSuper(2, SBNowPlayingAlertItem, alertSheet, sheet, buttonClicked, buttonIndex);
+		%orig;
 }
 
-CHOptimizedMethod(0, self, id, SBVoiceControlAlert, initFromMenuButton)
+%end
+
+%hook SBVoiceControlAlert
+
+- (id)initFromMenuButton
 {
 	if (menuEventToAbort) {
 		LAAbortEvent(menuEventToAbort);
 		[menuEventToAbort release];
 		menuEventToAbort = nil;
 	}
-	return CHSuper(0, SBVoiceControlAlert, initFromMenuButton);
+	return %orig;
 }
 
-CHOptimizedMethod(0, self, void, SBAwayController, playLockSound)
+%end
+
+%hook SBAwayController
+
+- (void)playLockSound
 {
 	if (!shouldSuppressLockSound)
-		CHSuper(0, SBAwayController, playLockSound);
+		%orig;
 }
 
-CHOptimizedMethod(0, self, BOOL, SBAwayController, handleMenuButtonTap)
+- (BOOL)handleMenuButtonTap
 {
 	NSString *mode = [LASharedActivator currentEventMode];
 	LAEvent *event = [LAEvent eventWithName:LAEventNameMenuPressSingle mode:mode];
@@ -1506,36 +1503,40 @@ CHOptimizedMethod(0, self, BOOL, SBAwayController, handleMenuButtonTap)
 	[LASharedActivator sendEventToListener:event];
 	if ([event isHandled])
 		return YES;
-	return CHSuper(0, SBAwayController, handleMenuButtonTap);
+	return %orig;
 }
 
-CHOptimizedMethod(0, self, void, SBAwayController, _sendLockStateChangedNotification)
+- (void)_sendLockStateChangedNotification
 {
 	[LASlideGestureWindow updateVisibility];
-	CHSuper(0, SBAwayController, _sendLockStateChangedNotification);
+	%orig;
 }
+
+%end
 
 static CFAbsoluteTime lastAwayDateLastTime;
 static NSInteger lastAwayDateTapCount;
 
-CHOptimizedMethod(2, super, void, SBAwayDateView, touchesBegan, NSSet *, touches, withEvent, UIEvent *, event)
+%hook SBAwayDateView
+
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
 	if (lastAwayDateLastTime + 0.333 < currentTime)
 		lastAwayDateTapCount = 0;
 	lastAwayDateTapCount++;
 	lastAwayDateLastTime = currentTime;
-	CHSuper(2, SBAwayDateView, touchesBegan, touches, withEvent, event);
+	%orig;
 }
 
-CHOptimizedMethod(2, super, void, SBAwayDateView, touchesMoved, NSSet *, touches, withEvent, UIEvent *, event)
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	lastAwayDateTapCount = 0;
 	lastAwayDateLastTime = 0.0;
-	CHSuper(2, SBAwayDateView, touchesMoved, touches, withEvent, event);
+	%orig;
 }
 
-CHOptimizedMethod(2, super, void, SBAwayDateView, touchesEnded, NSSet *, touches, withEvent, UIEvent *, event)
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	CFAbsoluteTime currentTime = CFAbsoluteTimeGetCurrent();
 	if (lastAwayDateLastTime + 0.333 < currentTime) {
@@ -1546,20 +1547,24 @@ CHOptimizedMethod(2, super, void, SBAwayDateView, touchesEnded, NSSet *, touches
 		if (lastAwayDateTapCount == 2)
 			LASendEventWithName(LAEventNameLockScreenClockDoubleTap);
 	}
-	CHSuper(2, SBAwayDateView, touchesEnded, touches, withEvent, event);
+	%orig;
 }
 
-CHOptimizedMethod(2, super, void, SBAwayDateView, touchesCancelled, NSSet *, touches, withEvent, UIEvent *, event)
+- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	lastAwayDateTapCount = 0;
 	lastAwayDateLastTime = 0.0;
-	CHSuper(2, SBAwayDateView, touchesCancelled, touches, withEvent, event);
+	%orig;
 }
 
-CHOptimizedMethod(0, self, void, VolumeControl, _createUI)
+%end
+
+%hook VolumeControl
+
+- (void)_createUI
 {
 	if (LAListenerForEventWithName(LAEventNameVolumeDisplayTap)) {
-		CHSuper(0, VolumeControl, _createUI);
+		%orig;
 		UIView **view = CHIvarRef(self, _volumeView, UIView *);
 		if (view && *view) {
 			ShowVolumeTapWindow(*view);
@@ -1569,32 +1574,38 @@ CHOptimizedMethod(0, self, void, VolumeControl, _createUI)
 				ShowVolumeTapWindow(window);
 		}
 	} else {
-		CHSuper(0, VolumeControl, _createUI);
+		%orig;
 	}
 }
 
-CHOptimizedMethod(0, self, void, VolumeControl, _tearDown)
+- (void)_tearDown
 {
 	HideVolumeTapWindow();
-	CHSuper(0, VolumeControl, _tearDown);
+	%orig;
 }
 
-CHOptimizedMethod(0, super, void, SBVolumeHUDView, didMoveToWindow)
+%end
+
+%hook SBVolumeHUDView
+
+- (void)didMoveToWindow
 {
 	UIWindow *window = [self window];
 	if (window)
 		ShowVolumeTapWindow(self);
 	else
 		HideVolumeTapWindow();
-	CHSuper(0, SBVolumeHUDView, didMoveToWindow);
+	%orig;
 }
 
-CHDeclareClass(UIFenceController)
+%end
 
-CHOptimizedMethod(0, self, NSSet *, UIFenceController, _fenceableWindows)
+%hook UIFenceController
+
+- (NSSet *)_fenceableWindows
 {
 	// Don't fence our slider windows that way rotation animation will be immediate
-	NSMutableSet *result = [[CHSuper(0, UIFenceController, _fenceableWindows) mutableCopy] autorelease];
+	NSMutableSet *result = [[%orig mutableCopy] autorelease];
 	if (leftSlideGestureWindow)
 		[result removeObject:leftSlideGestureWindow];
 	if (middleSlideGestureWindow)
@@ -1604,117 +1615,14 @@ CHOptimizedMethod(0, self, NSSet *, UIFenceController, _fenceableWindows)
 	return result;
 }
 
-CHConstructor
+%end
+
+%ctor
 {
-	CHAutoreleasePoolForScope();
-	if (CHLoadLateClass(UIStatusBar)) {
-		CHHook(2, UIStatusBar, touchesBegan, withEvent);
-		CHHook(2, UIStatusBar, touchesMoved, withEvent);
-		CHHook(2, UIStatusBar, touchesEnded, withEvent);
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	{
+		%init(SBIcon = objc_getClass("SBIconView") ?: objc_getClass("SBIcon"));
 	}
-	
-	if (CHLoadLateClass(SpringBoard)) {
-		CHHook(1, SpringBoard, ringerChanged);
-		//CHHook(0, SpringBoard, systemWillSleep);
-		//CHHook(0, SpringBoard, undim);
-		CHHook(0, SpringBoard, _performDelayedHeadsetAction);
-		CHHook(1, SpringBoard, headsetButtonDown);
-		CHHook(1, SpringBoard, headsetButtonUp);
-		CHHook(0, SpringBoard, _handleMenuButtonEvent);
-		CHHook(1, SpringBoard, respondImmediatelyToMenuSingleTapAllowingDoubleTap);
-		CHHook(0, SpringBoard, allowMenuDoubleTap);
-		CHHook(0, SpringBoard, handleMenuDoubleTap);
-		CHHook(0, SpringBoard, isLocked);
-		CHHook(1, SpringBoard, lockButtonDown);
-		CHHook(0, SpringBoard, activatorFixStatusBar);
-		CHHook(1, SpringBoard, resetIdleTimerAndUndim);
-		CHHook(1, SpringBoard, lockButtonUp);
-		CHHook(0, SpringBoard, lockButtonWasHeld);
-		CHHook(0, SpringBoard, activatorLockButtonHoldCompleted);
-		CHHook(0, SpringBoard, activatorLockButtonDoubleTapAborted);
-		CHHook(1, SpringBoard, menuButtonDown);
-		CHHook(1, SpringBoard, menuButtonUp);
-		CHHook(0, SpringBoard, menuButtonWasHeld);
-		CHHook(0, SpringBoard, _menuButtonWasHeld);
-		CHHook(0, SpringBoard, activatorMenuButtonTimerCompleted);
-		CHHook(1, SpringBoard, volumeChanged);
-		CHHook(0, SpringBoard, _showEditAlertView);
-		CHHook(1, SpringBoard, _sendMotionEnded);
-		
-		CHLoadLateClass(SBUIController);
-		CHHook(0, SBUIController, clickedMenuButton);
-		CHHook(0, SBUIController, finishLaunching);
-		CHHook(0, SBUIController, tearDownIconListAndBar);
-		CHHook(1, SBUIController, restoreIconList);
-		CHHook(0, SBUIController, lock);
-		CHHook(1, SBUIController, lockFromSource);
-		CHHook(0, SBUIController, _toggleSwitcher);
-		CHHook(0, SBUIController, ACPowerChanged);
-	
-		CHLoadLateClass(SBScreenShotter);
-		CHHook(1, SBScreenShotter, saveScreenshot);
-	
-		CHLoadLateClass(SBIconController);
-		CHHook(2, SBIconController, scrollToIconListAtIndex, animate);
-		
-		CHLoadLateClass(SBIconScrollView);
-		CHHook(1, SBIconScrollView, initWithFrame);
-		CHHook(2, SBIconScrollView, touchesBegan, withEvent);
-		CHHook(1, SBIconScrollView, handlePinch);
-		
-		CHClass(SBIcon) = objc_getClass("SBIconView") ?: objc_getClass("SBIcon");
-		CHMetaClass(SBIcon) = object_getClass(CHClass(SBIcon));
-		CHSuperClass(SBIcon) = class_getSuperclass(CHClass(SBIcon));
-		CHHook(0, SBIcon, initWithDefaultSize);
-		CHHook(2, SBIcon, touchesBegan, withEvent);
-		CHHook(2, SBIcon, touchesMoved, withEvent);
-		
-		CHLoadLateClass(SBStatusBar);
-		CHHook(2, SBStatusBar, touchesBegan, withEvent);
-		CHHook(2, SBStatusBar, touchesMoved, withEvent);
-		CHHook(2, SBStatusBar, touchesEnded, withEvent);
-		
-		CHLoadLateClass(SBNowPlayingAlertItem);
-		CHHook(0, SBNowPlayingAlertItem, createFrontAlertSheet);
-		CHHook(2, SBNowPlayingAlertItem, configure, requirePasscodeForActions);
-		CHHook(2, SBNowPlayingAlertItem, configureFront, requirePasscodeForActions);
-		CHHook(2, SBNowPlayingAlertItem, alertSheet, buttonClicked);
-		
-		CHLoadLateClass(SBVoiceControlAlert);
-		CHHook(0, SBVoiceControlAlert, initFromMenuButton);
-		
-		CHLoadLateClass(SBAwayController);
-		CHHook(0, SBAwayController, playLockSound);
-		CHHook(0, SBAwayController, handleMenuButtonTap);
-		CHHook(0, SBAwayController, _sendLockStateChangedNotification);
-
-		CHLoadLateClass(SBAwayDateView);	
-		CHHook(2, SBAwayDateView, touchesBegan, withEvent);
-		CHHook(2, SBAwayDateView, touchesMoved, withEvent);
-		CHHook(2, SBAwayDateView, touchesEnded, withEvent);
-		CHHook(2, SBAwayDateView, touchesCancelled, withEvent);
-
-		CHLoadLateClass(VolumeControl);
-		CHHook(0, VolumeControl, _createUI);
-		CHHook(0, VolumeControl, _tearDown);
-		
-		CHLoadLateClass(SBVolumeHUDView);
-		if (CHClass(SBVolumeHUDView))
-			CHHook(0, SBVolumeHUDView, didMoveToWindow);
-	
-		CHLoadLateClass(iHome);
-		if (CHClass(iHome))
-			CHHook(0, iHome, inject);
-
-		CHLoadLateClass(UIFenceController);
-		CHHook(0, UIFenceController, _fenceableWindows);
-			
-		CHLoadLateClass(SBAppSwitcherController);
-		
-		CHLoadLateClass(SBStatusBarController);
-		CHLoadLateClass(SBRemoteLocalNotificationAlert);
-		CHLoadLateClass(SBAlertItemsController);
-		CHLoadLateClass(SBAlert);
-		[[LAVersionChecker class] performSelector:@selector(checkVersion) withObject:nil afterDelay:0.1];
-	}
+	[[LAVersionChecker class] performSelector:@selector(checkVersion) withObject:nil afterDelay:0.1];
+	[pool drain];
 }
