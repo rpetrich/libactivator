@@ -3,7 +3,6 @@
 #import "SimulatorCompat.h"
 
 #import <UIKit/UIKit.h>
-#import <CaptainHook/CaptainHook.h>
 #import <SpringBoard/SpringBoard.h>
 
 #include <notify.h>
@@ -36,8 +35,11 @@ static UIAlertView *alertView;
 
 + (void)initialize
 {
-	CHAutoreleasePoolForScope();
-	sharedInstance = [[self alloc] init];
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	if (self == [LAToggleListener class]) {
+		sharedInstance = [[self alloc] init];
+	}
+	[pool drain];
 }
 
 + (id)sharedInstance

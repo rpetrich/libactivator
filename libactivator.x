@@ -5,7 +5,6 @@
 #import "SimulatorCompat.h"
 
 #import <SpringBoard/SpringBoard.h>
-#import <CaptainHook/CaptainHook.h>
 #import <AppSupport/AppSupport.h>
 
 #include <objc/runtime.h>
@@ -19,8 +18,6 @@ NSString * const LAEventModeApplication = @"application";
 NSString * const LAEventModeLockScreen  = @"lockscreen";
 
 LAActivator *LASharedActivator;
-
-CHDeclareClass(SBIconController);
 
 #define ListenerKeyForEventNameAndMode(eventName, eventMode) \
 	[NSString stringWithFormat:@"LAEventListener(%@)-%@", (eventMode), (eventName)]
@@ -49,7 +46,7 @@ static inline CPDistributedMessagingCenter *GetMessagingCenter()
 
 static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 {
-	CHAutoreleasePoolForScope();
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	void *symbols[2];
 	size_t size = backtrace(symbols, 2);
 	NSString *culprit;
@@ -67,6 +64,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 		nil];
 	[LASharedActivator performSelector:@selector(apiFailWithCulpritDictionary:) withObject:culpritDictionary afterDelay:0.0];
 	NSLog(@"Activator: %@ called -[LAActivator %s] from outside SpringBoard. This is invalid!", culprit, _cmd);
+	[pool drain];
 }
 
 #define LAInvalidSpringBoardOperation() LAInvalidSpringBoardOperation(_cmd)
@@ -571,9 +569,10 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 
 @end
 
-CHConstructor
+%ctor
 {
-	CHAutoreleasePoolForScope();
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	%init;
 	if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.Preferences"]) {
 		// Prevent disabling PreferenceLoader
 		// This has come up quite often where users can't get back in to change their settings
@@ -584,7 +583,7 @@ CHConstructor
 		}
 	}
 	activatorBundle = [[NSBundle alloc] initWithPath:SCRootPath(@"/Library/Activator")];
-	if (CHLoadLateClass(SBIconController)) {
+	if (%c(SBIconController)) {
 		// Cache listener data
 		listenerData = [[NSMutableDictionary alloc] init];
 		NSString *listenersPath = SCRootPath(@"/Library/Activator/Listeners");
@@ -596,4 +595,5 @@ CHConstructor
 	} else {
 		LASharedActivator = [[LAActivator alloc] init];
 	}
+	[pool drain];
 }

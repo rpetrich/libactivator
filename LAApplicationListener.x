@@ -68,7 +68,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 - (BOOL)activateApplication:(SBApplication *)application;
 {
 	SBApplication *springBoard;
-	SBApplicationController *applicationController = (SBApplicationController *)%c[(SBApplicationController) sharedInstance];
+	SBApplicationController *applicationController = (SBApplicationController *)[%c(SBApplicationController) sharedInstance];
 	if ([applicationController respondsToSelector:@selector(springBoard)])
 		springBoard = [applicationController springBoard];
 	else

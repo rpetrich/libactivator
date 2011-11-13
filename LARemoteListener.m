@@ -1,7 +1,5 @@
 #import "libactivator-private.h"
 
-#import <CaptainHook/CaptainHook.h>
-
 static CPDistributedMessagingCenter *springboardCenter;
 static LARemoteListener *sharedInstance;
 

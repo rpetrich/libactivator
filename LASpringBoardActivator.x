@@ -1,8 +1,6 @@
 #import "libactivator-private.h"
 #import "LAApplicationListener.h"
 
-#import <CaptainHook/CaptainHook.h>
-
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -18,80 +16,11 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 @property (nonatomic, retain) SBProcess *process;
 @end
 
-CHDeclareClass(SBApplicationController);
-CHDeclareClass(SBAwayController);
-
 @implementation LASpringBoardActivator
 
 static void NewCydiaStatusChanged()
 {
 	[LASharedActivator _setObject:(id)kCFBooleanTrue forPreference:@"LAHasNewCydia"];
-}
-
-- (id)init
-{
-	if ((self = [super init])) {
-		CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
-		[messagingCenter runServerOnCurrentThread];
-		// Remote messages to id<LAListener> (with event)
-		[messagingCenter registerForMessageName:@"activator:receiveEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:abortEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
-		// Remote messages to id<LAListener> (without event)
-		[messagingCenter registerForMessageName:@"activator:requiresLocalizedTitleForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresLocalizedDescriptionForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresLocalizedGroupForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresRequiresAssignmentForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresCompatibleEventModesForListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresIsCompatibleWithEventName:listenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresInfoDictionaryValueOfKey:forListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		// Remote messages to id<LAListener> (without event, with scale pointer)
-		[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];			
-		// Remote messages to LAActivator
-		[messagingCenter registerForMessageName:@"isAlive" target:self selector:@selector(_handleRemoteIsAlive)];
-		[messagingCenter registerForMessageName:@"_cachedAndSortedListeners" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"availableEventNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"eventWithNameIsHidden:" target:self selector:@selector(_handleRemoteBoolMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"compatibleModesForEventWithName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"eventWithName:isCompatibleWithMode:" target:self selector:@selector(_handleRemoteBoolMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"localizedTitleForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"localizedGroupForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"localizedDescriptionForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		// Remote message to deactivate event
-		[messagingCenter registerForMessageName:@"sendDeactivateEventToListeners:" target:self selector:@selector(_handleRemoteDeactivateMessage:withUserInfo:)];
-		// Preferences
-		[messagingCenter registerForMessageName:@"setObjectForPreference" target:self selector:@selector(_setObjectForPreferenceFromMessageName:userInfo:)];
-		[messagingCenter registerForMessageName:@"getObjectForPreference" target:self selector:@selector(_getObjectForPreferenceFromMessageName:userInfo:)];
-		[messagingCenter registerForMessageName:@"resetPreferences" target:self selector:@selector(_resetPreferences)];
-		// Does not retain values!
-		_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
-		// Load preferences
-		if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]]))
-			_preferences = [[NSMutableDictionary alloc] init];
-		_eventData = [[NSMutableDictionary alloc] init];
-		// Load NewCydia notify check
-		notify_register_check("com.saurik.Cydia.status", &notify_token);
-		if (![[_preferences objectForKey:@"LAHasNewCydia"] boolValue]) {
-			CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (void *)NewCydiaStatusChanged, CFSTR("com.saurik.Cydia.status"), NULL, CFNotificationSuspensionBehaviorCoalesce);
-		}
-		CHLoadLateClass(SBApplicationController);
-		CHLoadLateClass(SBAwayController);
-	}
-	return self;
-}
-
-- (void)dealloc
-{
-	notify_cancel(notify_token);
-	[_cachedAndSortedListeners release];
-	[_eventData release];
-	[_preferences release];
-	[_listeners release];
-	[super dealloc];
 }
 
 - (NSDictionary *)_handleRemoteIsAlive
@@ -113,7 +42,7 @@ static void NewCydiaStatusChanged()
 
 - (BOOL)isDangerousToSendEvents
 {
-	SBApplication *application = [CHSharedInstance(SBApplicationController) applicationWithDisplayIdentifier:@"com.saurik.Cydia"];
+	SBApplication *application = [(SBApplicationController *)[%c(SBApplicationController) sharedInstance] applicationWithDisplayIdentifier:@"com.saurik.Cydia"];
 	if ([application respondsToSelector:@selector(process)]) {
 		if (![application process])
 			return NO;
@@ -357,9 +286,9 @@ static void NewCydiaStatusChanged()
 
 - (NSString *)currentEventMode
 {
-	if ([(SpringBoard *)[UIApplication sharedApplication] isLocked] || [[CHClass(SBAwayController) sharedAwayController] isMakingEmergencyCall])
+	if ([(SpringBoard *)[UIApplication sharedApplication] isLocked] || [[%c(SBAwayController) sharedAwayController] isMakingEmergencyCall])
 		return LAEventModeLockScreen;
-	/*if ([[CHSharedInstance(SBIconController) contentView] window])
+	/*if ([[(SBIconController *)[%c(SBIconController) sharedInstance] contentView] window])
 		return LAEventModeSpringBoard;
 	return LAEventModeApplication;*/
 	return [[LAApplicationListener sharedInstance] topApplication] ? LAEventModeApplication : LAEventModeSpringBoard;
@@ -442,6 +371,71 @@ static void NewCydiaStatusChanged()
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName
 {
 	return [[_eventData objectForKey:eventName] localizedDescriptionForEventName:eventName];
+}
+
+- (id)init
+{
+	if ((self = [super init])) {
+		CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+		[messagingCenter runServerOnCurrentThread];
+		// Remote messages to id<LAListener> (with event)
+		[messagingCenter registerForMessageName:@"activator:receiveEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"activator:abortEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
+		// Remote messages to id<LAListener> (without event)
+		[messagingCenter registerForMessageName:@"activator:requiresLocalizedTitleForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"activator:requiresLocalizedDescriptionForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"activator:requiresLocalizedGroupForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"activator:requiresRequiresAssignmentForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"activator:requiresCompatibleEventModesForListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"activator:requiresIsCompatibleWithEventName:listenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"activator:requiresInfoDictionaryValueOfKey:forListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
+		// Remote messages to id<LAListener> (without event, with scale pointer)
+		[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];			
+		// Remote messages to LAActivator
+		[messagingCenter registerForMessageName:@"isAlive" target:self selector:@selector(_handleRemoteIsAlive)];
+		[messagingCenter registerForMessageName:@"_cachedAndSortedListeners" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"availableEventNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"eventWithNameIsHidden:" target:self selector:@selector(_handleRemoteBoolMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"compatibleModesForEventWithName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"eventWithName:isCompatibleWithMode:" target:self selector:@selector(_handleRemoteBoolMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"localizedTitleForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"localizedGroupForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"localizedDescriptionForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+		// Remote message to deactivate event
+		[messagingCenter registerForMessageName:@"sendDeactivateEventToListeners:" target:self selector:@selector(_handleRemoteDeactivateMessage:withUserInfo:)];
+		// Preferences
+		[messagingCenter registerForMessageName:@"setObjectForPreference" target:self selector:@selector(_setObjectForPreferenceFromMessageName:userInfo:)];
+		[messagingCenter registerForMessageName:@"getObjectForPreference" target:self selector:@selector(_getObjectForPreferenceFromMessageName:userInfo:)];
+		[messagingCenter registerForMessageName:@"resetPreferences" target:self selector:@selector(_resetPreferences)];
+		// Does not retain values!
+		_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
+		// Load preferences
+		if (!(_preferences = [[NSMutableDictionary alloc] initWithContentsOfFile:[self settingsFilePath]]))
+			_preferences = [[NSMutableDictionary alloc] init];
+		_eventData = [[NSMutableDictionary alloc] init];
+		// Load NewCydia notify check
+		notify_register_check("com.saurik.Cydia.status", &notify_token);
+		if (![[_preferences objectForKey:@"LAHasNewCydia"] boolValue]) {
+			CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (void *)NewCydiaStatusChanged, CFSTR("com.saurik.Cydia.status"), NULL, CFNotificationSuspensionBehaviorCoalesce);
+		}
+		%init;
+	}
+	return self;
+}
+
+- (void)dealloc
+{
+	notify_cancel(notify_token);
+	[_cachedAndSortedListeners release];
+	[_eventData release];
+	[_preferences release];
+	[_listeners release];
+	[super dealloc];
 }
 
 @end
