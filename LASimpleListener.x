@@ -438,7 +438,7 @@ __attribute__((visibility("hidden")))
 {
 	SBBulletinListController *blc = (SBBulletinListController *)[%c(SBBulletinListController) sharedInstance];
 	if (blc) {
-		if ([blc listViewIsActive]) {
+		if (![blc listViewIsActive]) {
 			[blc showListViewAnimated:YES];
 			return YES;
 		}
