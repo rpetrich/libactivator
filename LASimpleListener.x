@@ -563,7 +563,7 @@ static UIWindow *tweetFormerKeyWindow;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.next-track"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.music-controls"];
 		// Phone
-		if (GSSystemHasCapability(CFSTR("telephony"))) {
+		if (GSSystemHasCapability(CFSTR("telephony")) && kCFCoreFoundationVersionNumber < 675.0) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.favorites"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.recents"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.contacts"];
