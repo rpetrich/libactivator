@@ -837,18 +837,22 @@ static BOOL performedFirstHoldEvent;
 
 static inline void IncreaseVolumeStep(VolumeControl *volumeControl)
 {
-	if ([volumeControl respondsToSelector:@selector(_changeVolumeBy:)])
+	if ([volumeControl respondsToSelector:@selector(_changeVolumeBy:)] && [%c(VolumeControl) respondsToSelector:@selector(volumeStep)])
 		[volumeControl _changeVolumeBy:[%c(VolumeControl) volumeStep]];
-	else
+	else {
 		[volumeControl increaseVolume];
+		[volumeControl cancelVolumeEvent];
+	}
 }
 
 static inline void DecreaseVolumeStep(VolumeControl *volumeControl)
 {
-	if ([volumeControl respondsToSelector:@selector(_changeVolumeBy:)])
+	if ([volumeControl respondsToSelector:@selector(_changeVolumeBy:)] && [%c(VolumeControl) respondsToSelector:@selector(volumeStep)])
 		[volumeControl _changeVolumeBy:-[%c(VolumeControl) volumeStep]];
-	else
+	else {
 		[volumeControl decreaseVolume];
+		[volumeControl cancelVolumeEvent];
+	}
 }
 
 static void DestroyCurrentVolumeButtonUpTimer()
