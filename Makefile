@@ -54,7 +54,7 @@ internal-stage::
 	- find $(THEOS_STAGING_DIR) -iname '*.plist' -or -iname '*.strings' -exec plutil -convert binary1 {} \;
 
 internal-after-install::
-	install.exec "sbreload || respring || killall -9 SpringBoard"
+	install.exec "respring || killall -9 SpringBoard"
 
 stage::
 	$(ECHO_NOTHING)./symlink_localizations.sh "$(FW_PROJECT_DIR)/Localization/$(LOCALIZATION_PROJECT_NAME)" "$(LOCALIZATION_DEST_PATH)" "$(FW_STAGING_DIR)/Applications/Activator.app"$(ECHO_END)
