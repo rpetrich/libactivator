@@ -165,7 +165,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 		return activator.availableEventModes;
 }
 
-- (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
+- (UIImage *)activator:(LAActivator *)activator requiresIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
 {
 	SBIcon *icon;
 	SBIconModel *iconModel = (SBIconModel *)[%c(SBIconModel) sharedInstance];
@@ -177,23 +177,11 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 	if ([icon respondsToSelector:@selector(getIconImage:)])
 		image = [icon getIconImage:1];
 	else
-		image = [icon icon];	
-	if (image) {
-		if ([image respondsToSelector:@selector(scale)])
-			*scale = [image scale];
-		return UIImagePNGRepresentation(image);
-	}
-	SBApplication *app = SBApp(listenerName);
-	if ([app respondsToSelector:@selector(pathForIcon)])
-		return [NSData dataWithContentsOfFile:[app pathForIcon]];
-	return nil;
+		image = [icon icon];
+	return image;
 }
-- (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName
-{
-	CGFloat scale = 1.0f;
-	return [self activator:activator requiresIconDataForListenerName:listenerName scale:&scale];
-}
-- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
+
+- (UIImage *)activator:(LAActivator *)activator requiresSmallIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
 {
 	SBIcon *icon;
 	SBIconModel *iconModel = (SBIconModel *)[%c(SBIconModel) sharedInstance];
@@ -208,12 +196,6 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 		image = [icon smallIcon];	
 	if (!image) {
 		SBApplication *app = SBApp(listenerName);
-		NSData *result;
-		if ([app respondsToSelector:@selector(pathForSmallIcon)]) {
-			result = [NSData dataWithContentsOfFile:[app pathForSmallIcon]];
-			if (result)
-				return result;
-		}
 		image = [icon icon];
 		if (!image) {
 			if (![app respondsToSelector:@selector(pathForIcon)])
@@ -228,14 +210,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 		CGFloat larger = (size.width > size.height) ? size.width : size.height;
 		image = [image _imageScaledToProportion:(29.0f / larger) interpolationQuality:kCGInterpolationDefault];
 	}
-	if ([image respondsToSelector:@selector(scale)])
-		*scale = [image scale];
-	return UIImagePNGRepresentation(image);
-}
-- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
-{
-	CGFloat scale = 1.0f;
-	return [self activator:activator requiresSmallIconDataForListenerName:listenerName scale:&scale];
+	return image;
 }
 
 @end

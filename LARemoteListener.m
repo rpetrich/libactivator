@@ -48,6 +48,17 @@ static LARemoteListener *sharedInstance;
 	return [result objectForKey:@"result"];
 }
 
+- (UIImage *)_performRemoteImageSelector:(SEL)selector withObject:(id)object withScale:(CGFloat)scale forListenerName:(NSString *)listenerName
+{
+	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:listenerName, @"listenerName", [NSNumber numberWithFloat:scale], @"scale", object, @"object", nil];
+	NSDictionary *result = [springboardCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
+	UIImage *image = [UIImage imageWithData:[result objectForKey:@"result"]];
+	if ([UIImage respondsToSelector:@selector(imageWithCGImage:scale:orientation:)]) {
+		image = [UIImage imageWithCGImage:image.CGImage scale:[[result objectForKey:@"scale"] floatValue] orientation:image.imageOrientation];
+	}
+	return image;
+}
+
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName
 {
 	return [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
@@ -76,7 +87,9 @@ static LARemoteListener *sharedInstance;
 }
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
-	return [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
+	// Read data without CPDistributedMessagingCenter if possible
+	return [super activator:activator requiresIconDataForListenerName:listenerName scale:scale]
+		?: [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
 }
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
 {
@@ -86,7 +99,9 @@ static LARemoteListener *sharedInstance;
 }
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
-	return [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
+	// Read data without CPDistributedMessagingCenter if possible
+	return [super activator:activator requiresSmallIconDataForListenerName:listenerName scale:scale]
+		?: [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
 }
 - (NSNumber *)activator:(LAActivator *)activator requiresIsCompatibleWithEventName:(NSString *)eventName listenerName:(NSString *)listenerName
 {
@@ -96,5 +111,16 @@ static LARemoteListener *sharedInstance;
 {
 	return [self _performRemoteSelector:_cmd withObject:key withObject:listenerName forListenerName:listenerName];
 }
+
+- (UIImage *)activator:(LAActivator *)activator requiresIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
+{
+	return [self _performRemoteImageSelector:_cmd withObject:listenerName withScale:scale forListenerName:listenerName];
+}
+
+- (UIImage *)activator:(LAActivator *)activator requiresSmallIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
+{
+	return [self _performRemoteImageSelector:_cmd withObject:listenerName withScale:scale forListenerName:listenerName];
+}
+
 
 @end

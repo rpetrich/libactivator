@@ -107,6 +107,23 @@ static void NewCydiaStatusChanged()
 	return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithFloat:scale], @"scale", result, @"result", nil];
 }
 
+- (NSDictionary *)_handleRemoteListenerImageScaleMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
+{
+	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
+	CGFloat scale = [[userInfo objectForKey:@"scale"] floatValue];
+	id<LAListener> listener = [self listenerForName:listenerName];
+	UIImage *image = objc_msgSend(listener, NSSelectorFromString(message), self, [userInfo objectForKey:@"object"], scale);
+	id result;
+	if (image) {
+		result = UIImagePNGRepresentation(image);
+		if ([image respondsToSelector:@selector(scale)])
+			scale = [image scale];
+	} else {
+		result = nil;
+	}
+	return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithFloat:scale], @"scale", result, @"result", nil];
+}
+
 - (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
 {
 	id withObject = [userInfo objectForKey:@"withObject"];
@@ -394,6 +411,9 @@ static void NewCydiaStatusChanged()
 		// Remote messages to id<LAListener> (without event, with scale pointer)
 		[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];			
+		// Remote messages to id<LAListener> (without event, with scale pointer, with UIImage return type)
+		[messagingCenter registerForMessageName:@"activator:requiresIconForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerImageScaleMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"activator:requiresSmallIconForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerImageScaleMessage:withUserInfo:)];			
 		// Remote messages to LAActivator
 		[messagingCenter registerForMessageName:@"isAlive" target:self selector:@selector(_handleRemoteIsAlive)];
 		[messagingCenter registerForMessageName:@"_cachedAndSortedListeners" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];

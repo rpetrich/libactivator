@@ -56,16 +56,21 @@
 }
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
+	NSData *result;
 	CGFloat scaleCopy = *scale;
 	if (scaleCopy != 1.0f) {
 		NSBundle *bundle = [listenerData objectForKey:listenerName];
-		NSData *result = [NSData dataWithContentsOfFile:[bundle pathForResource:[NSString stringWithFormat:@"icon@%.0fx", scaleCopy] ofType:@"png"]]
-		              ?: [NSData dataWithContentsOfFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon@%.0fx", scaleCopy] ofType:@"png"]];
+		result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon@%.0fx", scaleCopy] ofType:@"png"]];
 		if (result)
 			return result;
-		*scale = 1.0f;
 	}
-	return [self activator:activator requiresIconDataForListenerName:listenerName];
+	result = [self activator:activator requiresIconDataForListenerName:listenerName];
+	if (result) {
+		*scale = 1.0f;
+		return result;
+	}
+	return UIImagePNGRepresentation([self activator:activator requiresIconForListenerName:listenerName scale:*scale]);
 }
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
 {
@@ -75,16 +80,29 @@
 }
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
+	NSData *result;
 	CGFloat scaleCopy = *scale;
 	if (scaleCopy != 1.0f) {
 		NSBundle *bundle = [listenerData objectForKey:listenerName];
-		NSData *result = [NSData dataWithContentsOfFile:[bundle pathForResource:[NSString stringWithFormat:@"icon-small@%.0fx", scaleCopy] ofType:@"png"]]
-		              ?: [NSData dataWithContentsOfFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-small@%.0fx", scaleCopy] ofType:@"png"]];
+		result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon-small@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-small@%.0fx", scaleCopy] ofType:@"png"]];
 		if (result)
 			return result;
-		*scale = 1.0f;
 	}
-	return [self activator:activator requiresSmallIconDataForListenerName:listenerName];
+	result = [self activator:activator requiresSmallIconDataForListenerName:listenerName];
+	if (result) {
+		*scale = 1.0f;
+		return result;
+	}		
+	return UIImagePNGRepresentation([self activator:activator requiresSmallIconForListenerName:listenerName scale:*scale]);
+}
+- (UIImage *)activator:(LAActivator *)activator requiresIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
+{
+	return nil;
+}
+- (UIImage *)activator:(LAActivator *)activator requiresSmallIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
+{
+	return nil;
 }
 - (NSNumber *)activator:(LAActivator *)activator requiresIsCompatibleWithEventName:(NSString *)eventName listenerName:(NSString *)listenerName
 {

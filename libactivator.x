@@ -91,6 +91,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 		// Caches
 		_cachedListenerGroups = [[NSMutableDictionary alloc] init];
 		_cachedListenerTitles = [[NSMutableDictionary alloc] init];
+		_cachedListenerIcons = [[NSMutableDictionary alloc] init];
 		_cachedListenerSmallIcons = [[NSMutableDictionary alloc] init];
 		_listenerInstances = CFSetCreateMutable(kCFAllocatorDefault, 0, NULL);
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didReceiveMemoryWarning) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
@@ -104,6 +105,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 	if (_listenerInstances)
 		CFRelease(_listenerInstances);
 	[_cachedListenerSmallIcons release];
+	[_cachedListenerIcons release];
 	[_cachedListenerTitles release];
 	[_cachedListenerGroups release];
 	[_availableEventModes release];
@@ -113,6 +115,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 - (void)didReceiveMemoryWarning
 {
 	[_cachedListenerSmallIcons removeAllObjects];
+	[_cachedListenerIcons removeAllObjects];
 	[_cachedListenerTitles removeAllObjects];
 	[_cachedListenerGroups removeAllObjects];
 }
@@ -431,20 +434,35 @@ static UIAlertView *inCydiaAlert;
 
 - (UIImage *)iconForListenerName:(NSString *)listenerName
 {
-	return [UIImage imageWithData:[[self listenerForName:listenerName] activator:self requiresIconDataForListenerName:listenerName]];
+	UIImage *result = [_cachedListenerIcons objectForKey:listenerName];
+	if (!result) {
+		CGFloat scale = [UIScreen instancesRespondToSelector:@selector(scale)] ? [[UIScreen mainScreen] scale] : 1.0f;
+		id<LAListener> listener = [self listenerForName:listenerName];
+		result = [listener activator:self requiresIconForListenerName:listenerName scale:scale];
+		if (!result) {
+			NSData *data = [listener activator:self requiresIconDataForListenerName:listenerName scale:&scale];
+			result = [UIImage imageWithData:data];
+			if ([UIImage respondsToSelector:@selector(imageWithCGImage:scale:orientation:)])
+				result = [UIImage imageWithCGImage:result.CGImage scale:scale orientation:result.imageOrientation];
+		}
+		if (result)
+			[_cachedListenerIcons setObject:result forKey:listenerName];
+	}
+	return result;
 }
 
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName
 {
 	UIImage *result = [_cachedListenerSmallIcons objectForKey:listenerName];
 	if (!result) {
-		if ([UIImage respondsToSelector:@selector(imageWithData:scale:)]) {
-			CGFloat scale = [[UIScreen mainScreen] scale];
-			NSData *data = [[self listenerForName:listenerName] activator:self requiresSmallIconDataForListenerName:listenerName scale:&scale];
-			result = [UIImage imageWithData:data scale:scale];
-		} else {
-			NSData *data = [[self listenerForName:listenerName] activator:self requiresSmallIconDataForListenerName:listenerName];
+		CGFloat scale = [UIScreen instancesRespondToSelector:@selector(scale)] ? [[UIScreen mainScreen] scale] : 1.0f;
+		id<LAListener> listener = [self listenerForName:listenerName];
+		result = [listener activator:self requiresSmallIconForListenerName:listenerName scale:scale];
+		if (!result) {
+			NSData *data = [listener activator:self requiresSmallIconDataForListenerName:listenerName scale:&scale];
 			result = [UIImage imageWithData:data];
+			if ([UIImage respondsToSelector:@selector(imageWithCGImage:scale:orientation:)])
+				result = [UIImage imageWithCGImage:result.CGImage scale:scale orientation:result.imageOrientation];
 		}
 		if (result)
 			[_cachedListenerSmallIcons setObject:result forKey:listenerName];
