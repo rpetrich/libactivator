@@ -52,11 +52,29 @@ static LARemoteListener *sharedInstance;
 {
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:listenerName, @"listenerName", [NSNumber numberWithFloat:scale], @"scale", object, @"object", nil];
 	NSDictionary *result = [springboardCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
-	UIImage *image = [UIImage imageWithData:[result objectForKey:@"result"]];
-	if ([UIImage respondsToSelector:@selector(imageWithCGImage:scale:orientation:)]) {
-		image = [UIImage imageWithCGImage:image.CGImage scale:[[result objectForKey:@"scale"] floatValue] orientation:image.imageOrientation];
+	NSData *data = [result objectForKey:@"data"];
+	if (data) {
+		size_t width = [[result objectForKey:@"width"] longValue];
+		size_t height = [[result objectForKey:@"height"] longValue];
+		size_t bitsPerComponent = [[result objectForKey:@"bitsPerComponent"] longValue];
+		size_t bitsPerPixel = [[result objectForKey:@"bitsPerPixel"] longValue];
+		size_t bytesPerRow = [[result objectForKey:@"bytesPerRow"] longValue];
+		CGBitmapInfo bitmapInfo = [[result objectForKey:@"bitmapInfo"] longValue];
+		CGDataProviderRef provider = CGDataProviderCreateWithCFData((CFDataRef)data);
+		CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+		CGImageRef cgImage = CGImageCreate(width, height, bitsPerComponent, bitsPerPixel, bytesPerRow, colorSpace, bitmapInfo, provider, NULL, false, kCGRenderingIntentDefault);
+		CGColorSpaceRelease(colorSpace);
+		CGDataProviderRelease(provider);
+		UIImage *image = [UIImage imageWithData:[result objectForKey:@"result"]];
+		if ([UIImage respondsToSelector:@selector(imageWithCGImage:scale:orientation:)]) {
+			image = [UIImage imageWithCGImage:cgImage scale:[[result objectForKey:@"scale"] floatValue] orientation:[[result objectForKey:@"orientation"] longValue]];
+		} else {
+			image = [UIImage imageWithCGImage:cgImage];
+		}
+		CGImageRelease(cgImage);
+		return image;
 	}
-	return image;
+	return nil;
 }
 
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName

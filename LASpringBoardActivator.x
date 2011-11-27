@@ -113,15 +113,32 @@ static void NewCydiaStatusChanged()
 	CGFloat scale = [[userInfo objectForKey:@"scale"] floatValue];
 	id<LAListener> listener = [self listenerForName:listenerName];
 	UIImage *image = objc_msgSend(listener, NSSelectorFromString(message), self, [userInfo objectForKey:@"object"], scale);
-	id result;
 	if (image) {
-		result = UIImagePNGRepresentation(image);
+		CGImageRef cgImage = image.CGImage;
+		size_t width = CGImageGetWidth(cgImage);
+		size_t height = CGImageGetHeight(cgImage);
+		size_t bitsPerComponent = CGImageGetBitsPerComponent(cgImage);
+		size_t bitsPerPixel = CGImageGetBitsPerPixel(cgImage);
+		size_t bytesPerRow = CGImageGetBytesPerRow(cgImage);
+		CGBitmapInfo bitmapInfo = CGImageGetBitmapInfo(cgImage);
+		CFDataRef data = CGDataProviderCopyData(CGImageGetDataProvider(cgImage));
 		if ([image respondsToSelector:@selector(scale)])
 			scale = [image scale];
+		UIImageOrientation orientation = image.imageOrientation;
+		return [NSDictionary dictionaryWithObjectsAndKeys:
+			[NSNumber numberWithFloat:scale], @"scale",
+			[NSNumber numberWithLong:orientation], @"orientation",
+			[NSNumber numberWithLong:width], @"width",
+			[NSNumber numberWithLong:height], @"height",
+			[NSNumber numberWithLong:bitsPerComponent], @"bitsPerComponent",
+			[NSNumber numberWithLong:bitsPerPixel], @"bitsPerPixel",
+			[NSNumber numberWithLong:bytesPerRow], @"bytesPerRow",
+			[NSNumber numberWithLong:bitmapInfo], @"bitmapInfo",
+			[(NSData *)data autorelease], @"data",
+			nil];
 	} else {
-		result = nil;
+		return [NSDictionary dictionary];
 	}
-	return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithFloat:scale], @"scale", result, @"result", nil];
 }
 
 - (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
