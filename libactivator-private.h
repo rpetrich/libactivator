@@ -2,6 +2,7 @@
 
 #import <SpringBoard/SpringBoard.h>
 #import <AppSupport/AppSupport.h>
+#import "SimulatorCompat.h"
 
 // libactivator.m
 
@@ -179,7 +180,18 @@ __attribute__((visibility("hidden")))
 
 
 __attribute__((visibility("hidden")))
-NSMutableDictionary *listenerData;
+NSMutableDictionary *listenerBundles;
+static inline NSBundle *ListenerBundle(NSString *listenerName) {
+	if (!listenerBundles) {
+		// Cache listener data
+		listenerBundles = [[NSMutableDictionary alloc] init];
+		NSString *listenersPath = SCRootPath(@"/Library/Activator/Listeners");
+		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:listenersPath error:NULL])
+			if (![fileName hasPrefix:@"."])
+				[listenerBundles setObject:[NSBundle bundleWithPath:[listenersPath stringByAppendingPathComponent:fileName]] forKey:fileName];
+	}
+	return [listenerBundles objectForKey:listenerName];
+}
 __attribute__((visibility("hidden")))
 NSBundle *activatorBundle;
 

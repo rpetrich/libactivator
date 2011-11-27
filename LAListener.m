@@ -3,6 +3,7 @@
 #import <CoreFoundation/CoreFoundation.h>
 
 @implementation NSObject(LAListener)
+
 - (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode
 {
 }
@@ -18,13 +19,13 @@
 
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName
 {
-	NSBundle *bundle = [listenerData objectForKey:listenerName];
+	NSBundle *bundle = ListenerBundle(listenerName);
 	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"title"] ?: listenerName;
 	return Localize(activatorBundle, [@"LISTENER_TITLE_" stringByAppendingString:listenerName], Localize(bundle, unlocalized, unlocalized) ?: listenerName);
 }
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedDescriptionForListenerName:(NSString *)listenerName
 {
-	NSBundle *bundle = [listenerData objectForKey:listenerName];
+	NSBundle *bundle = ListenerBundle(listenerName);
 	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"description"];
 	if (unlocalized)
 		return Localize(activatorBundle, [@"LISTENER_DESCRIPTION_" stringByAppendingString:listenerName], Localize(bundle, unlocalized, unlocalized));
@@ -34,7 +35,7 @@
 }
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedGroupForListenerName:(NSString *)listenerName
 {
-	NSBundle *bundle = [listenerData objectForKey:listenerName];
+	NSBundle *bundle = ListenerBundle(listenerName);
 	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"] ?: @"";
 	if ([unlocalized length] == 0)
 		return @"";
@@ -42,15 +43,15 @@
 }
 - (NSNumber *)activator:(LAActivator *)activator requiresRequiresAssignmentForListenerName:(NSString *)name
 {
-	return [[listenerData objectForKey:name] objectForInfoDictionaryKey:@"requires-event"];
+	return [ListenerBundle(name) objectForInfoDictionaryKey:@"requires-event"];
 }
 - (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)name
 {
-	return [[listenerData objectForKey:name] objectForInfoDictionaryKey:@"compatible-modes"];
+	return [ListenerBundle(name) objectForInfoDictionaryKey:@"compatible-modes"];
 }
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName
 {
-	NSBundle *bundle = [listenerData objectForKey:listenerName];
+	NSBundle *bundle = ListenerBundle(listenerName);
 	return [NSData dataWithContentsOfFile:[bundle pathForResource:@"icon" ofType:@"png"]]
 		?: [NSData dataWithContentsOfFile:[bundle pathForResource:@"Icon" ofType:@"png"]];
 }
@@ -59,42 +60,38 @@
 	NSData *result;
 	CGFloat scaleCopy = *scale;
 	if (scaleCopy != 1.0f) {
-		NSBundle *bundle = [listenerData objectForKey:listenerName];
+		NSBundle *bundle = ListenerBundle(listenerName);
 		result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon@%.0fx", scaleCopy] ofType:@"png"]]
 		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon@%.0fx", scaleCopy] ofType:@"png"]];
 		if (result)
 			return result;
 	}
 	result = [self activator:activator requiresIconDataForListenerName:listenerName];
-	if (result) {
+	if (result)
 		*scale = 1.0f;
-		return result;
-	}
-	return UIImagePNGRepresentation([self activator:activator requiresIconForListenerName:listenerName scale:*scale]);
+	return result;
 }
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
 {
-	NSBundle *bundle = [listenerData objectForKey:listenerName];
-	return [NSData dataWithContentsOfFile:[bundle pathForResource:@"icon-small" ofType:@"png"]]
-		?: [NSData dataWithContentsOfFile:[bundle pathForResource:@"Icon-small" ofType:@"png"]];
+	NSBundle *bundle = ListenerBundle(listenerName);
+	return [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"icon-small" ofType:@"png"]]
+		?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon-small" ofType:@"png"]];
 }
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
 	NSData *result;
 	CGFloat scaleCopy = *scale;
 	if (scaleCopy != 1.0f) {
-		NSBundle *bundle = [listenerData objectForKey:listenerName];
+		NSBundle *bundle = ListenerBundle(listenerName);
 		result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon-small@%.0fx", scaleCopy] ofType:@"png"]]
 		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-small@%.0fx", scaleCopy] ofType:@"png"]];
 		if (result)
 			return result;
 	}
 	result = [self activator:activator requiresSmallIconDataForListenerName:listenerName];
-	if (result) {
+	if (result)
 		*scale = 1.0f;
-		return result;
-	}		
-	return UIImagePNGRepresentation([self activator:activator requiresSmallIconForListenerName:listenerName scale:*scale]);
+	return result;
 }
 - (UIImage *)activator:(LAActivator *)activator requiresIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
 {
@@ -106,7 +103,7 @@
 }
 - (NSNumber *)activator:(LAActivator *)activator requiresIsCompatibleWithEventName:(NSString *)eventName listenerName:(NSString *)listenerName
 {
-	return [[[listenerData objectForKey:listenerName] objectForInfoDictionaryKey:@"incompatible-events"] containsObject:eventName]
+	return [[ListenerBundle(listenerName) objectForInfoDictionaryKey:@"incompatible-events"] containsObject:eventName]
 		? (NSNumber *)kCFBooleanFalse
 		: (NSNumber *)kCFBooleanTrue;
 }
@@ -122,7 +119,7 @@
 		return [self activator:activator requiresRequiresAssignmentForListenerName:listenerName];
 	if ([key isEqualToString:@"compatible-modes"])
 		return [self activator:activator requiresCompatibleEventModesForListenerWithName:listenerName];
-	return [[listenerData objectForKey:listenerName] objectForInfoDictionaryKey:key];
+	return [ListenerBundle(listenerName) objectForInfoDictionaryKey:key];
 }
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event

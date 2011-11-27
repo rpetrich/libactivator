@@ -114,6 +114,8 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (void)didReceiveMemoryWarning
 {
+	[listenerBundles release];
+	listenerBundles = nil;
 	[_cachedListenerSmallIcons removeAllObjects];
 	[_cachedListenerIcons removeAllObjects];
 	[_cachedListenerTitles removeAllObjects];
@@ -602,12 +604,6 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 	}
 	activatorBundle = [[NSBundle alloc] initWithPath:SCRootPath(@"/Library/Activator")];
 	if (%c(SBIconController)) {
-		// Cache listener data
-		listenerData = [[NSMutableDictionary alloc] init];
-		NSString *listenersPath = SCRootPath(@"/Library/Activator/Listeners");
-		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:listenersPath error:NULL])
-			if (![fileName hasPrefix:@"."])
-				[listenerData setObject:[NSBundle bundleWithPath:[listenersPath stringByAppendingPathComponent:fileName]] forKey:fileName];
 		LASharedActivator = [[LASpringBoardActivator alloc] init];
 		[LADefaultEventDataSource sharedInstance];
 	} else {

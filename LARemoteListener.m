@@ -106,8 +106,22 @@ static LARemoteListener *sharedInstance;
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
 	// Read data without CPDistributedMessagingCenter if possible
-	return [super activator:activator requiresIconDataForListenerName:listenerName scale:scale]
-		?: [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
+	NSBundle *bundle = ListenerBundle(listenerName);
+	NSData *result;
+	CGFloat scaleCopy = *scale;
+	if (scaleCopy != 1.0f) {
+		result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon@%.0fx", scaleCopy] ofType:@"png"]];
+		if (result)
+			return result;
+	}
+	result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"icon" ofType:@"png"]]
+	      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon" ofType:@"png"]];
+	if (result) {
+		*scale = 1.0f;
+		return result;
+	}		
+	return [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
 }
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
 {
@@ -118,8 +132,22 @@ static LARemoteListener *sharedInstance;
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
 	// Read data without CPDistributedMessagingCenter if possible
-	return [super activator:activator requiresSmallIconDataForListenerName:listenerName scale:scale]
-		?: [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
+	NSBundle *bundle = ListenerBundle(listenerName);
+	NSData *result;
+	CGFloat scaleCopy = *scale;
+	if (scaleCopy != 1.0f) {
+		result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon-small@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-small@%.0fx", scaleCopy] ofType:@"png"]];
+		if (result)
+			return result;
+	}
+	result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"icon-small" ofType:@"png"]]
+	      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon-small" ofType:@"png"]];
+	if (result) {
+		*scale = 1.0f;
+		return result;
+	}		
+	return [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
 }
 - (NSNumber *)activator:(LAActivator *)activator requiresIsCompatibleWithEventName:(NSString *)eventName listenerName:(NSString *)listenerName
 {
