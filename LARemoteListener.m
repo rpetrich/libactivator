@@ -111,12 +111,16 @@ static LARemoteListener *sharedInstance;
 	CGFloat scaleCopy = *scale;
 	if (scaleCopy != 1.0f) {
 		result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon@%.0fx", scaleCopy] ofType:@"png"]]
-		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon@%.0fx", scaleCopy] ofType:@"png"]];
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon-fallback@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-fallback@%.0fx", scaleCopy] ofType:@"png"]];
 		if (result)
 			return result;
 	}
 	result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"icon" ofType:@"png"]]
-	      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon" ofType:@"png"]];
+	      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon" ofType:@"png"]]
+	      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"icon-fallback" ofType:@"png"]]
+	      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon-fallback" ofType:@"png"]];
 	if (result) {
 		*scale = 1.0f;
 		return result;
@@ -137,12 +141,16 @@ static LARemoteListener *sharedInstance;
 	CGFloat scaleCopy = *scale;
 	if (scaleCopy != 1.0f) {
 		result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon-small@%.0fx", scaleCopy] ofType:@"png"]]
-		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-small@%.0fx", scaleCopy] ofType:@"png"]];
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-small@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon-small-fallback@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-small-fallback@%.0fx", scaleCopy] ofType:@"png"]];
 		if (result)
 			return result;
 	}
 	result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"icon-small" ofType:@"png"]]
-	      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon-small" ofType:@"png"]];
+	      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon-small" ofType:@"png"]]
+	      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"icon-small-fallback" ofType:@"png"]]
+	      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon-small-fallback" ofType:@"png"]];
 	if (result) {
 		*scale = 1.0f;
 		return result;

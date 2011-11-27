@@ -62,7 +62,9 @@
 	if (scaleCopy != 1.0f) {
 		NSBundle *bundle = ListenerBundle(listenerName);
 		result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon@%.0fx", scaleCopy] ofType:@"png"]]
-		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon@%.0fx", scaleCopy] ofType:@"png"]];
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon-fallback@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-fallback@%.0fx", scaleCopy] ofType:@"png"]];
 		if (result)
 			return result;
 	}
@@ -75,7 +77,9 @@
 {
 	NSBundle *bundle = ListenerBundle(listenerName);
 	return [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"icon-small" ofType:@"png"]]
-		?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon-small" ofType:@"png"]];
+		?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon-small" ofType:@"png"]]
+		?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"icon-small-fallback" ofType:@"png"]]
+		?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:@"Icon-small-fallback" ofType:@"png"]];
 }
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
