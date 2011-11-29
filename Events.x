@@ -458,6 +458,8 @@ static void HideVolumeTapWindow()
 
 @end
 
+%group SpringBoard
+
 static CFAbsoluteTime lastRingerChangedTime;
 
 %hook SpringBoard
@@ -1334,69 +1336,6 @@ static void StatusBarTapCallback(CFRunLoopTimerRef timer, void *info)
 
 %end
 
-%hook UIStatusBar
-
-static BOOL passThroughStatusBar;
-
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
-{
-	if (passThroughStatusBar) {
-		passThroughStatusBar = NO;
-		%orig;
-	} else {
-		DestroyCurrentStatusBarHoldTimer();
-		DestroyCurrentStatusBarTapTimer();
-		statusBarHoldTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarHoldDelay, 0.0, 0, 0, StatusBarHeldCallback, NULL);
-		CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarHoldTimer, kCFRunLoopCommonModes);
-		statusBarTouchDown = [[touches anyObject] locationInView:self];
-		hasSentStatusBarEvent = NO;
-	}
-}
-
-- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
-{
-	if (!hasSentStatusBarEvent) {
-		DestroyCurrentStatusBarHoldTimer();
-		DestroyCurrentStatusBarTapTimer();
-		CGPoint currentPosition = [[touches anyObject] locationInView:self];
-		CGFloat deltaX = currentPosition.x - statusBarTouchDown.x;
-		CGFloat deltaY = currentPosition.y - statusBarTouchDown.y;
-		if ((deltaX * deltaX) > (deltaY * deltaY)) {
-			if (deltaX > kStatusBarHorizontalSwipeThreshold) {
-				hasSentStatusBarEvent = YES;
-				LASendEventWithName(LAEventNameStatusBarSwipeRight);
-			} else if (deltaX < -kStatusBarHorizontalSwipeThreshold) {
-				hasSentStatusBarEvent = YES;
-				LASendEventWithName(LAEventNameStatusBarSwipeLeft);
-			}
-		} else {
-			if (deltaY > kStatusBarVerticalSwipeThreshold) {
-				hasSentStatusBarEvent = YES;
-				LASendEventWithName(LAEventNameStatusBarSwipeDown);
-			}
-		}
-	}
-}
-
-- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
-{
-	DestroyCurrentStatusBarHoldTimer();
-	DestroyCurrentStatusBarTapTimer();
-	if (!hasSentStatusBarEvent) {
-		if ([[touches anyObject] tapCount] == 2)
-			LASendEventWithName(LAEventNameStatusBarTapDouble);
-		else {
-			statusBarTapTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarTapDelay, 0.0, 0, 0, StatusBarTapCallback, NULL);
-			CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarTapTimer, kCFRunLoopCommonModes);
-			passThroughStatusBar = YES;
-			[self touchesBegan:touches withEvent:event];
-			%orig;
-		}
-	}
-}
-
-%end
-
 static NSInteger nowPlayingButtonIndex;
 
 %hook SBNowPlayingAlertItem
@@ -1621,12 +1560,82 @@ static NSInteger lastAwayDateTapCount;
 
 %end
 
+%end
+
+%group All
+
+%hook UIStatusBar
+
+static BOOL passThroughStatusBar;
+
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	if (passThroughStatusBar) {
+		passThroughStatusBar = NO;
+		%orig;
+	} else {
+		DestroyCurrentStatusBarHoldTimer();
+		DestroyCurrentStatusBarTapTimer();
+		statusBarHoldTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarHoldDelay, 0.0, 0, 0, StatusBarHeldCallback, NULL);
+		CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarHoldTimer, kCFRunLoopCommonModes);
+		statusBarTouchDown = [[touches anyObject] locationInView:self];
+		hasSentStatusBarEvent = NO;
+	}
+}
+
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	if (!hasSentStatusBarEvent) {
+		DestroyCurrentStatusBarHoldTimer();
+		DestroyCurrentStatusBarTapTimer();
+		CGPoint currentPosition = [[touches anyObject] locationInView:self];
+		CGFloat deltaX = currentPosition.x - statusBarTouchDown.x;
+		CGFloat deltaY = currentPosition.y - statusBarTouchDown.y;
+		if ((deltaX * deltaX) > (deltaY * deltaY)) {
+			if (deltaX > kStatusBarHorizontalSwipeThreshold) {
+				hasSentStatusBarEvent = YES;
+				LASendEventWithName(LAEventNameStatusBarSwipeRight);
+			} else if (deltaX < -kStatusBarHorizontalSwipeThreshold) {
+				hasSentStatusBarEvent = YES;
+				LASendEventWithName(LAEventNameStatusBarSwipeLeft);
+			}
+		} else {
+			if (deltaY > kStatusBarVerticalSwipeThreshold) {
+				hasSentStatusBarEvent = YES;
+				LASendEventWithName(LAEventNameStatusBarSwipeDown);
+			}
+		}
+	}
+}
+
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	DestroyCurrentStatusBarHoldTimer();
+	DestroyCurrentStatusBarTapTimer();
+	if (!hasSentStatusBarEvent) {
+		if ([[touches anyObject] tapCount] == 2)
+			LASendEventWithName(LAEventNameStatusBarTapDouble);
+		else {
+			statusBarTapTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarTapDelay, 0.0, 0, 0, StatusBarTapCallback, NULL);
+			CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarTapTimer, kCFRunLoopCommonModes);
+			passThroughStatusBar = YES;
+			[self touchesBegan:touches withEvent:event];
+			%orig;
+		}
+	}
+}
+
+%end
+
+%end
+
 %ctor
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	{
-		%init(SBIcon = objc_getClass("SBIconView") ?: objc_getClass("SBIcon"));
+	if (objc_getClass("SpringBoard")) {
+		%init(SpringBoard, SBIcon = objc_getClass("SBIconView") ?: objc_getClass("SBIcon"));
 	}
+	%init(All);
 	[[LAVersionChecker class] performSelector:@selector(checkVersion) withObject:nil afterDelay:0.1];
 	[pool drain];
 }
