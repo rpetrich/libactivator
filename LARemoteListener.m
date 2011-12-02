@@ -3,6 +3,10 @@
 static CPDistributedMessagingCenter *springboardCenter;
 static LARemoteListener *sharedInstance;
 
+@interface UIImage (UIApplicationIconPrivate)
++ (UIImage *)_applicationIconImageForBundleIdentifier:(NSString *)bundleIdentifier format:(NSInteger)format scale:(CGFloat)scale;
+@end
+
 @implementation LARemoteListener
 
 + (void)initialize
@@ -173,6 +177,11 @@ static LARemoteListener *sharedInstance;
 
 - (UIImage *)activator:(LAActivator *)activator requiresSmallIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
 {
+	if ([UIImage respondsToSelector:@selector(_applicationIconImageForBundleIdentifier:format:scale:)]) {
+		UIImage *result = [UIImage _applicationIconImageForBundleIdentifier:listenerName format:0 scale:scale];
+		if (result)
+			return result;
+	}
 	return [self _performRemoteImageSelector:_cmd withObject:listenerName withScale:scale forListenerName:listenerName];
 }
 
