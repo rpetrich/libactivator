@@ -889,8 +889,8 @@ static void VolumeUpButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
 		HideVolumeHUD(volumeControl);
 	} else {
 		IncreaseVolumeStep(volumeControl);
+		SetupVolumeRepeatTimer(StandardVolumeUpRepeat, info, kVolumeRepeatDelay);
 	}
-	SetupVolumeRepeatTimer(StandardVolumeUpRepeat, info, kVolumeRepeatDelay);
 }
 
 static void StandardVolumeDownRepeat(CFRunLoopTimerRef timer, void *info)
@@ -909,8 +909,8 @@ static void VolumeDownButtonHeldCallback(CFRunLoopTimerRef timer, void *info)
 		HideVolumeHUD(volumeControl);
 	} else {
 		DecreaseVolumeStep(volumeControl);
+		SetupVolumeRepeatTimer(StandardVolumeDownRepeat, info, kVolumeRepeatDelay);
 	}
-	SetupVolumeRepeatTimer(StandardVolumeDownRepeat, info, kVolumeRepeatDelay);
 }
 
 static BOOL justSuppressedNotificationSound;
