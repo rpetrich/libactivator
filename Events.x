@@ -105,6 +105,7 @@ static inline id<LAListener> LAListenerForEventWithName(NSString *eventName)
 
 @interface SpringBoard (OS50)
 - (NSArray *)appsRegisteredForVolumeEvents;
+- (BOOL)isCameraApp;
 @end
 
 @interface SBAwayController (OS40)
@@ -919,6 +920,12 @@ static BOOL justSuppressedNotificationSound;
 {
 	if ([self respondsToSelector:@selector(appsRegisteredForVolumeEvents)]) {
 		if ([[self appsRegisteredForVolumeEvents] count]) {
+			%orig;
+			return;
+		}
+	}
+	if ([self respondsToSelector:@selector(isCameraApp)]) {
+		if ([self isCameraApp]) {
 			%orig;
 			return;
 		}
