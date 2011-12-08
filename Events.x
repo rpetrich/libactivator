@@ -112,6 +112,11 @@ static inline id<LAListener> LAListenerForEventWithName(NSString *eventName)
 - (void)_unlockWithSound:(BOOL)sound isAutoUnlock:(BOOL)unlock;
 @end
 
+@interface SBAlert (OS50)
+- (BOOL)handleVolumeUpButtonPressed;
+- (BOOL)handleVolumeDownButtonPressed;
+@end
+
 @interface VolumeControl (OS40)
 + (float)volumeStep;
 - (void)_changeVolumeBy:(float)volumeAdjust;
@@ -938,6 +943,26 @@ static BOOL justSuppressedNotificationSound;
 			if ([alertDisplay respondsToSelector:@selector(handleVolumeEvent:)]) {
 				[alertDisplay handleVolumeEvent:gsEvent];
 				return;
+			} else if ([alertDisplay respondsToSelector:@selector(alert)]) {
+				SBAlert *alert = [alertDisplay alert];
+				if ([alert respondsToSelector:@selector(handleVolumeDownButtonPressed)]) {
+					switch (GSEventGetType(gsEvent)) {
+						case kGSEventVolumeUpButtonDown:
+							if ([alert handleVolumeUpButtonPressed]) {
+								suppressVolumeButtonUp = YES;
+								return;
+							}
+							break;
+						case kGSEventVolumeDownButtonDown:
+							if ([alert handleVolumeDownButtonPressed]) {
+								suppressVolumeButtonUp = YES;
+								return;
+							}
+							break;
+						default:
+							break;
+					}
+				}
 			}
 		}
 	}
