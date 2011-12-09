@@ -2,6 +2,7 @@
 #import "libactivator-private.h"
 #import "LAToggleListener.h"
 #import "LAMenuListener.h"
+#import "LASimpleListener.h"
 
 %config(generator=internal);
 
@@ -9,62 +10,6 @@
 #import <SpringBoard/SpringBoard.h>
 
 #include <dlfcn.h>
-
-NSString * const LAEventNameMenuPressAtSpringBoard = @"libactivator.menu.press.at-springboard";
-NSString * const LAEventNameMenuPressSingle        = @"libactivator.menu.press.single";
-NSString * const LAEventNameMenuPressDouble        = @"libactivator.menu.press.double";
-NSString * const LAEventNameMenuPressTriple        = @"libactivator.menu.press.triple";
-NSString * const LAEventNameMenuHoldShort          = @"libactivator.menu.hold.short";
-
-NSString * const LAEventNameLockHoldShort          = @"libactivator.lock.hold.short";
-NSString * const LAEventNameLockPressDouble        = @"libactivator.lock.press.double";
-
-NSString * const LAEventNameSpringBoardPinch       = @"libactivator.springboard.pinch";
-NSString * const LAEventNameSpringBoardSpread      = @"libactivator.springboard.spread";
-
-NSString * const LAEventNameStatusBarSwipeRight    = @"libactivator.statusbar.swipe.right";
-NSString * const LAEventNameStatusBarSwipeLeft     = @"libactivator.statusbar.swipe.left";
-NSString * const LAEventNameStatusBarSwipeDown     = @"libactivator.statusbar.swipe.down";
-NSString * const LAEventNameStatusBarTapDouble     = @"libactivator.statusbar.tap.double";
-NSString * const LAEventNameStatusBarTapSingle     = @"libactivator.statusbar.tap.single";
-NSString * const LAEventNameStatusBarHold          = @"libactivator.statusbar.hold";
-
-NSString * const LAEventNameVolumeDownUp           = @"libactivator.volume.down-up";
-NSString * const LAEventNameVolumeUpDown           = @"libactivator.volume.up-down";
-NSString * const LAEventNameVolumeDisplayTap       = @"libactivator.volume.display-tap";
-NSString * const LAEventNameVolumeToggleMuteTwice  = @"libactivator.volume.toggle-mute-twice";
-NSString * const LAEventNameVolumeDownHoldShort    = @"libactivator.volume.down.hold.short";
-NSString * const LAEventNameVolumeUpHoldShort      = @"libactivator.volume.up.hold.short";
-NSString * const LAEventNameVolumeDownPress        = @"libactivator.volume.down.press";
-NSString * const LAEventNameVolumeUpPress          = @"libactivator.volume.up.press";
-NSString * const LAEventNameVolumeBothPress        = @"libactivator.volume.both.press";
-
-NSString * const LAEventNameSlideInFromBottom      = @"libactivator.slide-in.bottom";
-NSString * const LAEventNameSlideInFromBottomLeft  = @"libactivator.slide-in.bottom-left";
-NSString * const LAEventNameSlideInFromBottomRight = @"libactivator.slide-in.bottom-right";
-
-NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake";
-
-NSString * const LAEventNameHeadsetButtonPressSingle = @"libactivator.headset-button.press.single";
-NSString * const LAEventNameHeadsetButtonHoldShort = @"libactivator.headset-button.hold.short";
-
-NSString * const LAEventNameLockScreenClockDoubleTap = @"libactivator.lockscreen.clock.double-tap";
-
-NSString * const LAEventNamePowerConnected         = @"libactivator.power.connected";
-NSString * const LAEventNamePowerDisconnected      = @"libactivator.power.disconnected";
-
-#define kSpringBoardPinchThreshold         0.95f
-#define kSpringBoardSpreadThreshold        1.05f
-#define kButtonHoldDelay                   0.3
-#define kVolumeRepeatDelay                 0.15
-#define kStatusBarHorizontalSwipeThreshold 50.0f
-#define kStatusBarVerticalSwipeThreshold   10.0f
-#define kStatusBarHoldDelay                0.5
-#define kStatusBarTapDelay                 0.33
-#define kSlideGestureWindowHeight          13.0f
-#define kWindowLevelTransparentTopMost     9999.0f
-#define kShakeIgnoreTimeout                2.0
-#define kAlmostTransparentColor            [[UIColor grayColor] colorWithAlphaComponent:(2.0f / 255.0f)]
 
 //static BOOL isInSleep;
 
@@ -78,14 +23,6 @@ static LASlideGestureWindow *rightSlideGestureWindow;
 
 static LAQuickDoDelegate *sharedQuickDoDelegate;
 static UIButton *quickDoButton;
-
-__attribute__((always_inline))
-static inline LAEvent *LASendEventWithName(NSString *eventName)
-{
-	LAEvent *event = [[[LAEvent alloc] initWithName:eventName mode:[LASharedActivator currentEventMode]] autorelease];
-	[LASharedActivator sendEventToListener:event];
-	return event;
-}
 
 __attribute__((always_inline))
 static inline void LAAbortEvent(LAEvent *event)
@@ -463,8 +400,6 @@ static void HideVolumeTapWindow()
 }
 
 @end
-
-%group SpringBoard
 
 static CFAbsoluteTime lastRingerChangedTime;
 
@@ -1592,82 +1527,10 @@ static NSInteger lastAwayDateTapCount;
 
 %end
 
-%end
-
-%group All
-
-%hook UIStatusBar
-
-static BOOL passThroughStatusBar;
-
-- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
-{
-	if (passThroughStatusBar) {
-		passThroughStatusBar = NO;
-		%orig;
-	} else {
-		DestroyCurrentStatusBarHoldTimer();
-		DestroyCurrentStatusBarTapTimer();
-		statusBarHoldTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarHoldDelay, 0.0, 0, 0, StatusBarHeldCallback, NULL);
-		CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarHoldTimer, kCFRunLoopCommonModes);
-		statusBarTouchDown = [[touches anyObject] locationInView:self];
-		hasSentStatusBarEvent = NO;
-	}
-}
-
-- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
-{
-	if (!hasSentStatusBarEvent) {
-		DestroyCurrentStatusBarHoldTimer();
-		DestroyCurrentStatusBarTapTimer();
-		CGPoint currentPosition = [[touches anyObject] locationInView:self];
-		CGFloat deltaX = currentPosition.x - statusBarTouchDown.x;
-		CGFloat deltaY = currentPosition.y - statusBarTouchDown.y;
-		if ((deltaX * deltaX) > (deltaY * deltaY)) {
-			if (deltaX > kStatusBarHorizontalSwipeThreshold) {
-				hasSentStatusBarEvent = YES;
-				LASendEventWithName(LAEventNameStatusBarSwipeRight);
-			} else if (deltaX < -kStatusBarHorizontalSwipeThreshold) {
-				hasSentStatusBarEvent = YES;
-				LASendEventWithName(LAEventNameStatusBarSwipeLeft);
-			}
-		} else {
-			if (deltaY > kStatusBarVerticalSwipeThreshold) {
-				hasSentStatusBarEvent = YES;
-				LASendEventWithName(LAEventNameStatusBarSwipeDown);
-			}
-		}
-	}
-}
-
-- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
-{
-	DestroyCurrentStatusBarHoldTimer();
-	DestroyCurrentStatusBarTapTimer();
-	if (!hasSentStatusBarEvent) {
-		if ([[touches anyObject] tapCount] == 2)
-			LASendEventWithName(LAEventNameStatusBarTapDouble);
-		else {
-			statusBarTapTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarTapDelay, 0.0, 0, 0, StatusBarTapCallback, NULL);
-			CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarTapTimer, kCFRunLoopCommonModes);
-			passThroughStatusBar = YES;
-			[self touchesBegan:touches withEvent:event];
-			%orig;
-		}
-	}
-}
-
-%end
-
-%end
-
 %ctor
 {
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	if (objc_getClass("SpringBoard")) {
-		%init(SpringBoard, SBIcon = objc_getClass("SBIconView") ?: objc_getClass("SBIcon"));
-	}
-	%init(All);
+	%init(SBIcon = objc_getClass("SBIconView") ?: objc_getClass("SBIcon"));
+	[[LASpringBoardActivator alloc] init];
+	[LADefaultEventDataSource sharedInstance];
 	[[LAVersionChecker class] performSelector:@selector(checkVersion) withObject:nil afterDelay:0.1];
-	[pool drain];
 }

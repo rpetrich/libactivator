@@ -1,5 +1,6 @@
 #import "libactivator.h"
 #import "libactivator-private.h"
+#import "LASimpleListener.h"
 #import "LAApplicationListener.h"
 #import <UIKit/UIKit2.h>
 #import <SpringBoard/SpringBoard.h>
@@ -523,7 +524,7 @@ static UIWindow *tweetFormerKeyWindow;
 
 + (void)initialize
 {
-	if ((self == [LASimpleListener class]) && LASharedActivator.runningInsideSpringBoard) {
+	if (self == [LASimpleListener class]) {
 		%init;
 		sharedSimpleListener = [[self alloc] init];
 		// System

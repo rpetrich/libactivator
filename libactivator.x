@@ -1,7 +1,5 @@
 #import "libactivator.h"
 #import "libactivator-private.h"
-#import "LAApplicationListener.h"
-#import "LAToggleListener.h"
 #import "SimulatorCompat.h"
 
 #import <SpringBoard/SpringBoard.h>
@@ -12,6 +10,50 @@
 #include <sys/sysctl.h>
 #include <execinfo.h>
 #include <dlfcn.h>
+
+NSString * const LAEventNameMenuPressAtSpringBoard = @"libactivator.menu.press.at-springboard";
+NSString * const LAEventNameMenuPressSingle        = @"libactivator.menu.press.single";
+NSString * const LAEventNameMenuPressDouble        = @"libactivator.menu.press.double";
+NSString * const LAEventNameMenuPressTriple        = @"libactivator.menu.press.triple";
+NSString * const LAEventNameMenuHoldShort          = @"libactivator.menu.hold.short";
+
+NSString * const LAEventNameLockHoldShort          = @"libactivator.lock.hold.short";
+NSString * const LAEventNameLockPressDouble        = @"libactivator.lock.press.double";
+
+NSString * const LAEventNameSpringBoardPinch       = @"libactivator.springboard.pinch";
+NSString * const LAEventNameSpringBoardSpread      = @"libactivator.springboard.spread";
+
+NSString * const LAEventNameStatusBarSwipeRight    = @"libactivator.statusbar.swipe.right";
+NSString * const LAEventNameStatusBarSwipeLeft     = @"libactivator.statusbar.swipe.left";
+NSString * const LAEventNameStatusBarSwipeDown     = @"libactivator.statusbar.swipe.down";
+NSString * const LAEventNameStatusBarTapDouble     = @"libactivator.statusbar.tap.double";
+NSString * const LAEventNameStatusBarTapSingle     = @"libactivator.statusbar.tap.single";
+NSString * const LAEventNameStatusBarHold          = @"libactivator.statusbar.hold";
+
+NSString * const LAEventNameVolumeDownUp           = @"libactivator.volume.down-up";
+NSString * const LAEventNameVolumeUpDown           = @"libactivator.volume.up-down";
+NSString * const LAEventNameVolumeDisplayTap       = @"libactivator.volume.display-tap";
+NSString * const LAEventNameVolumeToggleMuteTwice  = @"libactivator.volume.toggle-mute-twice";
+NSString * const LAEventNameVolumeDownHoldShort    = @"libactivator.volume.down.hold.short";
+NSString * const LAEventNameVolumeUpHoldShort      = @"libactivator.volume.up.hold.short";
+NSString * const LAEventNameVolumeDownPress        = @"libactivator.volume.down.press";
+NSString * const LAEventNameVolumeUpPress          = @"libactivator.volume.up.press";
+NSString * const LAEventNameVolumeBothPress        = @"libactivator.volume.both.press";
+
+NSString * const LAEventNameSlideInFromBottom      = @"libactivator.slide-in.bottom";
+NSString * const LAEventNameSlideInFromBottomLeft  = @"libactivator.slide-in.bottom-left";
+NSString * const LAEventNameSlideInFromBottomRight = @"libactivator.slide-in.bottom-right";
+
+NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake";
+
+NSString * const LAEventNameHeadsetButtonPressSingle = @"libactivator.headset-button.press.single";
+NSString * const LAEventNameHeadsetButtonHoldShort = @"libactivator.headset-button.hold.short";
+
+NSString * const LAEventNameLockScreenClockDoubleTap = @"libactivator.lockscreen.clock.double-tap";
+
+NSString * const LAEventNamePowerConnected         = @"libactivator.power.connected";
+NSString * const LAEventNamePowerDisconnected      = @"libactivator.power.disconnected";
+
 
 NSString * const LAEventModeSpringBoard = @"springboard";
 NSString * const LAEventModeApplication = @"application";
@@ -86,6 +128,10 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (id)init
 {
+	if (LASharedActivator) {
+		[self release];
+		return nil;
+	}
 	if ((self = [super init])) {
 		_availableEventModes = [[NSArray arrayWithObjects:LAEventModeSpringBoard, LAEventModeApplication, LAEventModeLockScreen, nil] retain];
 		// Caches
@@ -95,6 +141,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 		_cachedListenerSmallIcons = [[NSMutableDictionary alloc] init];
 		_listenerInstances = CFSetCreateMutable(kCFAllocatorDefault, 0, NULL);
 		[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(didReceiveMemoryWarning) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+		LASharedActivator = self;
 	}
 	return self;
 }
@@ -109,6 +156,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 	[_cachedListenerTitles release];
 	[_cachedListenerGroups release];
 	[_availableEventModes release];
+	LASharedActivator = nil;
 	[super dealloc];
 }
 
@@ -593,21 +641,21 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	%init;
-	if ([[[NSBundle mainBundle] bundleIdentifier] isEqualToString:@"com.apple.Preferences"]) {
-		// Prevent disabling PreferenceLoader
-		// This has come up quite often where users can't get back in to change their settings
-		if (!dlopen("/Library/MobileSubstrate/DynamicLibraries/PreferenceLoader.dylib", RTLD_LAZY)) {
-			if (dlopen("/Library/MobileSubstrate/DynamicLibraries/PreferenceLoader.disabled", RTLD_LAZY)) {
-				NSLog(@"Activator: PreferenceLoader was disabled; forced load!");
+	activatorBundle = [[NSBundle alloc] initWithPath:SCRootPath(@"/Library/Activator")];
+	NSString *bundleIdentifier = [[NSBundle mainBundle] bundleIdentifier];
+	if ([bundleIdentifier isEqualToString:@"com.apple.springboard"]) {
+		dlopen("/Library/Activator/SpringBoard.dylib", RTLD_LAZY);
+	} else {
+		[[LAActivator alloc] init];
+		if ([bundleIdentifier isEqualToString:@"com.apple.Preferences"]) {
+			// Prevent disabling PreferenceLoader
+			// This has come up quite often where users can't get back in to change their settings
+			if (!dlopen("/Library/MobileSubstrate/DynamicLibraries/PreferenceLoader.dylib", RTLD_LAZY)) {
+				if (dlopen("/Library/MobileSubstrate/DynamicLibraries/PreferenceLoader.disabled", RTLD_LAZY)) {
+					NSLog(@"Activator: PreferenceLoader was disabled; forced load!");
+				}
 			}
 		}
-	}
-	activatorBundle = [[NSBundle alloc] initWithPath:SCRootPath(@"/Library/Activator")];
-	if (%c(SBIconController)) {
-		LASharedActivator = [[LASpringBoardActivator alloc] init];
-		[LADefaultEventDataSource sharedInstance];
-	} else {
-		LASharedActivator = [[LAActivator alloc] init];
 	}
 	[pool drain];
 }

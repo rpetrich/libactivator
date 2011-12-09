@@ -295,13 +295,9 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 
 %ctor
 {
-	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	if (objc_getClass("SBApplicationController")) {
-		%init;
-		sharedApplicationListener = [[LAApplicationListener alloc] init];
-		allEventModesExceptLockScreen = [[NSArray alloc] initWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil];
-		ignoredDisplayIdentifiers = [[NSArray alloc] initWithObjects:@"com.apple.DemoApp", @"com.apple.fieldtest", @"com.apple.springboard", @"com.apple.AdSheet", @"com.apple.iphoneos.iPodOut", @"com.apple.TrustMe", @"com.apple.DataActivation", @"com.apple.WebSheet", @"com.apple.AdSheetPhone", @"com.apple.AdSheetPad", @"com.apple.iosdiagnostics", @"com.apple.purplebuddy", nil];
-		displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
-	}
-	[pool drain];
+	%init;
+	sharedApplicationListener = [[LAApplicationListener alloc] init];
+	allEventModesExceptLockScreen = [[NSArray alloc] initWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil];
+	ignoredDisplayIdentifiers = [[NSArray alloc] initWithObjects:@"com.apple.DemoApp", @"com.apple.fieldtest", @"com.apple.springboard", @"com.apple.AdSheet", @"com.apple.iphoneos.iPodOut", @"com.apple.TrustMe", @"com.apple.DataActivation", @"com.apple.WebSheet", @"com.apple.AdSheetPhone", @"com.apple.AdSheetPad", @"com.apple.iosdiagnostics", @"com.apple.purplebuddy", nil];
+	displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
 }

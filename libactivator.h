@@ -232,6 +232,7 @@ extern NSString * const LAEventModeLockScreen;
 
 extern NSString * const LAEventNameMenuPressSingle;
 extern NSString * const LAEventNameMenuPressDouble;
+extern NSString * const LAEventNameMenuPressTriple;
 extern NSString * const LAEventNameMenuHoldShort;
 
 extern NSString * const LAEventNameLockHoldShort;
@@ -268,29 +269,5 @@ extern NSString * const LAEventNameHeadsetButtonHoldShort;
 
 extern NSString * const LAEventNameLockScreenClockDoubleTap;
 
-@interface LASimpleListener : NSObject<LAListener> {
-}
-+ (LASimpleListener *)sharedInstance;
-
-// System
-- (BOOL)homeButton;
-- (BOOL)sleepButton;
-- (BOOL)respring;
-- (BOOL)reboot;
-- (BOOL)powerDown;
-- (BOOL)spotlight;
-- (BOOL)takeScreenshot;
-- (BOOL)voiceControl;
-
-// Lock Screen
-- (BOOL)showLockScreen;
-- (BOOL)dismissLockScreen;
-- (BOOL)toggleLockScreen;
-
-// iPod
-- (BOOL)togglePlayback;
-- (BOOL)previousTrack;
-- (BOOL)nextTrack;
-- (BOOL)musicControls;
-
-@end
+extern NSString * const LAEventNamePowerConnected;
+extern NSString * const LAEventNamePowerDisconnected;
