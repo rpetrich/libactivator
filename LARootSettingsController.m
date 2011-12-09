@@ -158,7 +158,7 @@ typedef BOOL (*libhideIsHiddenFunction)(NSString *);
 					// Hide ads and show donation form
 					[LASharedActivator _setObject:(id)kCFBooleanTrue forPreference:@"LAHideAds"];
 					[LASettingsViewController updateAdSettings];
-					[[UIApplication sharedApplication] openURL:[NSURL URLWithString:@"http://rpetri.ch/cydia/activator/donate/"]];
+					[UIApp openURL:[NSURL URLWithString:@"http://rpetri.ch/cydia/activator/donate/"]];
 					return;
 				case 2:
 					vc = [[LAMenuSettingsController alloc] init];

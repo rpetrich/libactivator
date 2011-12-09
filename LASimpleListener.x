@@ -146,25 +146,25 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)respring
 {
-	[(SpringBoard *)[UIApplication sharedApplication] relaunchSpringBoard];
+	[(SpringBoard *)UIApp relaunchSpringBoard];
 	return YES;
 }
 
 /* // A safeMode method isn't needed; it should safe mode anyway :P
 - (void)safeMode
 {
-	[(SpringBoard *)[UIApplication sharedApplication] enterSafeMode];
+	[(SpringBoard *)UIApp enterSafeMode];
 }*/
 
 - (BOOL)reboot
 {
-	[(SpringBoard *)[UIApplication sharedApplication] reboot];
+	[(SpringBoard *)UIApp reboot];
 	return YES;
 }
 
 - (BOOL)powerDown
 {
-	[(SpringBoard *)[UIApplication sharedApplication] powerDown];
+	[(SpringBoard *)UIApp powerDown];
 	return YES;
 }
 
@@ -367,31 +367,31 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)showPhoneFavorites
 {
-	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=FAVORITES"] publicURLsOnly:NO];
+	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=FAVORITES"] publicURLsOnly:NO];
 	return YES;
 }
 
 - (BOOL)showPhoneRecents
 {
-	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=RECENTS"] publicURLsOnly:NO];
+	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=RECENTS"] publicURLsOnly:NO];
 	return YES;
 }
 
 - (BOOL)showPhoneContacts
 {
-	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=CONTACTS"] publicURLsOnly:NO];
+	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=CONTACTS"] publicURLsOnly:NO];
 	return YES;
 }
 
 - (BOOL)showPhoneKeypad
 {
-	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=KEYPAD"] publicURLsOnly:NO];
+	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=KEYPAD"] publicURLsOnly:NO];
 	return YES;
 }
 
 - (BOOL)showPhoneVoicemail
 {
-	[(SpringBoard *)[UIApplication sharedApplication] applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=VOICEMAIL"] publicURLsOnly:NO];
+	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=VOICEMAIL"] publicURLsOnly:NO];
 	return YES;
 }
 
@@ -482,7 +482,7 @@ static UIWindow *tweetFormerKeyWindow;
 		[tweetFormerKeyWindow release];
 		tweetFormerKeyWindow = [[UIWindow keyWindow] retain];
 		UIViewController *vc = [[ActivatorEmptyViewController alloc] init];
-		vc.interfaceOrientation = [(SpringBoard *)[UIApplication sharedApplication] activeInterfaceOrientation];
+		vc.interfaceOrientation = [(SpringBoard *)UIApp activeInterfaceOrientation];
 		tweetWindow.rootViewController = vc;
 		tweetComposer.completionHandler = ^(int result) {
 			[tweetWindow.firstResponder resignFirstResponder];

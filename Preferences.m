@@ -176,7 +176,7 @@ __attribute__((visibility("hidden")))
 {
 	if ([[UIDevice currentDevice] isWildcat])
 		return;
-	UINavigationController *navigationController = [(id)[UIApplication sharedApplication] rootController];
+	UINavigationController *navigationController = [(id)UIApp rootController];
 	while ([navigationController.topViewController isKindOfClass:self]) {
 		if ([navigationController.viewControllers count] == 1)
 			break;

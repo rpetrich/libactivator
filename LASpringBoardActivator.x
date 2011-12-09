@@ -170,7 +170,7 @@ static void NewCydiaStatusChanged()
 - (void)_resetPreferences
 {
 	unlink([[self settingsFilePath] UTF8String]);
-	[(SpringBoard *)[UIApplication sharedApplication] relaunchSpringBoard];
+	[(SpringBoard *)UIApp relaunchSpringBoard];
 }
 
 - (id)_getObjectForPreference:(NSString *)preference
@@ -320,7 +320,7 @@ static void NewCydiaStatusChanged()
 
 - (NSString *)currentEventMode
 {
-	if ([(SpringBoard *)[UIApplication sharedApplication] isLocked] || [[%c(SBAwayController) sharedAwayController] isMakingEmergencyCall])
+	if ([(SpringBoard *)UIApp isLocked] || [[%c(SBAwayController) sharedAwayController] isMakingEmergencyCall])
 		return LAEventModeLockScreen;
 	/*if ([[(SBIconController *)[%c(SBIconController) sharedInstance] contentView] window])
 		return LAEventModeSpringBoard;

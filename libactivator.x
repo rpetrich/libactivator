@@ -182,7 +182,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (void)apiFailWithCulpritDictionary:(NSDictionary *)culpritDictionary
 {
-	if ([UIApplication sharedApplication]) {
+	if (UIApp) {
 		UIAlertView *av = [[UIAlertView alloc] init];
 		av.title = @"Invalid Operation";
 		NSString *culprit = [culpritDictionary objectForKey:@"culprit"];
