@@ -25,6 +25,7 @@
 
 @property (nonatomic, readonly) NSURL *moreActionsURL;
 @property (nonatomic, readonly) NSURL *adPaneURL;
+@property (nonatomic, readonly) CPDistributedMessagingCenter *messagingCenter;
 
 @end
 
@@ -47,14 +48,6 @@ __attribute__((visibility("hidden")))
 @end
 
 __attribute__((visibility("hidden")))
-@interface LARemoteListener : NSObject<LAListener> {
-}
-
-+ (LARemoteListener *)sharedInstance;
-
-@end
-
-__attribute__((visibility("hidden")))
 @interface LADefaultEventDataSource : NSObject<LAEventDataSource> {
    NSMutableDictionary *_eventData;
 }
@@ -73,6 +66,7 @@ __attribute__((visibility("hidden")))
 
 __attribute__((visibility("hidden")))
 BOOL shouldAddNowPlayingButton;
+extern CPDistributedMessagingCenter *messagingCenter;
 
 @interface NSObject(LAListener)
 - (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;

@@ -410,7 +410,7 @@ static void NewCydiaStatusChanged()
 - (id)init
 {
 	if ((self = [super init])) {
-		CPDistributedMessagingCenter *messagingCenter = [CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"];
+		CPDistributedMessagingCenter *messagingCenter = self.messagingCenter;
 		[messagingCenter runServerOnCurrentThread];
 		// Remote messages to id<LAListener> (with event)
 		[messagingCenter registerForMessageName:@"activator:receiveEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];

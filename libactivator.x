@@ -1,4 +1,5 @@
 #import "libactivator.h"
+#import "LARemoteListener.h"
 #import "libactivator-private.h"
 #import "SimulatorCompat.h"
 
@@ -76,15 +77,7 @@ LAActivator *LASharedActivator;
 + (UIImage *)imageWithData:(NSData *)data scale:(CGFloat)scale;
 @end
 
-
-static inline CPDistributedMessagingCenter *GetMessagingCenter()
-{
-	static CPDistributedMessagingCenter *messagingCenter;
-	if (messagingCenter)
-		return messagingCenter;
-	messagingCenter = [[CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"] retain];
-	return messagingCenter;
-}
+CPDistributedMessagingCenter *messagingCenter;
 
 static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 {
@@ -133,6 +126,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 		return nil;
 	}
 	if ((self = [super init])) {
+		messagingCenter = [[CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"] retain];
 		_availableEventModes = [[NSArray arrayWithObjects:LAEventModeSpringBoard, LAEventModeApplication, LAEventModeLockScreen, nil] retain];
 		// Caches
 		_cachedListenerGroups = [[NSMutableDictionary alloc] init];
@@ -198,7 +192,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (void)_resetPreferences
 {
-	[GetMessagingCenter() sendMessageName:@"resetPreferences" userInfo:nil];
+	[messagingCenter sendMessageName:@"resetPreferences" userInfo:nil];
 }
 
 - (NSDictionary *)_getObjectForPreferenceFromMessageName:(NSString *)messageName userInfo:(NSDictionary *)userInfo
@@ -212,26 +206,26 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (id)_getObjectForPreference:(NSString *)preference
 {
-	NSDictionary *response = [GetMessagingCenter() sendMessageAndReceiveReplyName:@"getObjectForPreference" userInfo:[NSDictionary dictionaryWithObject:preference forKey:@"preference"]];
+	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:@"getObjectForPreference" userInfo:[NSDictionary dictionaryWithObject:preference forKey:@"preference"]];
 	return [response objectForKey:@"value"];
 }
 
 - (void)_setObject:(id)value forPreference:(NSString *)preference
 {
-	[GetMessagingCenter() sendMessageName:@"setObjectForPreference" userInfo:[NSDictionary dictionaryWithObjectsAndKeys:preference, @"preference", value, @"value", nil]];
+	[messagingCenter sendMessageName:@"setObjectForPreference" userInfo:[NSDictionary dictionaryWithObjectsAndKeys:preference, @"preference", value, @"value", nil]];
 }
 
 - (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject
 {
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:withObject, @"withObject", nil];
-	NSDictionary *response = [GetMessagingCenter() sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
+	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
 	return [response objectForKey:@"result"];
 }
 
 - (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject withObject:(id)withObject2
 {
 	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:withObject, @"withObject", withObject2, @"withObject2", nil];
-	NSDictionary *response = [GetMessagingCenter() sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
+	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
 	return [response objectForKey:@"result"];
 }
 
@@ -310,7 +304,7 @@ static UIAlertView *inCydiaAlert;
 		event.handled ? (id)kCFBooleanTrue : (id)kCFBooleanFalse, @"handled",
 		event.mode, @"mode",
 		nil];
-	NSDictionary *response = [GetMessagingCenter() sendMessageAndReceiveReplyName:@"sendDeactivateEventToListeners:" userInfo:userInfo];
+	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:@"sendDeactivateEventToListeners:" userInfo:userInfo];
 	event.handled = [[response objectForKey:@"result"] boolValue];
 }
 
@@ -560,6 +554,11 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 - (NSURL *)adPaneURL
 {
 	return URLWithDeviceData(@"http://rpetri.ch/cydia/activator/ads/");
+}
+
+- (CPDistributedMessagingCenter *)messagingCenter
+{
+	return messagingCenter;
 }
 
 @end
