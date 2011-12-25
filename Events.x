@@ -8,6 +8,7 @@
 
 #import <CaptainHook/CaptainHook.h>
 #import <SpringBoard/SpringBoard.h>
+#import <SpringBoard/SBGestureRecognizer.h>
 
 #include <dlfcn.h>
 
@@ -22,7 +23,6 @@ static LASlideGestureWindow *middleSlideGestureWindow;
 static LASlideGestureWindow *rightSlideGestureWindow;
 
 static LAQuickDoDelegate *sharedQuickDoDelegate;
-static UIButton *quickDoButton;
 
 __attribute__((always_inline))
 static inline void LAAbortEvent(LAEvent *event)
@@ -251,14 +251,10 @@ typedef enum {
 
 + (void)updateVisibility
 {
-	if (!quickDoButton) {
+	if (!%c(SBOffscreenSwipeGestureRecognizer)) {
 		[[LASlideGestureWindow leftWindow] updateVisibility];
 		[[LASlideGestureWindow middleWindow] updateVisibility];
 		[[LASlideGestureWindow rightWindow] updateVisibility];
-	} else {
-		[leftSlideGestureWindow setHidden:YES];
-		[middleSlideGestureWindow setHidden:YES];
-		[rightSlideGestureWindow setHidden:YES];
 	}
 }
 
@@ -1011,6 +1007,79 @@ static BOOL justSuppressedNotificationSound;
 
 %end
 
+%hook SBOffscreenSwipeGestureRecognizer
+
+static SBOffscreenSwipeGestureRecognizer *forcedOpenGesture;
+static NSString *startedSlideGestureName;
+static CGFloat yCoordinateToPassToSendSlideGesture;
+
+- (void)dealloc
+{
+	if (forcedOpenGesture == self)
+		forcedOpenGesture = nil;
+	%orig;
+}
+
+- (void)setState:(int)state
+{
+	if (state == 4)
+		forcedOpenGesture = self;
+	else
+		%orig;
+}
+
+- (void)reset
+{
+	if (forcedOpenGesture == self)
+		forcedOpenGesture = nil;
+	%orig;
+}
+
+- (void)touchesBegan:(SBGestureContextRef)touches
+{
+	%orig;
+	CGPoint location = CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location;
+	CGSize screenSize = [UIScreen mainScreen].bounds.size;
+	UIInterfaceOrientation interfaceOrientation = [(SpringBoard *)UIApp activeInterfaceOrientation];
+	if (UIInterfaceOrientationIsLandscape(interfaceOrientation)) {
+		CGFloat temp = screenSize.width;
+		screenSize.width = screenSize.height;
+		screenSize.height = temp;
+	}
+	if (location.y + kSlideGestureWindowHeight < screenSize.height)
+		startedSlideGestureName = nil;
+	else {
+		if (location.x < screenSize.width * 0.25f)
+			startedSlideGestureName = LAEventNameSlideInFromBottomLeft;
+		else if (location.x < screenSize.width * 0.75f)
+			startedSlideGestureName = LAEventNameSlideInFromBottom;
+		else
+			startedSlideGestureName = LAEventNameSlideInFromBottomRight;
+		yCoordinateToPassToSendSlideGesture = screenSize.height - (kSlideGestureWindowHeight + 50.0f);
+	}
+}
+
+- (void)touchesMoved:(SBGestureContextRef)touches
+{
+	%orig;
+	if (startedSlideGestureName) {
+		if (CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location.y < yCoordinateToPassToSendSlideGesture) {
+			if (LASendEventWithName(startedSlideGestureName).handled)
+				[self sendTouchesCancelledToApplicationIfNeeded];
+			startedSlideGestureName = nil;
+		}
+	}
+}
+
+- (void)touchesCancelled:(SBGestureContextRef)touches
+{
+	%orig;
+	if (forcedOpenGesture == self)
+		forcedOpenGesture = nil;
+}
+
+%end
+
 %hook SBUIController
 
 - (BOOL)clickedMenuButton
@@ -1045,8 +1114,8 @@ static BOOL justSuppressedNotificationSound;
 	[LASimpleListener sharedInstance];
 	[LAToggleListener sharedInstance];
 	[LAMenuListener sharedMenuListener];
-	%orig;
 	[LASlideGestureWindow performSelector:@selector(updateVisibility) withObject:nil afterDelay:1.0];
+	%orig;
 }
 
 - (void)tearDownIconListAndBar
