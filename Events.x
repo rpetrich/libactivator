@@ -4,6 +4,7 @@
 #import "LAMenuListener.h"
 #import "LASimpleListener.h"
 #import "LASpringBoardActivator.h"
+#import "LADefaultEventDataSource.h"
 
 %config(generator=internal);
 
