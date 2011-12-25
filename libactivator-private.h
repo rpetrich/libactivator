@@ -72,24 +72,6 @@ __attribute__((visibility("hidden")))
 // Events.m
 
 __attribute__((visibility("hidden")))
-@interface LASlideGestureWindow : UIWindow {
-@private
-	BOOL hasSentSlideEvent;
-	NSString *_eventName;
-}
-
-+ (LASlideGestureWindow *)leftWindow;
-+ (LASlideGestureWindow *)middleWindow;
-+ (LASlideGestureWindow *)rightWindow;
-+ (void)updateVisibility;
-
-- (id)initWithFrame:(CGRect)frame eventName:(NSString *)eventName;
-
-- (void)updateVisibility;
-
-@end
-
-__attribute__((visibility("hidden")))
 BOOL shouldAddNowPlayingButton;
 
 @interface NSObject(LAListener)

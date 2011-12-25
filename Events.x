@@ -19,6 +19,24 @@ static BOOL shouldInterceptMenuPresses;
 static BOOL shouldSuppressMenuReleases;
 static BOOL shouldSuppressLockSound;
 
+__attribute__((visibility("hidden")))
+@interface LASlideGestureWindow : UIWindow {
+@private
+	BOOL hasSentSlideEvent;
+	NSString *_eventName;
+}
+
++ (LASlideGestureWindow *)leftWindow;
++ (LASlideGestureWindow *)middleWindow;
++ (LASlideGestureWindow *)rightWindow;
++ (void)updateVisibility;
+
+- (id)initWithFrame:(CGRect)frame eventName:(NSString *)eventName;
+
+- (void)updateVisibility;
+
+@end
+
 static LASlideGestureWindow *leftSlideGestureWindow;
 static LASlideGestureWindow *middleSlideGestureWindow;
 static LASlideGestureWindow *rightSlideGestureWindow;
