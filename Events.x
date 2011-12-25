@@ -9,6 +9,7 @@
 #import <CaptainHook/CaptainHook.h>
 #import <SpringBoard/SpringBoard.h>
 #import <SpringBoard/SBGestureRecognizer.h>
+#import <UIKit/UIGestureRecognizerSubclass.h>
 
 #include <dlfcn.h>
 
@@ -1007,11 +1008,44 @@ static BOOL justSuppressedNotificationSound;
 
 %end
 
-%hook SBOffscreenSwipeGestureRecognizer
-
-static SBOffscreenSwipeGestureRecognizer *forcedOpenGesture;
 static NSString *startedSlideGestureName;
 static CGFloat yCoordinateToPassToSendSlideGesture;
+
+static inline BOOL SlideGestureStartWithRotatedLocation(CGPoint location)
+{
+	CGSize screenSize = [UIScreen mainScreen].bounds.size;
+	UIInterfaceOrientation interfaceOrientation = [(SpringBoard *)UIApp activeInterfaceOrientation];
+	if (UIInterfaceOrientationIsLandscape(interfaceOrientation)) {
+		CGFloat temp = screenSize.width;
+		screenSize.width = screenSize.height;
+		screenSize.height = temp;
+	}
+	if (location.y + kSlideGestureWindowHeight < screenSize.height) {
+		startedSlideGestureName = nil;
+		return NO;
+	}
+	if (location.x < screenSize.width * 0.25f)
+		startedSlideGestureName = LAEventNameSlideInFromBottomLeft;
+	else if (location.x < screenSize.width * 0.75f)
+		startedSlideGestureName = LAEventNameSlideInFromBottom;
+	else
+		startedSlideGestureName = LAEventNameSlideInFromBottomRight;
+	yCoordinateToPassToSendSlideGesture = screenSize.height - (kSlideGestureWindowHeight + 50.0f);
+	return YES;
+}
+
+static inline BOOL SlideGestureMoveWithRotatedLocation(CGPoint location)
+{
+	if (location.y < yCoordinateToPassToSendSlideGesture) {
+		BOOL result = LASendEventWithName(startedSlideGestureName).handled;
+		startedSlideGestureName = nil;
+		return result;
+	}
+	return NO;
+}
+
+%hook SBOffscreenSwipeGestureRecognizer
+static SBOffscreenSwipeGestureRecognizer *forcedOpenGesture;
 
 - (void)dealloc
 {
@@ -1038,37 +1072,15 @@ static CGFloat yCoordinateToPassToSendSlideGesture;
 - (void)touchesBegan:(SBGestureContextRef)touches
 {
 	%orig;
-	CGPoint location = CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location;
-	CGSize screenSize = [UIScreen mainScreen].bounds.size;
-	UIInterfaceOrientation interfaceOrientation = [(SpringBoard *)UIApp activeInterfaceOrientation];
-	if (UIInterfaceOrientationIsLandscape(interfaceOrientation)) {
-		CGFloat temp = screenSize.width;
-		screenSize.width = screenSize.height;
-		screenSize.height = temp;
-	}
-	if (location.y + kSlideGestureWindowHeight < screenSize.height)
-		startedSlideGestureName = nil;
-	else {
-		if (location.x < screenSize.width * 0.25f)
-			startedSlideGestureName = LAEventNameSlideInFromBottomLeft;
-		else if (location.x < screenSize.width * 0.75f)
-			startedSlideGestureName = LAEventNameSlideInFromBottom;
-		else
-			startedSlideGestureName = LAEventNameSlideInFromBottomRight;
-		yCoordinateToPassToSendSlideGesture = screenSize.height - (kSlideGestureWindowHeight + 50.0f);
-	}
+	SlideGestureStartWithRotatedLocation(CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location);
 }
 
 - (void)touchesMoved:(SBGestureContextRef)touches
 {
 	%orig;
-	if (startedSlideGestureName) {
-		if (CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location.y < yCoordinateToPassToSendSlideGesture) {
-			if (LASendEventWithName(startedSlideGestureName).handled)
-				[self sendTouchesCancelledToApplicationIfNeeded];
-			startedSlideGestureName = nil;
-		}
-	}
+	if (startedSlideGestureName)
+		if (SlideGestureMoveWithRotatedLocation(CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location))
+			[self sendTouchesCancelledToApplicationIfNeeded];
 }
 
 - (void)touchesCancelled:(SBGestureContextRef)touches
@@ -1076,6 +1088,75 @@ static CGFloat yCoordinateToPassToSendSlideGesture;
 	%orig;
 	if (forcedOpenGesture == self)
 		forcedOpenGesture = nil;
+}
+
+%end
+
+__attribute__((visibility("hidden")))
+@interface ActivatorSwipeGestureRecognizer : UIGestureRecognizer
+@end
+
+@implementation ActivatorSwipeGestureRecognizer
+
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	UITouch *touch = [touches anyObject];
+	self.state = SlideGestureStartWithRotatedLocation([touch locationInView:self.view]) ? UIGestureRecognizerStatePossible : UIGestureRecognizerStateFailed;
+}
+
+- (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	if (startedSlideGestureName) {
+		if ([touches count] == 1) {
+			UITouch *touch = [touches anyObject];
+			if (SlideGestureMoveWithRotatedLocation([touch locationInView:self.view]))
+				self.state = UIGestureRecognizerStateRecognized;
+		} else {
+			startedSlideGestureName = nil;
+		}
+	}
+}
+
+- (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	startedSlideGestureName = nil;
+	if (self.state == UIGestureRecognizerStatePossible)
+		self.state = UIGestureRecognizerStateFailed;
+}
+
+- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	startedSlideGestureName = nil;
+	if (self.state == UIGestureRecognizerStatePossible)
+		self.state = UIGestureRecognizerStateFailed;
+}
+
+- (BOOL)canBePreventedByGestureRecognizer:(UIGestureRecognizer *)preventingGestureRecognizer
+{
+	return NO;
+}
+
+- (BOOL)canPreventGestureRecognizer:(UIGestureRecognizer *)preventedGestureRecognizer
+{
+	return NO;
+}
+
+@end
+
+%hook SBAwayView
+
+- (id)initWithFrame:(CGRect)frame
+{
+	if (%c(SBOffscreenSwipeGestureRecognizer)) {
+		if ((self = %orig)) {
+			ActivatorSwipeGestureRecognizer *recognizer = [[ActivatorSwipeGestureRecognizer alloc] init];
+			[self addGestureRecognizer:recognizer];
+			[recognizer release];
+		}
+		return self;
+	} else {
+		return %orig;
+	}
 }
 
 %end
