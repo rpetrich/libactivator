@@ -33,6 +33,7 @@
 
 __attribute__((visibility("hidden")))
 BOOL shouldAddNowPlayingButton;
+__attribute__((visibility("hidden")))
 extern CPDistributedMessagingCenter *messagingCenter;
 
 @interface NSObject(LAListener)
