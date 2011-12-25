@@ -23,8 +23,6 @@ static LASlideGestureWindow *leftSlideGestureWindow;
 static LASlideGestureWindow *middleSlideGestureWindow;
 static LASlideGestureWindow *rightSlideGestureWindow;
 
-static LAQuickDoDelegate *sharedQuickDoDelegate;
-
 __attribute__((always_inline))
 static inline void LAAbortEvent(LAEvent *event)
 {
@@ -312,49 +310,6 @@ typedef enum {
 		if (location.y < -50.0f)
 			LASendEventWithName(_eventName);
 	}
-}
-
-@end
-
-@implementation LAQuickDoDelegate
-
-+ (id)sharedInstance
-{
-	if (!sharedQuickDoDelegate)
-		sharedQuickDoDelegate = [[self alloc] init];
-	return sharedQuickDoDelegate;
-}
-
-- (void)controlTouchesBegan:(UIControl *)control withEvent:(UIEvent *)event
-{
-	hasSentSlideEvent = NO;
-}
-
-- (void)controlTouchesMoved:(UIControl *)control withEvent:(UIEvent *)event
-{
-	if (!hasSentSlideEvent) {
-		hasSentSlideEvent = YES;
-		UITouch *touch = [[event allTouches] anyObject];
-		CGFloat xFactor = [touch locationInView:control].x / [control bounds].size.width;
-		if (xFactor < 0.25f)
-			LASendEventWithName(LAEventNameSlideInFromBottomLeft);
-		else if (xFactor < 0.75f)
-			LASendEventWithName(LAEventNameSlideInFromBottom);
-		else
-			LASendEventWithName(LAEventNameSlideInFromBottomRight);
-	}
-}
-
-- (void)controlTouchesEnded:(UIControl *)control withEvent:(UIEvent *)event
-{
-	hasSentSlideEvent = NO;
-}
-
-- (void)acceptEventsFromControl:(UIControl *)control
-{
-	[control addTarget:self action:@selector(controlTouchesBegan:withEvent:) forControlEvents:UIControlEventTouchDown];
-	[control addTarget:self action:@selector(controlTouchesMoved:withEvent:) forControlEvents:UIControlEventTouchDragInside | UIControlEventTouchDragOutside];
-	[control addTarget:self action:@selector(controlTouchesEnded:withEvent:) forControlEvents:UIControlEventTouchUpInside | UIControlEventTouchUpOutside | UIControlEventTouchCancel];
 }
 
 @end

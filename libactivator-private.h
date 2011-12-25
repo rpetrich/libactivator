@@ -96,18 +96,6 @@ __attribute__((visibility("hidden")))
 @end
 
 __attribute__((visibility("hidden")))
-@interface LAQuickDoDelegate : NSObject {
-@private
-	BOOL hasSentSlideEvent;
-}
-
-+ (id)sharedInstance;
-
-- (void)acceptEventsFromControl:(UIControl *)control;
-
-@end
-
-__attribute__((visibility("hidden")))
 BOOL shouldAddNowPlayingButton;
 
 @interface NSObject(LAListener)
