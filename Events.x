@@ -314,6 +314,10 @@ typedef enum {
 
 @end
 
+__attribute__((visibility("hidden")))
+@interface LAVolumeTapWindow : UIWindow
+@end
+
 static LAVolumeTapWindow *volumeTapWindow;
 
 static void ShowVolumeTapWindow(UIView *view)

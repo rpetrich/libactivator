@@ -90,12 +90,6 @@ __attribute__((visibility("hidden")))
 @end
 
 __attribute__((visibility("hidden")))
-@interface LAVolumeTapWindow : UIWindow {
-}
-
-@end
-
-__attribute__((visibility("hidden")))
 BOOL shouldAddNowPlayingButton;
 
 @interface NSObject(LAListener)
