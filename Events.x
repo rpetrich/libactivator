@@ -3,6 +3,7 @@
 #import "LAToggleListener.h"
 #import "LAMenuListener.h"
 #import "LASimpleListener.h"
+#import "LASpringBoardActivator.h"
 
 %config(generator=internal);
 

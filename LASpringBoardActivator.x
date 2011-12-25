@@ -1,6 +1,8 @@
-#import "libactivator-private.h"
+#import "LASpringBoardActivator.h"
 #import "LAApplicationListener.h"
+#import "libactivator-private.h"
 
+#import <SpringBoard/SpringBoard.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
