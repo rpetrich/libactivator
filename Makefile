@@ -12,7 +12,7 @@ libactivator_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 libactivator_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
 
 # SpringBoard.dylib (/Library/Activator)
-SpringBoard_FILES = Events.x LASimpleListener.x LAApplicationListener.x LAToggleListener.m LASpringBoardActivator.x LAMenuListener.m LADefaultEventDataSource.m
+SpringBoard_FILES = Events.x SlideEvents.x LASimpleListener.x LAApplicationListener.x LAToggleListener.m LASpringBoardActivator.x LAMenuListener.m LADefaultEventDataSource.m
 SpringBoard_INSTALL_PATH = /Library/Activator
 SpringBoard_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 SpringBoard_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices

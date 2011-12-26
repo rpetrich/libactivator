@@ -1,5 +1,7 @@
-#import <UIKit/UIKit.h>
 #import "libactivator-private.h"
+#import "Constants.h"
+
+#import <UIKit/UIKit2.h>
 
 %config(generator=internal)
 
