@@ -225,6 +225,10 @@ static void NewCydiaStatusChanged()
 - (void)_eventModeChanged
 {
 	NSString *eventMode = [self currentEventMode];
+	static NSString *lastEventMode;
+	if (lastEventMode == eventMode)
+		return;
+	lastEventMode = eventMode;
 	CFIndex count = CFSetGetCount(_listenerInstances);
 	const void *instances[count];
 	CFSetGetValues(_listenerInstances, instances);
