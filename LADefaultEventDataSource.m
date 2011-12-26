@@ -63,7 +63,7 @@ static LADefaultEventDataSource *sharedInstance;
 {
 	NSBundle *bundle = [_eventData objectForKey:eventName];
 	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"title"] ?: eventName;
-	return Localize(activatorBundle, [@"EVENT_TITLE_" stringByAppendingString:eventName], Localize(bundle, unlocalized, unlocalized) ?: eventName);
+	return Localize(LASharedActivator.bundle, [@"EVENT_TITLE_" stringByAppendingString:eventName], Localize(bundle, unlocalized, unlocalized) ?: eventName);
 }
 
 - (NSString *)localizedGroupForEventName:(NSString *)eventName
@@ -72,17 +72,18 @@ static LADefaultEventDataSource *sharedInstance;
 	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"] ?: @"";
 	if ([unlocalized length] == 0)
 		return @"";
-	return Localize(activatorBundle, [@"EVENT_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(bundle, unlocalized, unlocalized) ?: @"");
+	return Localize(LASharedActivator.bundle, [@"EVENT_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(bundle, unlocalized, unlocalized) ?: @"");
 }
 
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName
 {
 	NSBundle *bundle = [_eventData objectForKey:eventName];
 	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"description"];
+	NSBundle *aBundle = LASharedActivator.bundle;
 	if (unlocalized)
-		return Localize(activatorBundle, [@"EVENT_DESCRIPTION_" stringByAppendingString:eventName], Localize(bundle, unlocalized, unlocalized));
+		return Localize(aBundle, [@"EVENT_DESCRIPTION_" stringByAppendingString:eventName], Localize(bundle, unlocalized, unlocalized));
 	NSString *key = [@"EVENT_DESCRIPTION_" stringByAppendingString:eventName];
-	NSString *result = Localize(activatorBundle, key, nil);
+	NSString *result = Localize(aBundle, key, nil);
 	return [result isEqualToString:key] ? nil : result;
 }
 

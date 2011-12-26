@@ -353,6 +353,7 @@ static void DestroyMenuTripleTapTimer()
 static void MenuTripleTapTimeoutCallback(CFRunLoopTimerRef timer, void *info);
 
 static BOOL triplePressTimedOut;
+BOOL shouldAddNowPlayingButton;
 
 - (void)handleMenuDoubleTap
 {

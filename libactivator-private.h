@@ -26,13 +26,14 @@
 @property (nonatomic, readonly) NSURL *moreActionsURL;
 @property (nonatomic, readonly) NSURL *adPaneURL;
 @property (nonatomic, readonly) CPDistributedMessagingCenter *messagingCenter;
+@property (nonatomic, readonly) NSBundle *bundle;
 
 @end
 
 // Events.m
 
 __attribute__((visibility("hidden")))
-BOOL shouldAddNowPlayingButton;
+extern BOOL shouldAddNowPlayingButton;
 __attribute__((visibility("hidden")))
 extern CPDistributedMessagingCenter *messagingCenter;
 
@@ -96,7 +97,7 @@ __attribute__((visibility("hidden")))
 
 
 __attribute__((visibility("hidden")))
-NSMutableDictionary *listenerBundles;
+extern NSMutableDictionary *listenerBundles;
 static inline NSBundle *ListenerBundle(NSString *listenerName) {
 	if (!listenerBundles) {
 		// Cache listener data
@@ -109,14 +110,25 @@ static inline NSBundle *ListenerBundle(NSString *listenerName) {
 	return [listenerBundles objectForKey:listenerName];
 }
 __attribute__((visibility("hidden")))
-NSBundle *activatorBundle;
+extern NSBundle *activatorBundle;
 
+#ifdef DEBUG
+#define Localize(bundle, key, value_) ({ \
+	NSBundle *_bundle = (bundle); \
+	NSString *_key = (key); \
+	NSString *_value = (value_); \
+	NSString *_result = (_bundle) ? [_bundle localizedStringForKey:_key value:_value table:nil] : _value; \
+	NSLog(@"Activator: Localizing \"%@\" from \"%@\" with default value \"%@\"; result was \"%@\"", _key, _bundle, _value, _result); \
+	_result; \
+})
+#else
 #define Localize(bundle, key, value_) ({ \
 	NSBundle *_bundle = (bundle); \
 	NSString *_key = (key); \
 	NSString *_value = (value_); \
 	(_bundle) ? [_bundle localizedStringForKey:_key value:_value table:nil] : _value; \
 })
+#endif
 
 __attribute__((always_inline))
 static inline LAEvent *LASendEventWithName(NSString *eventName)

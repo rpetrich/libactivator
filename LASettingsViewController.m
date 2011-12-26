@@ -271,7 +271,7 @@ __attribute__((visibility("hidden")))
 			UIViewController *vc = [[ActivatorAdExpandedViewController alloc] initWithRequest:request];
 			expansionController = [[UINavigationController alloc] initWithRootViewController:vc];
 			UINavigationItem *ni = vc.navigationItem;
-			ni.title = Localize(activatorBundle, @"Advertisement", @"Advertisement");
+			ni.title = Localize(LASharedActivator.bundle, @"Advertisement", @"Advertisement");
 			UIBarButtonItem *bbi = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(dismissAdExpansion)];
 			ni.rightBarButtonItem = bbi;
 			[bbi release];

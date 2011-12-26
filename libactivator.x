@@ -66,6 +66,9 @@ NSString * const LAEventModeLockScreen  = @"lockscreen";
 
 LAActivator *LASharedActivator;
 
+NSMutableDictionary *listenerBundles;
+NSBundle *activatorBundle;
+
 #define ListenerKeyForEventNameAndMode(eventName, eventMode) \
 	[NSString stringWithFormat:@"LAEventListener(%@)-%@", (eventMode), (eventName)]
 
@@ -585,6 +588,11 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 - (CPDistributedMessagingCenter *)messagingCenter
 {
 	return messagingCenter;
+}
+
+- (NSBundle *)bundle
+{
+	return activatorBundle;
 }
 
 @end
