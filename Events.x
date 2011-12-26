@@ -1663,5 +1663,5 @@ static NSInteger lastAwayDateTapCount;
 	%init(SBIcon = objc_getClass("SBIconView") ?: objc_getClass("SBIcon"));
 	[[LASpringBoardActivator alloc] init];
 	[LADefaultEventDataSource sharedInstance];
-	[[LAVersionChecker class] performSelector:@selector(checkVersion) withObject:nil afterDelay:0.1];
+	[LAVersionChecker performSelector:@selector(checkVersion) withObject:nil afterDelay:0.1];
 }
