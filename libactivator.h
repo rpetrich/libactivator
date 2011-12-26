@@ -68,6 +68,8 @@ typedef enum {
 @property (nonatomic, readonly, getter=isRunningInsideSpringBoard) BOOL runningInsideSpringBoard;
 @property (nonatomic, readonly, getter=isDangerousToSendEvents) BOOL dangerousToSendEvents;
 
+// Listeners
+
 - (id<LAListener>)listenerForEvent:(LAEvent *)event;
 - (void)sendEventToListener:(LAEvent *)event;
 - (void)sendAbortToListener:(LAEvent *)event;
@@ -79,10 +81,14 @@ typedef enum {
 
 - (BOOL)hasSeenListenerWithName:(NSString *)name;
 
+// Assignments
+
 - (void)assignEvent:(LAEvent *)event toListenerWithName:(NSString *)listenerName;
 - (void)unassignEvent:(LAEvent *)event;
 - (NSString *)assignedListenerNameForEvent:(LAEvent *)event;
 - (NSArray *)eventsAssignedToListenerWithName:(NSString *)listenerName;
+
+// Events
 
 @property (nonatomic, readonly) NSArray *availableEventNames;
 - (BOOL)eventWithNameIsHidden:(NSString *)name;
@@ -92,6 +98,8 @@ typedef enum {
 - (void)registerEventDataSource:(id<LAEventDataSource>)dataSource forEventName:(NSString *)eventName;
 - (void)unregisterEventDataSourceWithEventName:(NSString *)eventName;
 
+// Listener Metadata
+
 @property (nonatomic, readonly) NSArray *availableListenerNames;
 - (id)infoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)name;
 - (BOOL)listenerWithNameRequiresAssignment:(NSString *)name;
@@ -100,6 +108,8 @@ typedef enum {
 - (BOOL)listenerWithName:(NSString *)listenerName isCompatibleWithEventName:(NSString *)eventName;
 - (UIImage *)iconForListenerName:(NSString *)listenerName;
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName;
+
+// Event Modes
 
 @property (nonatomic, readonly) NSArray *availableEventModes;
 @property (nonatomic, readonly) NSString *currentEventMode;
