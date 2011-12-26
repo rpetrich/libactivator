@@ -225,8 +225,11 @@ static void NewCydiaStatusChanged()
 - (void)_eventModeChanged
 {
 	NSString *eventMode = [self currentEventMode];
-	for (id<LAListener> listener in (NSSet *)_listenerInstances)
-		[listener activator:self didChangeToEventMode:eventMode];
+	CFIndex count = CFSetGetCount(_listenerInstances);
+	const void *instances[count];
+	CFSetGetValues(_listenerInstances, instances);
+	for (int i = 0; i < count; i++)
+		[(id<LAListener>)instances[i] activator:self didChangeToEventMode:eventMode];
 }
 
 // Registration of listeners
