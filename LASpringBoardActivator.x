@@ -337,6 +337,13 @@ static void NewCydiaStatusChanged()
 	return [[LAApplicationListener sharedInstance] topApplication] ? LAEventModeApplication : LAEventModeSpringBoard;
 }
 
+- (NSString *)displayIdentifierForCurrentApplication
+{
+	if ([(SpringBoard *)UIApp isLocked] || [[%c(SBAwayController) sharedAwayController] isMakingEmergencyCall])
+		return nil;
+	return [[[LAApplicationListener sharedInstance] topApplication] displayIdentifier];
+}
+
 // Events
 
 - (NSArray *)availableEventNames
@@ -444,6 +451,7 @@ static void NewCydiaStatusChanged()
 		[messagingCenter registerForMessageName:@"isAlive" target:self selector:@selector(_handleRemoteIsAlive)];
 		[messagingCenter registerForMessageName:@"_cachedAndSortedListeners" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
+		[messagingCenter registerForMessageName:@"displayIdentifierForCurrentApplication" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"availableEventNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
 		[messagingCenter registerForMessageName:@"eventWithNameIsHidden:" target:self selector:@selector(_handleRemoteBoolMessage:withUserInfo:)];

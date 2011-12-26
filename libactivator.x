@@ -262,8 +262,9 @@ static UIAlertView *inCydiaAlert;
 	NSString *listenerName = [self assignedListenerNameForEvent:event];
 	if (listenerName && [self listenerWithName:listenerName isCompatibleWithEventName:[event name]]) {
 		if ([self isDangerousToSendEvents]) {
-			if (![[event name] isEqualToString:LAEventNameMenuPressSingle] &&
-				![[event name] isEqualToString:LAEventNameMenuPressDouble]
+			NSString *eventName = event.name;
+			if (![eventName isEqualToString:LAEventNameMenuPressSingle] &&
+				![eventName isEqualToString:LAEventNameMenuPressDouble]
 			) {
 				if (!inCydiaAlert) {
 					inCydiaAlert = [[UIAlertView alloc] init];
@@ -275,6 +276,11 @@ static UIAlertView *inCydiaAlert;
 				[inCydiaAlert show];
 			}
 			NSLog(@"Activator: sendEventToListener:%@ (listener=%@) aborted in Cydia", event, listenerName);
+			return;
+		}
+		NSString *displayIdentifier = self.displayIdentifierForCurrentApplication;
+		if (displayIdentifier && [self applicationWithDisplayIdentifierIsBlacklisted:displayIdentifier]) {
+			NSLog(@"Activator: sendEventToListener:%@ (listener=%@) aborted in blacklisted app \"%@\"", event, listenerName, displayIdentifier);
 			return;
 		}
 		id<LAListener> listener = [self listenerForName:listenerName];
@@ -526,6 +532,22 @@ static UIAlertView *inCydiaAlert;
 - (NSString *)currentEventMode
 {
 	return [self _performRemoteMessage:_cmd withObject:nil];
+}
+
+- (NSString *)displayIdentifierForCurrentApplication
+{
+	return [self _performRemoteMessage:_cmd withObject:nil];
+}
+
+- (BOOL)applicationWithDisplayIdentifierIsBlacklisted:(NSString *)displayIdentifier
+{
+	return [[self _getObjectForPreference:[@"LABlacklisted-" stringByAppendingString:displayIdentifier]] boolValue];
+}
+
+- (void)setApplicationWithDisplayIdentifier:(NSString *)displayIdentifier isBlacklisted:(BOOL)blacklisted
+{
+	if (displayIdentifier)
+		[self _setObject:blacklisted ? (id)kCFBooleanTrue : nil forPreference:[@"LABlacklisted-" stringByAppendingString:displayIdentifier]];
 }
 
 - (NSString *)description

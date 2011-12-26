@@ -1,6 +1,7 @@
 #import "Settings.h"
 #import "libactivator-private.h"
 #import "LAMenuSettingsController.h"
+#import "LABlacklistSettingsController.h"
 #include <dlfcn.h>
 #include <notify.h>
 
@@ -43,7 +44,7 @@
 		case 1:
 			return [[LASharedActivator availableEventModes] count];
 		case 2:
-			return 3;
+			return 4;
 		case 3:
 			return libhideIsHidden ? 2 : 1;
 		default:
@@ -99,6 +100,10 @@
 				case 2:
 					cell.textLabel.text = [LASharedActivator localizedStringForKey:@"MENUS" value:@"Menus"];
 					cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"MENUS_DETAIL" value:@"Manage custom Activator menus"];
+					break;
+				case 3:
+					cell.textLabel.text = [LASharedActivator localizedStringForKey:@"BLACKLIST" value:@"Blacklist"];
+					cell.detailTextLabel.text = [LASharedActivator localizedStringForKey:@"BLACKLIST_DETAIL" value:@"Ignore events in specific applications"];
 					break;
 			}
 			break;
@@ -156,6 +161,9 @@
 					return;
 				case 2:
 					vc = [[LAMenuSettingsController alloc] init];
+					break;
+				case 3:
+					vc = [[LABlacklistSettingsController alloc] init];
 					break;
 				default:
 					return;

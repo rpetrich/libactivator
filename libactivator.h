@@ -114,6 +114,12 @@ typedef enum {
 @property (nonatomic, readonly) NSArray *availableEventModes;
 @property (nonatomic, readonly) NSString *currentEventMode;
 
+// Blacklisting
+
+@property (nonatomic, readonly) NSString *displayIdentifierForCurrentApplication;
+- (BOOL)applicationWithDisplayIdentifierIsBlacklisted:(NSString *)displayIdentifier;
+- (void)setApplicationWithDisplayIdentifier:(NSString *)displayIdentifier isBlacklisted:(BOOL)blacklisted;
+
 @end
 
 extern LAActivator *LASharedActivator;

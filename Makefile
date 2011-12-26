@@ -12,7 +12,7 @@ libactivator_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 libactivator_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
 
 # Settings.dylib (/Library/Activator)
-Settings_FILES = LAListenerSettingsViewController.m LASettingsViewController.m LAWebSettingsController.m LARootSettingsController.m LAModeSettingsController.m LAEventSettingsController.m LAEventGroupSettingsController.m LAMenuSettingsController.m LAMenuItemsController.m LAMenuListenerSelectionController.m ActivatorEventViewHeader.m LAListenerTableViewDataSource.m
+Settings_FILES = LAListenerSettingsViewController.m LASettingsViewController.m LAWebSettingsController.m LARootSettingsController.m LAModeSettingsController.m LAEventSettingsController.m LAEventGroupSettingsController.m LAMenuSettingsController.m LAMenuItemsController.m LAMenuListenerSelectionController.m ActivatorEventViewHeader.m LAListenerTableViewDataSource.m LABlacklistSettingsController.m
 Settings_INSTALL_PATH = /Library/Activator
 Settings_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 Settings_LDFLAGS = -L$(FW_OBJ_DIR) -lactivator
