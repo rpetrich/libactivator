@@ -22,12 +22,28 @@ static LADefaultEventDataSource *sharedInstance;
 	if ((self = [super init])) {
 		// Cache event data
 		_eventData = [[NSMutableDictionary alloc] init];
+		Class arrayClass = [NSArray class];
 		NSString *eventsPath = SCRootPath(@"/Library/Activator/Events");
-		if (LASharedActivator.runningInsideSpringBoard) {
-			for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:eventsPath error:NULL])
-				if (![fileName hasPrefix:@"."]) {
-					[_eventData setObject:[NSBundle bundleWithPath:[eventsPath stringByAppendingPathComponent:fileName]] forKey:fileName];
+		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:eventsPath error:NULL]) {
+			if (![fileName hasPrefix:@"."]) {
+				NSBundle *bundle = [NSBundle bundleWithPath:[eventsPath stringByAppendingPathComponent:fileName]];
+				NSArray *foundationVersion = [bundle objectForInfoDictionaryKey:@"CoreFoundationVersion"];
+				if ([foundationVersion isKindOfClass:arrayClass]) {
+					switch ([foundationVersion count]) {
+						case 2:
+							if ([[foundationVersion objectAtIndex:1] doubleValue] <= kCFCoreFoundationVersionNumber)
+								goto skip;
+						case 1:
+							if ([[foundationVersion objectAtIndex:0] doubleValue] > kCFCoreFoundationVersionNumber)
+								goto skip;
+							break;
+						default:
+							goto skip;
+					}
+				}
+				[_eventData setObject:bundle forKey:fileName];
 				[LASharedActivator registerEventDataSource:self forEventName:fileName];
+			skip:;
 			}
 		}
 	}
