@@ -81,7 +81,7 @@ static void StatusBarTapCallback(CFRunLoopTimerRef timer, void *info)
 				LASendEventWithName(LAEventNameStatusBarSwipeLeft);
 			}
 		} else {
-			if (deltaY > kStatusBarVerticalSwipeThreshold) {
+			if (deltaY > kStatusBarVerticalSwipeThreshold && (kCFCoreFoundationVersionNumber < 675.00)) {
 				hasSentStatusBarEvent = YES;
 				LASendEventWithName(LAEventNameStatusBarSwipeDown);
 			}

@@ -1,0 +1,6 @@
+{
+	title = "From Screen Top-Left";
+	group = "Slide In Gesture";
+	description = "Drag onto screen from top-left";
+	CoreFoundationVersion = (675.00);
+}

@@ -26,7 +26,6 @@ NSString * const LAEventNameSpringBoardSpread      = @"libactivator.springboard.
 
 NSString * const LAEventNameStatusBarSwipeRight    = @"libactivator.statusbar.swipe.right";
 NSString * const LAEventNameStatusBarSwipeLeft     = @"libactivator.statusbar.swipe.left";
-NSString * const LAEventNameStatusBarSwipeDown     = @"libactivator.statusbar.swipe.down";
 NSString * const LAEventNameStatusBarTapDouble     = @"libactivator.statusbar.tap.double";
 NSString * const LAEventNameStatusBarTapSingle     = @"libactivator.statusbar.tap.single";
 NSString * const LAEventNameStatusBarHold          = @"libactivator.statusbar.hold";
@@ -46,6 +45,9 @@ NSString * const LAEventNameSlideInFromBottomLeft  = @"libactivator.slide-in.bot
 NSString * const LAEventNameSlideInFromBottomRight = @"libactivator.slide-in.bottom-right";
 NSString * const LAEventNameSlideInFromLeft        = @"libactivator.slide-in.left";
 NSString * const LAEventNameSlideInFromRight       = @"libactivator.slide-in.right";
+NSString * const LAEventNameStatusBarSwipeDown     = @"libactivator.statusbar.swipe.down"; // Now a slide in gesture on iOS5.0+
+NSString * const LAEventNameSlideInFromTopLeft     = @"libactivator.slide-in.top-left";
+NSString * const LAEventNameSlideInFromTopRight    = @"libactivator.slide-in.top-right";
 
 NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake";
 

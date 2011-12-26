@@ -160,6 +160,16 @@ static inline BOOL SlideGestureStartWithRotatedLocation(CGPoint location)
 		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, 0.0f }, { screenSize.width, screenSize.height - (kSlideGestureWindowHeight + 50.0f) }};
 		return YES;
 	}
+	if (location.y < kSlideGestureWindowHeight) {
+		if (location.x < screenSize.width * 0.25f)
+			startedSlideGestureName = LAEventNameSlideInFromTopLeft;
+		else if (location.x < screenSize.width * 0.75f)
+			startedSlideGestureName = LAEventNameSlideInFromTop;
+		else
+			startedSlideGestureName = LAEventNameSlideInFromTopRight;
+		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, kSlideGestureWindowHeight + 50.0f }, { screenSize.width, screenSize.height - (kSlideGestureWindowHeight + 50.0f) }};
+		return YES;
+	}
 	if (location.x < kSlideGestureWindowHeight) {
 		startedSlideGestureName = LAEventNameSlideInFromLeft;
 		rectToEnterToSendSlideGesture = (CGRect){ { kSlideGestureWindowHeight + 50.0f, 0.0f }, { screenSize.width - (kSlideGestureWindowHeight + 50.0f), screenSize.height }};

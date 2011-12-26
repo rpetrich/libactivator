@@ -222,7 +222,6 @@ extern NSString * const LAEventNameSpringBoardSpread;
 
 extern NSString * const LAEventNameStatusBarSwipeRight;
 extern NSString * const LAEventNameStatusBarSwipeLeft;
-extern NSString * const LAEventNameStatusBarSwipeDown;
 extern NSString * const LAEventNameStatusBarTapDouble;
 extern NSString * const LAEventNameStatusBarTapSingle;
 extern NSString * const LAEventNameStatusBarHold;
@@ -242,6 +241,10 @@ extern NSString * const LAEventNameSlideInFromBottomLeft;
 extern NSString * const LAEventNameSlideInFromBottomRight;
 extern NSString * const LAEventNameSlideInFromLeft;
 extern NSString * const LAEventNameSlideInFromRight;
+extern NSString * const LAEventNameStatusBarSwipeDown; // Now a slide gesture in iOS5.0+; extern and name kept for backwards compatibility
+#define LAEventNameSlideInFromTop LAEventNameStatusBarSwipeDown
+extern NSString * const LAEventNameSlideInFromTopLeft;
+extern NSString * const LAEventNameSlideInFromTopRight;
 
 extern NSString * const LAEventNameMotionShake;
 
