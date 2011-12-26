@@ -1,4 +1,4 @@
-#import "libactivator.h"
+#import "Settings.h"
 
 __attribute__((visibility("hidden")))
 @interface LAMenuListenerSelectionController : LASettingsViewController {

@@ -1,3 +1,4 @@
+#import "Settings.h"
 #import "libactivator-private.h"
 #import <objc/runtime.h>
 
@@ -297,7 +298,7 @@ __attribute__((visibility("hidden")))
 
 @end
 
-@implementation LASettingsViewController
+@implementation LASettingsViewController (API)
 
 static BOOL shouldShowAds;
 
@@ -330,7 +331,20 @@ static BOOL shouldShowAds;
 	[super dealloc];
 }
 
-@synthesize tableView = _tableView, delegate = _delegate;
+- (UITableView *)tableView
+{
+	return _tableView;
+}
+
+- (id<LASettingsViewControllerDelegate>)delegate
+{
+	return _delegate;
+}
+
+- (void)setDelegate:(id<LASettingsViewControllerDelegate>)delegate
+{
+	_delegate = delegate;
+}
 
 - (BOOL)showsAd
 {

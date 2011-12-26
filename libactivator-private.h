@@ -67,16 +67,6 @@ extern CPDistributedMessagingCenter *messagingCenter;
 - (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
 @end
 
-@interface LASettingsViewController () <UITableViewDataSource, UITableViewDelegate>
-@property (nonatomic, readonly) UITableView *tableView;
-@property (nonatomic, assign) id<LASettingsViewControllerDelegate> delegate;
-- (void)pushSettingsController:(LASettingsViewController *)controller;
-@end
-
-@protocol LASettingsViewControllerDelegate <NSObject>
-- (void)settingsViewController:(LASettingsViewController *)settingsController shouldPushToChildController:(LASettingsViewController *)childController;
-@end
-
 __attribute__((visibility("hidden")))
 @interface LAWebSettingsController : LARootSettingsController<UIWebViewDelegate> {
 @private

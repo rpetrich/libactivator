@@ -1,8 +1,8 @@
+#import "Settings.h"
+#import "libactivator-private.h"
+
 #import <Preferences/Preferences.h>
 #import <QuartzCore/QuartzCore.h>
-
-#import "libactivator.h"
-#import "libactivator-private.h"
 
 // TODO: figure out the proper way to store this in headers
 @interface PSViewController (OS32)

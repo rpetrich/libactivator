@@ -1,3 +1,4 @@
+#import "Settings.h"
 #import "libactivator.h"
 #import "libactivator-private.h"
 

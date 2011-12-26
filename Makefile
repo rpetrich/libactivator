@@ -4,12 +4,18 @@ all clean package install::
 	$(MAKE) $(MAKEFLAGS) MAKELEVEL=0 $@
 else
 
-LIBRARY_NAME = libactivator SpringBoard
+LIBRARY_NAME = libactivator Settings SpringBoard
 
 # libactivator.dylib (/usr/lib)
-libactivator_FILES = LAEvent.m LARemoteListener.m LAListener.m LAListenerSettingsViewController.m libactivator.x LASettingsViewController.m ActivatorEventViewHeader.m LAWebSettingsController.m LARootSettingsController.m LAModeSettingsController.m LAEventSettingsController.m LAEventGroupSettingsController.m LAEventDataSource.m LAListenerTableViewDataSource.m LAMenuSettingsController.m LAMenuItemsController.m LAMenuListenerSelectionController.m StatusBarEvents.x
+libactivator_FILES = LAEvent.m LARemoteListener.m LAListener.m libactivator.x LAEventDataSource.m StatusBarEvents.x LASettingsViewControllers.m
 libactivator_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 libactivator_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
+
+# Settings.dylib (/Library/Activator)
+Settings_FILES = LAListenerSettingsViewController.m LASettingsViewController.m LAWebSettingsController.m LARootSettingsController.m LAModeSettingsController.m LAEventSettingsController.m LAEventGroupSettingsController.m LAMenuSettingsController.m LAMenuItemsController.m LAMenuListenerSelectionController.m ActivatorEventViewHeader.m LAListenerTableViewDataSource.m
+Settings_INSTALL_PATH = /Library/Activator
+Settings_FRAMEWORKS = UIKit CoreGraphics QuartzCore
+Settings_LDFLAGS = -L$(FW_OBJ_DIR) -lactivator
 
 # SpringBoard.dylib (/Library/Activator)
 SpringBoard_FILES = Events.x SlideEvents.x LASimpleListener.x LAApplicationListener.x LAToggleListener.m LASpringBoardActivator.x LAMenuListener.m LADefaultEventDataSource.m

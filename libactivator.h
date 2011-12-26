@@ -162,67 +162,30 @@ extern LAActivator *LASharedActivator;
 
 @end
 
-// Settings Controller
+// Settings Controllers
 
-@protocol LASettingsViewControllerDelegate;
+#ifndef LA_SETTINGS_CONTROLLER
+#define LA_SETTINGS_CONTROLLER(superclass) : superclass
+#endif
 
-@interface LASettingsViewController : UIViewController {
-@private
-	UITableView *_tableView;
-	id<LASettingsViewControllerDelegate> _delegate;
-	UINavigationController *_savedNavigationController;
-}
-
+@interface LASettingsViewController LA_SETTINGS_CONTROLLER(UIViewController)
 + (id)controller;
 - (id)init;
-
 @end
 
-@interface LARootSettingsController : LASettingsViewController {
-}
+@interface LARootSettingsController LA_SETTINGS_CONTROLLER(LASettingsViewController)
 @end
 
-@interface LAModeSettingsController : LASettingsViewController {
-@private
-	NSString *_eventMode;
-	NSMutableDictionary *_events;
-	NSArray *_groups;
-}
-
+@interface LAModeSettingsController LA_SETTINGS_CONTROLLER(LASettingsViewController)
 - (id)initWithMode:(NSString *)mode;
-
 @end
 
-@class ActivatorEventViewHeader;
-@class LAListenerTableViewDataSource;
-
-@interface LAEventSettingsController : LASettingsViewController {
-@private
-	NSArray *_modes;
-	NSMutableSet *_currentAssignments;
-	NSString *_eventName;
-	LAListenerTableViewDataSource *_dataSource;
-	ActivatorEventViewHeader *_headerView;
-	UISearchBar *_searchBar;
-	UIView *_headerWrapper;
-}
-
+@interface LAEventSettingsController LA_SETTINGS_CONTROLLER(LASettingsViewController)
 - (id)initWithModes:(NSArray *)modes eventName:(NSString *)eventName;
-
 @end
 
-
-@interface LAListenerSettingsViewController : LASettingsViewController {
-@private
-	NSString *_listenerName;
-	NSString *_eventMode;
-	NSMutableDictionary *_events;
-	NSMutableDictionary *_compatibleEvents;
-	NSArray *_groups;
-}
-
+@interface LAListenerSettingsViewController LA_SETTINGS_CONTROLLER(LASettingsViewController)
 @property (nonatomic, copy) NSString *listenerName;
-
 @end
 
 extern NSString * const LAEventModeSpringBoard;

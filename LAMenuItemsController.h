@@ -1,4 +1,4 @@
-#import "libactivator.h"
+#import "Settings.h"
 
 @class LAMenuListenerSelectionController;
 @protocol LAMenuItemsControllerDelegate;

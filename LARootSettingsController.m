@@ -1,30 +1,24 @@
+#import "Settings.h"
 #import "libactivator-private.h"
 #import "LAMenuSettingsController.h"
 #include <dlfcn.h>
 #include <notify.h>
 
-typedef BOOL (*libhideIsHiddenFunction)(NSString *);
-
 @interface LARootSettingsController () <UIAlertViewDelegate>
-@property (nonatomic, assign) void *libhide;
-@property (nonatomic, assign) libhideIsHiddenFunction libhideIsHidden;
 @end
 
-@implementation LARootSettingsController
+@implementation LARootSettingsController (API)
 
 - (id)init
 {
 	if ((self = [super init])) {
 		self.navigationItem.title = [LASharedActivator localizedStringForKey:@"ACTIVATOR" value:@"Activator"];
 		void *lh = dlopen("/usr/lib/hide.dylib", RTLD_LAZY);
-		self.libhide = lh;
-		self.libhideIsHidden = dlsym(lh, "IsIconHiddenDisplayId");
+		libhide = lh;
+		libhideIsHidden = dlsym(lh, "IsIconHiddenDisplayId");
 	}
 	return self;
 }
-
-@synthesize libhide;
-@synthesize libhideIsHidden;
 
 - (void)loadView
 {

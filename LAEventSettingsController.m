@@ -1,11 +1,13 @@
-#import "libactivator-private.h"
+#import "Settings.h"
 #import "ActivatorEventViewHeader.h"
 #import "LAListenerTableViewDataSource.h"
+
+#import <UIKit/UIKit2.h>
 
 @interface LAEventSettingsController () <ActivatorEventViewHeaderDelegate, LAListenerTableViewDataSourceDelegate, UISearchBarDelegate>
 @end
 
-@implementation LAEventSettingsController
+@implementation LAEventSettingsController (API)
 
 - (void)updateHeader
 {
