@@ -10,7 +10,7 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 	return [[LASharedActivator localizedTitleForEventName:a] localizedCaseInsensitiveCompare:[LASharedActivator localizedTitleForEventName:b]];
 }
 
-@implementation LAListenerSettingsViewController 
+@implementation LAListenerSettingsViewController (API)
 
 - (id)init
 {
