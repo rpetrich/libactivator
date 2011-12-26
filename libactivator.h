@@ -261,6 +261,8 @@ extern NSString * const LAEventNameVolumeBothPress;
 extern NSString * const LAEventNameSlideInFromBottom;
 extern NSString * const LAEventNameSlideInFromBottomLeft;
 extern NSString * const LAEventNameSlideInFromBottomRight;
+extern NSString * const LAEventNameSlideInFromLeft;
+extern NSString * const LAEventNameSlideInFromRight;
 
 extern NSString * const LAEventNameMotionShake;
 

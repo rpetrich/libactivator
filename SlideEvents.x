@@ -139,7 +139,7 @@ static LASlideGestureWindow *rightSlideGestureWindow;
 @end
 
 static NSString *startedSlideGestureName;
-static CGFloat yCoordinateToPassToSendSlideGesture;
+static CGRect rectToEnterToSendSlideGesture;
 
 static inline BOOL SlideGestureStartWithRotatedLocation(CGPoint location)
 {
@@ -150,23 +150,33 @@ static inline BOOL SlideGestureStartWithRotatedLocation(CGPoint location)
 		screenSize.width = screenSize.height;
 		screenSize.height = temp;
 	}
-	if (location.y + kSlideGestureWindowHeight < screenSize.height) {
-		startedSlideGestureName = nil;
-		return NO;
+	if (location.y + kSlideGestureWindowHeight >= screenSize.height) {
+		if (location.x < screenSize.width * 0.25f)
+			startedSlideGestureName = LAEventNameSlideInFromBottomLeft;
+		else if (location.x < screenSize.width * 0.75f)
+			startedSlideGestureName = LAEventNameSlideInFromBottom;
+		else
+			startedSlideGestureName = LAEventNameSlideInFromBottomRight;
+		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, 0.0f }, { screenSize.width, screenSize.height - (kSlideGestureWindowHeight + 50.0f) }};
+		return YES;
 	}
-	if (location.x < screenSize.width * 0.25f)
-		startedSlideGestureName = LAEventNameSlideInFromBottomLeft;
-	else if (location.x < screenSize.width * 0.75f)
-		startedSlideGestureName = LAEventNameSlideInFromBottom;
-	else
-		startedSlideGestureName = LAEventNameSlideInFromBottomRight;
-	yCoordinateToPassToSendSlideGesture = screenSize.height - (kSlideGestureWindowHeight + 50.0f);
-	return YES;
+	if (location.x < kSlideGestureWindowHeight) {
+		startedSlideGestureName = LAEventNameSlideInFromLeft;
+		rectToEnterToSendSlideGesture = (CGRect){ { kSlideGestureWindowHeight + 50.0f, 0.0f }, { screenSize.width - (kSlideGestureWindowHeight + 50.0f), screenSize.height }};
+		return YES;
+	}
+	if (location.x >= screenSize.width - kSlideGestureWindowHeight) {
+		startedSlideGestureName = LAEventNameSlideInFromRight;
+		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, 0.0f }, { screenSize.width - (kSlideGestureWindowHeight + 50.0f), screenSize.height }};
+		return YES;
+	}
+	startedSlideGestureName = nil;
+	return NO;
 }
 
 static inline BOOL SlideGestureMoveWithRotatedLocation(CGPoint location)
 {
-	if (location.y < yCoordinateToPassToSendSlideGesture) {
+	if (CGRectContainsPoint(rectToEnterToSendSlideGesture, location)) {
 		BOOL result = LASendEventWithName(startedSlideGestureName).handled;
 		startedSlideGestureName = nil;
 		return result;

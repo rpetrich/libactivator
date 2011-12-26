@@ -44,6 +44,8 @@ NSString * const LAEventNameVolumeBothPress        = @"libactivator.volume.both.
 NSString * const LAEventNameSlideInFromBottom      = @"libactivator.slide-in.bottom";
 NSString * const LAEventNameSlideInFromBottomLeft  = @"libactivator.slide-in.bottom-left";
 NSString * const LAEventNameSlideInFromBottomRight = @"libactivator.slide-in.bottom-right";
+NSString * const LAEventNameSlideInFromLeft        = @"libactivator.slide-in.left";
+NSString * const LAEventNameSlideInFromRight       = @"libactivator.slide-in.right";
 
 NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake";
 
