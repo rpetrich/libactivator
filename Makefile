@@ -7,7 +7,7 @@ else
 LIBRARY_NAME = libactivator SpringBoard
 
 # libactivator.dylib (/usr/lib)
-libactivator_FILES = LAEvent.m LARemoteListener.m LAListener.m ListenerSettingsViewController.m libactivator.x LASettingsViewController.m ActivatorEventViewHeader.m LAWebSettingsController.m LARootSettingsController.m LAModeSettingsController.m LAEventSettingsController.m LAEventGroupSettingsController.m LAEventDataSource.m LAListenerTableViewDataSource.m LAMenuSettingsController.m LAMenuItemsController.m LAMenuListenerSelectionController.m StatusBarEvents.x
+libactivator_FILES = LAEvent.m LARemoteListener.m LAListener.m LAListenerSettingsViewController.m libactivator.x LASettingsViewController.m ActivatorEventViewHeader.m LAWebSettingsController.m LARootSettingsController.m LAModeSettingsController.m LAEventSettingsController.m LAEventGroupSettingsController.m LAEventDataSource.m LAListenerTableViewDataSource.m LAMenuSettingsController.m LAMenuItemsController.m LAMenuListenerSelectionController.m StatusBarEvents.x
 libactivator_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 libactivator_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
 
