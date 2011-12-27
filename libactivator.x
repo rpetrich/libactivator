@@ -173,7 +173,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (LAActivatorVersion)version
 {
-	return LAActivatorVersion_1_5_8;
+	return LAActivatorVersion_1_5_9;
 }
 
 - (BOOL)isRunningInsideSpringBoard
