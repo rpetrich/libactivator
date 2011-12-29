@@ -194,50 +194,116 @@ static inline BOOL SlideGestureMoveWithRotatedLocation(CGPoint location)
 	return NO;
 }
 
-%hook SBOffscreenSwipeGestureRecognizer
-static SBOffscreenSwipeGestureRecognizer *forcedOpenGesture;
+static CFMutableSetRef activeRecognizers;
+static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
+static SBOffscreenSwipeGestureRecognizer *forcedOpenRecognizer;
+static id oldHandler;
+
+%hook SBGestureRecognizer
+
+%new
++ (NSSet *)activeRecognizers
+{
+	return (NSSet *)activeRecognizers;
+}
+
+%new
++ (SBOffscreenSwipeGestureRecognizer *)activeRecognizer
+{
+	return activeRecognizer;
+}
+
+%new
++ (SBOffscreenSwipeGestureRecognizer *)forcedOpenRecognizer
+{
+	return forcedOpenRecognizer;
+}
+
+- (id)init
+{
+	if ((self = %orig)) {
+		if (!activeRecognizers)
+			activeRecognizers = CFSetCreateMutable(NULL, 0, NULL);
+		CFSetAddValue(activeRecognizers, self);
+	}
+	return self;
+}
 
 - (void)dealloc
 {
-	if (forcedOpenGesture == self)
-		forcedOpenGesture = nil;
+	if (forcedOpenRecognizer == self) {
+		forcedOpenRecognizer = nil;
+		[oldHandler release];
+		oldHandler = nil;
+	}
+	if (activeRecognizer == self)
+		activeRecognizer = nil;
+	CFSetRemoveValue(activeRecognizers, self);
 	%orig;
 }
 
+%end
+
+%hook SBOffscreenSwipeGestureRecognizer
+
 - (void)setState:(int)state
 {
-	if (state == 4)
-		forcedOpenGesture = self;
-	else
+	if ((activeRecognizer == self) && (state == 4)) {
+		forcedOpenRecognizer = self;
+		[oldHandler release];
+		oldHandler = [self.handler retain];
+		self.handler = nil;
+	} else {
 		%orig;
+	}
 }
 
 - (void)reset
 {
-	if (forcedOpenGesture == self)
-		forcedOpenGesture = nil;
+	if (forcedOpenRecognizer == self) {
+		forcedOpenRecognizer = nil;
+		if (!self.handler)
+			self.handler = oldHandler;
+		[oldHandler release];
+		oldHandler = nil;
+	}
+	if (activeRecognizer == self)
+		activeRecognizer = nil;
 	%orig;
 }
 
 - (void)touchesBegan:(SBGestureContextRef)touches
 {
 	%orig;
-	SlideGestureStartWithRotatedLocation(CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location);
+	if (!activeRecognizer) {
+		activeRecognizer = self;
+		SlideGestureStartWithRotatedLocation(CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location);
+	}
 }
 
 - (void)touchesMoved:(SBGestureContextRef)touches
 {
 	%orig;
-	if (startedSlideGestureName)
-		if (SlideGestureMoveWithRotatedLocation(CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location))
+	if (startedSlideGestureName && (activeRecognizer == self)) {
+		if (SlideGestureMoveWithRotatedLocation(CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location)) {
+			for (SBGestureRecognizer *recognizer in (NSSet *)activeRecognizers)
+				if (recognizer != self)
+					recognizer.state = 4;
 			[self sendTouchesCancelledToApplicationIfNeeded];
+		}
+	}
 }
 
 - (void)touchesCancelled:(SBGestureContextRef)touches
 {
 	%orig;
-	if (forcedOpenGesture == self)
-		forcedOpenGesture = nil;
+	if (forcedOpenRecognizer == self) {
+		forcedOpenRecognizer = nil;
+		if (!self.handler)
+			self.handler = oldHandler;
+		[oldHandler release];
+		oldHandler = nil;
+	}
 }
 
 %end
