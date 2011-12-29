@@ -4,6 +4,10 @@
 #import "LABlacklistSettingsController.h"
 #include <dlfcn.h>
 #include <notify.h>
+#include <sys/stat.h>
+#import <UIKit/UIKit2.h>
+
+static BOOL shouldLaunchCydia;
 
 @interface LARootSettingsController () <UIAlertViewDelegate>
 @end
@@ -21,10 +25,26 @@
 	return self;
 }
 
+static inline int PermissionsForFile(const char *path)
+{
+	struct stat buf;
+	return (stat(path, &buf) == 0) ? ({ NSLog(@"Activator: mode of %s is %d", path, buf.st_mode); buf.st_mode; }) : 0;
+}
+
 - (void)loadView
 {
 	if (!LASharedActivator.alive) {
-		UIAlertView *av = [[UIAlertView alloc] initWithTitle:[LASharedActivator localizedStringForKey:@"SAFE_MODE_TITLE" value:@"In Safe Mode"] message:[LASharedActivator localizedStringForKey:@"SAFE_MODE_MESSAGE" value:@"Your device is currently running in Safe Mode. Most features of Activator are disabled while the device is in safe mode. Restart SpringBoard to return to the normal mode."] delegate:self cancelButtonTitle:[LASharedActivator localizedStringForKey:@"SAFE_MODE_CANCEL" value:@"Cancel"] otherButtonTitles:[LASharedActivator localizedStringForKey:@"SAFE_MODE_RESTART" value:@"Restart"], nil];
+		UIAlertView *av;
+		if (((PermissionsForFile("/usr/lib/libactivator.dylib") & 0755) == 0755) &&
+			((PermissionsForFile("/Library/MobileSubstrate/DynamicLibraries/Activator.dylib") & 0755) == 0755) &&
+			((PermissionsForFile("/Library/Activator/SpringBoard.dylib") & 0755) == 0755)
+		) {
+			shouldLaunchCydia = NO;
+			av = [[UIAlertView alloc] initWithTitle:[LASharedActivator localizedStringForKey:@"ACTIVATOR_DISABLED" value:@"Activator Disabled"] message:[LASharedActivator localizedStringForKey:@"ACTIVATOR_DISABLED_MESSAGE" value:@"Most features of Activator are currently disabled because Mobile Substrate is not functioning. If your device is in Safe Mode, you will see \"Exit Safe Mode\" at the top of your screen, and you can tap \"Restart\" to return to normal mode."] delegate:self cancelButtonTitle:[LASharedActivator localizedStringForKey:@"SAFE_MODE_CANCEL" value:@"Cancel"] otherButtonTitles:[LASharedActivator localizedStringForKey:@"SAFE_MODE_RESTART" value:@"Restart"], nil];
+		} else {
+			shouldLaunchCydia = YES;
+			av = [[UIAlertView alloc] initWithTitle:[LASharedActivator localizedStringForKey:@"ACTIVATOR_CORRUPT" value:@"Activator Corrupt"] message:[LASharedActivator localizedStringForKey:@"ACTIVATOR_DISABLED_MESSAGE" value:@"Most features of Activator are currently disabled because Activator's internal files seem to be incorrect. Try going into Cydia and reinstalling Activator."] delegate:self cancelButtonTitle:[LASharedActivator localizedStringForKey:@"CORRUPT_CANCEL" value:@"Cancel"] otherButtonTitles:[LASharedActivator localizedStringForKey:@"CORRUPT_LAUNCH_CYDIA" value:@"Launch Cydia"], nil];
+		}
 		[av show];
 		[av release];
 	}
@@ -130,8 +150,13 @@
 	if (buttonIndex != alertView.cancelButtonIndex) {
 		if (LASharedActivator.alive)
 			[LASharedActivator _resetPreferences];
-		else
-			system("killall SpringBoard");
+		else {
+			if (shouldLaunchCydia) {
+				[UIApp openURL:[NSURL URLWithString:@"cydia://package/libactivator"]];
+			} else {
+				system("killall SpringBoard");
+			}
+		}
 	}
 }
 
