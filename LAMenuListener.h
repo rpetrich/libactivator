@@ -7,6 +7,7 @@ __attribute__((visibility("hidden")))
 	NSDictionary *menus;
 	UIWindow *alertWindow;
 	UIActionSheet *currentActionSheet;
+	UIViewController *viewController;
 	NSArray *currentItems;
 	LAEvent *currentEvent;
 	NSData *imageData;

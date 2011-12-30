@@ -1,7 +1,7 @@
 #import "LAMenuListener.h"
 #import "libactivator-private.h"
 
-#import <UIKit/UIKit.h>
+#import <UIKit/UIKit2.h>
 
 @interface LAMenuListener () <UIActionSheetDelegate>
 - (void)unloadConfiguration;
@@ -14,6 +14,23 @@
 
 @interface UIActionSheet (OS32)
 - (void)showFromRect:(CGRect)rect inView:(UIView *)view animated:(BOOL)animated;
+@end
+
+@interface UIViewController (Private)
+@property (nonatomic, assign, readwrite) UIInterfaceOrientation interfaceOrientation;
+@end
+
+__attribute__((visibility("hidden")))
+@interface LAMenuListenerViewController : UIViewController
+@end
+
+@implementation LAMenuListenerViewController
+
+- (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
+{
+	return YES;
+}
+
 @end
 
 @implementation LAMenuListener
@@ -121,17 +138,36 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 		actionSheet.delegate = self;
 		if (!alertWindow) {
 			alertWindow = [[UIWindow alloc] initWithFrame:[UIScreen mainScreen].bounds];
-			alertWindow.windowLevel = UIWindowLevelStatusBar;
+			alertWindow.windowLevel = 1050.1f /*UIWindowLevelStatusBar*/;
 		}
 		alertWindow.hidden = NO;
+		if (!viewController)
+			viewController = [[LAMenuListenerViewController alloc] init];
+		UIView *view = viewController.view;
+		if ([alertWindow respondsToSelector:@selector(setRootViewController:)])
+			[alertWindow setRootViewController:viewController];
+		else
+			[alertWindow addSubview:view];
+		if ([alertWindow respondsToSelector:@selector(_updateToInterfaceOrientation:animated:)])
+			[alertWindow _updateToInterfaceOrientation:[(SpringBoard *)UIApp _frontMostAppOrientation] animated:NO];
 		if ([UIDevice instancesRespondToSelector:@selector(isWildcat)] && [[UIDevice currentDevice] isWildcat]) {
-			CGRect bounds = alertWindow.bounds;
-			if (![event.name hasPrefix:@"libactivator.statusbar."])
-				bounds.origin.y += bounds.size.height;
-			bounds.size.height = 0.0f;
-			[actionSheet showFromRect:bounds inView:alertWindow animated:YES];
+			CGRect bounds = view.bounds;
+			NSString *eventName = event.name;
+			if ([eventName isEqualToString:LAEventNameSlideInFromLeft]) {
+				bounds.size.width = 1.0f;
+			} else if ([eventName isEqualToString:LAEventNameSlideInFromRight]) {
+				bounds.origin.x += bounds.size.width;
+				bounds.size.width = 1.0f;
+			} else if ([eventName isEqualToString:LAEventNameLockScreenClockDoubleTap]) {
+				bounds.size.height = 100.0f;
+			} else {
+				if (![eventName hasPrefix:@"libactivator.statusbar."] && ![eventName isEqualToString:LAEventNameSlideInFromTopLeft] && ![eventName isEqualToString:LAEventNameSlideInFromTopRight])
+					bounds.origin.y += bounds.size.height;
+				bounds.size.height = 1.0f;
+			}
+			[actionSheet showFromRect:bounds inView:view animated:YES];
 		} else {
-			[actionSheet showInView:alertWindow];
+			[actionSheet showInView:view];
 		}
 		currentActionSheet = actionSheet;
 		[currentEvent release];
