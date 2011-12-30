@@ -801,11 +801,12 @@ static BOOL justSuppressedNotificationSound;
 		}
 		case kGSEventVolumeDownButtonDown: {
 			// Suppress notification alert sounds
-			if ([%c(SBRemoteLocalNotificationAlert) respondsToSelector:@selector(isPlayingRingtone)] && [%c(SBRemoteLocalNotificationAlert) isPlayingRingtone]) {
-				NSArray *notificationAlerts = [(SBAlertItemsController *)[%c(SBAlertItemsController) sharedInstance] alertItemsOfClass:%c(SBRemoteLocalNotificationAlert)];
+			Class alarmClass = %c(SBSystemLocalNotificationAlert) ?: %c(SBRemoteLocalNotificationAlert);
+			if ([alarmClass respondsToSelector:@selector(isPlayingRingtone)] && [alarmClass isPlayingRingtone]) {
+				NSArray *notificationAlerts = [(SBAlertItemsController *)[%c(SBAlertItemsController) sharedInstance] alertItemsOfClass:alarmClass];
 				[notificationAlerts makeObjectsPerformSelector:@selector(snoozeIfPossible)];
-				if ([%c(SBRemoteLocalNotificationAlert) respondsToSelector:@selector(stopPlayingAlertSoundOrRingtone)]) {
-					[%c(SBRemoteLocalNotificationAlert) stopPlayingAlertSoundOrRingtone];
+				if ([alarmClass respondsToSelector:@selector(stopPlayingAlertSoundOrRingtone)]) {
+					[alarmClass stopPlayingAlertSoundOrRingtone];
 				}
 				justSuppressedNotificationSound = YES;
 				break;
