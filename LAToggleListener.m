@@ -118,18 +118,23 @@ static UIAlertView *alertView;
 		return [NSData dataWithContentsOfFile:[defaultThemePath stringByAppendingPathComponent:@"blankon.png"]];
 }
 
-- (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
+- (UIImage *)activator:(LAActivator *)activator requiresSmallIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
 {
-	NSData *data = [self activator:activator requiresIconDataForListenerName:listenerName];
-	UIImage *image = [UIImage imageWithData:data];
+	NSString *toggleName = ToggleNameFromListenerName(listenerName);
+	NSString *defaultThemePath = [LAToggleListener defaultThemePath];
+	NSString *path = [[defaultThemePath stringByAppendingPathComponent:toggleName] stringByAppendingPathComponent:@"on.png"];
+	UIImage *image = [UIImage imageWithContentsOfFile:path] ?: [UIImage imageWithContentsOfFile:[defaultThemePath stringByAppendingPathComponent:@"blankon.png"]];
+	if (!image)
+		return nil;
 	CGSize size = [image size];
 	if (size.width > 29.0f || size.height > 29.0f) {
-		CGFloat larger = (size.width > size.height) ? size.width : size.height;
-		image = [image _imageScaledToProportion:(29.0f / larger) interpolationQuality:kCGInterpolationDefault];
-		return UIImagePNGRepresentation(image);
-	} else {
-		return data;
+		CGFloat scale = ((size.width > size.height) ? size.width : size.height) * (1.0f / 29.0f);
+		if ([UIImage respondsToSelector:@selector(imageWithCGImage:scale:orientation:)])
+			image = [UIImage imageWithCGImage:image.CGImage scale:scale orientation:image.imageOrientation];
+		else
+			image = [image _imageScaledToProportion:1.0f / scale interpolationQuality:kCGInterpolationDefault];
 	}
+	return image;
 }
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
