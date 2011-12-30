@@ -195,9 +195,8 @@ static inline BOOL SlideGestureMoveWithRotatedLocation(CGPoint location)
 }
 
 static CFMutableSetRef activeRecognizers;
+static CFMutableDictionaryRef forcedOpenRecognizers;
 static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
-static SBOffscreenSwipeGestureRecognizer *forcedOpenRecognizer;
-static id oldHandler;
 
 %hook SBGestureRecognizer
 
@@ -213,17 +212,13 @@ static id oldHandler;
 	return activeRecognizer;
 }
 
-%new
-+ (SBOffscreenSwipeGestureRecognizer *)forcedOpenRecognizer
-{
-	return forcedOpenRecognizer;
-}
-
 - (id)init
 {
 	if ((self = %orig)) {
-		if (!activeRecognizers)
+		if (!activeRecognizers) {
 			activeRecognizers = CFSetCreateMutable(NULL, 0, NULL);
+			forcedOpenRecognizers = CFDictionaryCreateMutable(NULL, 0, NULL, &kCFTypeDictionaryValueCallBacks);
+		}
 		CFSetAddValue(activeRecognizers, self);
 	}
 	return self;
@@ -231,11 +226,7 @@ static id oldHandler;
 
 - (void)dealloc
 {
-	if (forcedOpenRecognizer == self) {
-		forcedOpenRecognizer = nil;
-		[oldHandler release];
-		oldHandler = nil;
-	}
+	CFDictionaryRemoveValue(forcedOpenRecognizers, self);
 	if (activeRecognizer == self)
 		activeRecognizer = nil;
 	CFSetRemoveValue(activeRecognizers, self);
@@ -248,10 +239,8 @@ static id oldHandler;
 
 - (void)setState:(int)state
 {
-	if ((activeRecognizer == self) && (state == 4)) {
-		forcedOpenRecognizer = self;
-		[oldHandler release];
-		oldHandler = [self.handler retain];
+	if ((state == 4) && (!activeRecognizer || (activeRecognizer == self))) {
+		CFDictionarySetValue(forcedOpenRecognizers, self, (id)self.handler ?: (id)[NSNull null]);
 		self.handler = nil;
 	} else {
 		%orig;
@@ -260,12 +249,11 @@ static id oldHandler;
 
 - (void)reset
 {
-	if (forcedOpenRecognizer == self) {
-		forcedOpenRecognizer = nil;
-		if (!self.handler)
-			self.handler = oldHandler;
-		[oldHandler release];
-		oldHandler = nil;
+	const void *handler;
+	if (CFDictionaryGetValueIfPresent(forcedOpenRecognizers, self, &handler)) {
+		if (!self.handler && (handler != [NSNull null]))
+			self.handler = handler;
+		CFDictionaryRemoveValue(forcedOpenRecognizers, self);
 	}
 	if (activeRecognizer == self)
 		activeRecognizer = nil;
@@ -274,9 +262,10 @@ static id oldHandler;
 
 - (void)touchesBegan:(SBGestureContextRef)touches
 {
-	%orig;
-	if (!activeRecognizer) {
-		activeRecognizer = self;
+	if ([(SBBulletinListController *)[%c(SBBulletinListController) sharedInstance] listViewIsActive])
+		%orig;
+	else {
+		%orig;
 		SlideGestureStartWithRotatedLocation(CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location);
 	}
 }
@@ -284,26 +273,32 @@ static id oldHandler;
 - (void)touchesMoved:(SBGestureContextRef)touches
 {
 	%orig;
-	if (startedSlideGestureName && (activeRecognizer == self)) {
-		if (SlideGestureMoveWithRotatedLocation(CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location)) {
+	if (startedSlideGestureName) {
+		if (!activeRecognizer)
+			activeRecognizer = self;
+		if ((activeRecognizer == self) && SlideGestureMoveWithRotatedLocation(CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location)) {
 			for (SBGestureRecognizer *recognizer in (NSSet *)activeRecognizers)
-				if (recognizer != self)
-					recognizer.state = 4;
+				recognizer.state = 4;
+			activeRecognizer = nil;
 			[self sendTouchesCancelledToApplicationIfNeeded];
+			SBBulletinListController *blc = (SBBulletinListController *)[%c(SBBulletinListController) sharedInstance];
+			if (blc)
+				[blc hideListViewAnimated:YES];
 		}
 	}
 }
 
 - (void)touchesCancelled:(SBGestureContextRef)touches
 {
-	%orig;
-	if (forcedOpenRecognizer == self) {
-		forcedOpenRecognizer = nil;
-		if (!self.handler)
-			self.handler = oldHandler;
-		[oldHandler release];
-		oldHandler = nil;
+	const void *handler;
+	if (CFDictionaryGetValueIfPresent(forcedOpenRecognizers, self, &handler)) {
+		if (!self.handler && (handler != [NSNull null]))
+			self.handler = handler;
+		CFDictionaryRemoveValue(forcedOpenRecognizers, self);
 	}
+	if (activeRecognizer == self)
+		activeRecognizer = nil;
+	%orig;
 }
 
 %end

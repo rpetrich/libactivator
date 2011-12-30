@@ -126,3 +126,10 @@ typedef struct {
 - (void)_updateAnimationDistanceAndEdgeCenter;
 @end
 
+@interface SBBulletinListController : NSObject
++ (SBBulletinListController *)sharedInstance;
+- (void)showListViewAnimated:(BOOL)animated;
+- (void)hideListViewAnimated:(BOOL)animated;
+- (BOOL)listViewIsActive;
+@end
+
