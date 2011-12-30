@@ -625,26 +625,31 @@ static CFRunLoopTimerRef volumeButtonUpTimer;
 static BOOL isVolumeButtonDown;
 static BOOL performedFirstHoldEvent;
 
+static inline BOOL ShouldUseChangeVolumeBy(VolumeControl *volumeControl)
+{
+	return [volumeControl respondsToSelector:@selector(_changeVolumeBy:)] && [%c(VolumeControl) respondsToSelector:@selector(volumeStep)] && [[UIDevice currentDevice] isWildcat];
+}
+
 static inline void IncreaseVolumeStep(VolumeControl *volumeControl)
 {
-	// MobileVolumeSound requires increaseVolume message be sent
-	/*if ([volumeControl respondsToSelector:@selector(_changeVolumeBy:)] && [%c(VolumeControl) respondsToSelector:@selector(volumeStep)])
+	// MobileVolumeSound requires increaseVolume message be sent, but that causes problems on iPad
+	if (ShouldUseChangeVolumeBy(volumeControl))
 		[volumeControl _changeVolumeBy:[%c(VolumeControl) volumeStep]];
-	else {*/
+	else {
 		[volumeControl increaseVolume];
 		[volumeControl cancelVolumeEvent];
-	//}
+	}
 }
 
 static inline void DecreaseVolumeStep(VolumeControl *volumeControl)
 {
 	// MobileVolumeSound requires decreaseVolume message be sent
-	/*if ([volumeControl respondsToSelector:@selector(_changeVolumeBy:)] && [%c(VolumeControl) respondsToSelector:@selector(volumeStep)])
+	if (ShouldUseChangeVolumeBy(volumeControl))
 		[volumeControl _changeVolumeBy:-[%c(VolumeControl) volumeStep]];
-	else {*/
+	else {
 		[volumeControl decreaseVolume];
 		[volumeControl cancelVolumeEvent];
-	//}
+	}
 }
 
 static void DestroyCurrentVolumeButtonUpTimer()
