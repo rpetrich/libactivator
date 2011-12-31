@@ -240,8 +240,10 @@ static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
 - (void)setState:(int)state
 {
 	if ((state == 4) && (!activeRecognizer || (activeRecognizer == self))) {
-		CFDictionarySetValue(forcedOpenRecognizers, self, (id)self.handler ?: (id)[NSNull null]);
-		self.handler = nil;
+		if (!CFDictionaryContainsKey(forcedOpenRecognizers, self)) {
+			CFDictionarySetValue(forcedOpenRecognizers, self, (id)self.handler ?: (id)[NSNull null]);
+			self.handler = nil;
+		}
 	} else {
 		%orig;
 	}
