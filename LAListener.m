@@ -88,7 +88,9 @@
 	if (scaleCopy != 1.0f) {
 		NSBundle *bundle = ListenerBundle(listenerName);
 		result = [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon-small@%.0fx", scaleCopy] ofType:@"png"]]
-		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-small@%.0fx", scaleCopy] ofType:@"png"]];
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-small@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"icon-small-fallback@%.0fx", scaleCopy] ofType:@"png"]]
+		      ?: [NSData dataWithContentsOfMappedFile:[bundle pathForResource:[NSString stringWithFormat:@"Icon-small-fallback@%.0fx", scaleCopy] ofType:@"png"]];
 		if (result)
 			return result;
 	}
