@@ -1,0 +1,6 @@
+{
+	title = "Virtual Assistant";
+	description = "Activate virtual assistant";
+	group = "System Actions";
+	selector = "activateVirtualAssistant";
+}

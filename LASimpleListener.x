@@ -100,6 +100,16 @@ static LASimpleListener *sharedSimpleListener;
 @property (nonatomic, readwrite, assign) UIInterfaceOrientation interfaceOrientation;
 @end
 
+@interface SpringBoard (iOS5)
+- (void)activateAssistantWithOptions:(id)options withCompletion:(id)completionBlock;
+@end
+
+@interface SBAssistantController : NSObject
++ (BOOL)deviceSupported;
++ (BOOL)preferenceEnabled;
++ (BOOL)shouldEnterAssistant;
+@end
+
 void UIKeyboardEnableAutomaticAppearance();
 void UIKeyboardDisableAutomaticAppearance();
 
@@ -205,6 +215,17 @@ __attribute__((visibility("hidden")))
 		[alert _workspaceActivate];
 		[alert release];
 		return YES;
+	}
+	return NO;
+}
+
+- (BOOL)activateVirtualAssistant
+{
+	if ([%c(SBAssistantController) preferenceEnabled]) {
+		if ([%c(SBAssistantController) shouldEnterAssistant]) {
+			[(SpringBoard *)UIApp activateAssistantWithOptions:nil withCompletion:nil];
+			return YES;
+		}
 	}
 	return NO;
 }
@@ -540,6 +561,8 @@ static UIWindow *tweetFormerKeyWindow;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.first-springboard-page"];
 		if ([%c(SBVoiceControlAlert) shouldEnterVoiceControl])
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
+		if ([%c(SBAssistantController) deviceSupported])
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.virtual-assistant"];
 		if (GSSystemHasCapability(CFSTR("multitasking"))) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-switcher"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.show-now-playing-bar"];
