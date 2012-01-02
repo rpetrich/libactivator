@@ -379,11 +379,15 @@ __attribute__((visibility("hidden")))
 		SBApplication *application = [(SBApplicationController *)[%c(SBApplicationController) sharedInstance] applicationWithDisplayIdentifier:@"com.apple.mobileipod"];
 		return [[LAApplicationListener sharedInstance] activateApplication:application];
 	}
-	shouldAddNowPlayingButton = NO;
 	SBNowPlayingAlertItem *newAlert = [[%c(SBNowPlayingAlertItem) alloc] init];
-	[controller activateAlertItem:newAlert];
-	[newAlert release];
-	return YES;
+	if (newAlert) {
+		shouldAddNowPlayingButton = NO;
+		[controller activateAlertItem:newAlert];
+		[newAlert release];
+		return YES;
+	} else {
+		return [self showNowPlayingBar];
+	}
 }
 
 - (BOOL)showPhoneFavorites
