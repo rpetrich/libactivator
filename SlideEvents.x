@@ -394,6 +394,20 @@ __attribute__((visibility("hidden")))
 
 %end
 
+%hook UIStatusBar
+
+- (id)initWithFrame:(CGRect)frame showForegroundView:(BOOL)showForegroundView
+{
+	if ((self = %orig)) {
+		ActivatorSlideGestureRecognizer *recognizer = [[ActivatorSlideGestureRecognizer alloc] init];
+		[self addGestureRecognizer:recognizer];
+		[recognizer release];
+	}
+	return self;
+}
+
+%end
+
 %hook SBAwayController
 
 - (void)_sendLockStateChangedNotification
