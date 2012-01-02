@@ -219,20 +219,6 @@ static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
 
 %hook SBGestureRecognizer
 
-#ifdef DEBUG
-%new
-+ (NSSet *)activeRecognizers
-{
-	return (NSSet *)activeRecognizers;
-}
-
-%new
-+ (SBOffscreenSwipeGestureRecognizer *)activeRecognizer
-{
-	return activeRecognizer;
-}
-#endif
-
 - (id)init
 {
 	if ((self = %orig)) {
