@@ -138,13 +138,20 @@ static LASlideGestureWindow *rightSlideGestureWindow;
 
 @end
 
-static NSString *startedSlideGestureName;
-static CGRect rectToEnterToSendSlideGesture;
+static void *kStartedSlideGestureName;
+#define SetStartedSlideGestureName(value) objc_setAssociatedObject(self, &kStartedSlideGestureName, value, OBJC_ASSOCIATION_ASSIGN)
+#define GetStartedSlideGestureName() objc_getAssociatedObject(self, &kStartedSlideGestureName)
 
-static inline BOOL SlideGestureStartWithRotatedLocation(CGPoint location)
+static void *kRectToEnterToSendSlideGesture;
+#define SetRectToEnterToSendSlideGesture(value) objc_setAssociatedObject(self, &kRectToEnterToSendSlideGesture, [NSValue valueWithCGRect:value], OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+#define GetRectToEnterToSendSlideGesture() [objc_getAssociatedObject(self, &kRectToEnterToSendSlideGesture) CGRectValue]
+
+static inline BOOL SlideGestureStartWithRotatedLocation(id self, CGPoint location)
 {
 	CGSize screenSize = [UIScreen mainScreen].bounds.size;
 	UIInterfaceOrientation interfaceOrientation = [(SpringBoard *)UIApp activeInterfaceOrientation];
+	NSString *startedSlideGestureName;
+	CGRect rectToEnterToSendSlideGesture;
 	if (UIInterfaceOrientationIsLandscape(interfaceOrientation)) {
 		CGFloat temp = screenSize.width;
 		screenSize.width = screenSize.height;
@@ -158,9 +165,7 @@ static inline BOOL SlideGestureStartWithRotatedLocation(CGPoint location)
 		else
 			startedSlideGestureName = LAEventNameSlideInFromBottomRight;
 		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, 0.0f }, { screenSize.width, screenSize.height - (kSlideGestureWindowHeight + 50.0f) }};
-		return YES;
-	}
-	if (location.y < kSlideGestureWindowHeight) {
+	} else if (location.y < kSlideGestureWindowHeight) {
 		if (location.x < screenSize.width * 0.25f)
 			startedSlideGestureName = LAEventNameSlideInFromTopLeft;
 		else if (location.x < screenSize.width * 0.75f)
@@ -168,29 +173,43 @@ static inline BOOL SlideGestureStartWithRotatedLocation(CGPoint location)
 		else
 			startedSlideGestureName = LAEventNameSlideInFromTopRight;
 		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, kSlideGestureWindowHeight + 50.0f }, { screenSize.width, screenSize.height - (kSlideGestureWindowHeight + 50.0f) }};
-		return YES;
-	}
-	if (location.x < kSlideGestureWindowHeight) {
+	} else if (location.x < kSlideGestureWindowHeight) {
 		startedSlideGestureName = LAEventNameSlideInFromLeft;
 		rectToEnterToSendSlideGesture = (CGRect){ { kSlideGestureWindowHeight + 50.0f, 0.0f }, { screenSize.width - (kSlideGestureWindowHeight + 50.0f), screenSize.height }};
-		return YES;
-	}
-	if (location.x >= screenSize.width - kSlideGestureWindowHeight) {
+	} else if (location.x >= screenSize.width - kSlideGestureWindowHeight) {
 		startedSlideGestureName = LAEventNameSlideInFromRight;
 		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, 0.0f }, { screenSize.width - (kSlideGestureWindowHeight + 50.0f), screenSize.height }};
-		return YES;
+	} else {
+#ifdef DEBUG
+		NSLog(@"Activator: No slide gesture from this touch");
+#endif
+		SetStartedSlideGestureName(nil);
+		return NO;
 	}
-	startedSlideGestureName = nil;
-	return NO;
+#ifdef DEBUG
+	NSLog(@"Activator: Rect to enter is %@ to trigger %@", NSStringFromCGRect(rectToEnterToSendSlideGesture), startedSlideGestureName);
+#endif
+	SetStartedSlideGestureName(startedSlideGestureName);
+	SetRectToEnterToSendSlideGesture(rectToEnterToSendSlideGesture);
+	return YES;
 }
 
-static inline BOOL SlideGestureMoveWithRotatedLocation(CGPoint location)
+static inline BOOL SlideGestureMoveWithRotatedLocation(id self, CGPoint location)
 {
-	if (CGRectContainsPoint(rectToEnterToSendSlideGesture, location)) {
-		BOOL result = LASendEventWithName(startedSlideGestureName).handled;
-		startedSlideGestureName = nil;
-		return result;
+	if (CGRectContainsPoint(GetRectToEnterToSendSlideGesture(), location)) {
+		NSString *gestureName = GetStartedSlideGestureName();
+		if (gestureName) {
+#ifdef DEBUG
+			NSLog(@"Activator: Sending %@ in rect %@", gestureName, NSStringFromCGRect(GetRectToEnterToSendSlideGesture()));
+#endif
+			BOOL result = LASendEventWithName(gestureName).handled;
+			SetStartedSlideGestureName(nil);
+			return result;
+		}
 	}
+#ifdef DEBUG
+	NSLog(@"Activator: Touch at %@ does not match rect %@", NSStringFromCGPoint(location), NSStringFromCGRect(GetRectToEnterToSendSlideGesture()));
+#endif
 	return NO;
 }
 
@@ -200,6 +219,7 @@ static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
 
 %hook SBGestureRecognizer
 
+#ifdef DEBUG
 %new
 + (NSSet *)activeRecognizers
 {
@@ -211,6 +231,7 @@ static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
 {
 	return activeRecognizer;
 }
+#endif
 
 - (id)init
 {
@@ -244,6 +265,7 @@ static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
 			CFDictionarySetValue(forcedOpenRecognizers, self, (id)self.handler ?: (id)[NSNull null]);
 			self.handler = nil;
 		}
+		%orig(2);
 	} else {
 		%orig;
 	}
@@ -251,14 +273,16 @@ static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
 
 - (void)reset
 {
-	const void *handler;
-	if (CFDictionaryGetValueIfPresent(forcedOpenRecognizers, self, &handler)) {
-		if (!self.handler && (handler != [NSNull null]))
-			self.handler = handler;
-		CFDictionaryRemoveValue(forcedOpenRecognizers, self);
+	if ([self shouldReceiveTouches]) {
+		const void *handler;
+		if (CFDictionaryGetValueIfPresent(forcedOpenRecognizers, self, &handler)) {
+			if (!self.handler && (handler != [NSNull null]))
+				self.handler = handler;
+			CFDictionaryRemoveValue(forcedOpenRecognizers, self);
+		}
+		if (activeRecognizer == self)
+			activeRecognizer = nil;
 	}
-	if (activeRecognizer == self)
-		activeRecognizer = nil;
 	%orig;
 }
 
@@ -268,25 +292,23 @@ static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
 		%orig;
 	else {
 		%orig;
-		SlideGestureStartWithRotatedLocation(CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location);
+		SlideGestureStartWithRotatedLocation(self, CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location);
 	}
 }
 
 - (void)touchesMoved:(SBGestureContextRef)touches
 {
 	%orig;
-	if (startedSlideGestureName) {
-		if (!activeRecognizer)
-			activeRecognizer = self;
-		if ((activeRecognizer == self) && SlideGestureMoveWithRotatedLocation(CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location)) {
-			for (SBGestureRecognizer *recognizer in (NSSet *)activeRecognizers)
-				recognizer.state = 4;
-			activeRecognizer = nil;
-			[self sendTouchesCancelledToApplicationIfNeeded];
-			SBBulletinListController *blc = (SBBulletinListController *)[%c(SBBulletinListController) sharedInstance];
-			if (blc)
-				[blc hideListViewAnimated:YES];
-		}
+	if (!activeRecognizer)
+		activeRecognizer = self;
+	if ((activeRecognizer == self) && SlideGestureMoveWithRotatedLocation(self, CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location)) {
+		for (SBGestureRecognizer *recognizer in (NSSet *)activeRecognizers)
+			recognizer.state = 4;
+		activeRecognizer = nil;
+		[self sendTouchesCancelledToApplicationIfNeeded];
+		SBBulletinListController *blc = (SBBulletinListController *)[%c(SBBulletinListController) sharedInstance];
+		if (blc)
+			[blc hideListViewAnimated:YES];
 	}
 }
 
@@ -314,32 +336,30 @@ __attribute__((visibility("hidden")))
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	UITouch *touch = [touches anyObject];
-	self.state = SlideGestureStartWithRotatedLocation([touch locationInView:self.view]) ? UIGestureRecognizerStatePossible : UIGestureRecognizerStateFailed;
+	self.state = SlideGestureStartWithRotatedLocation(self, [touch locationInView:self.view]) ? UIGestureRecognizerStatePossible : UIGestureRecognizerStateFailed;
 }
 
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
-	if (startedSlideGestureName) {
+	if (self.state == UIGestureRecognizerStatePossible) {
 		if ([touches count] == 1) {
 			UITouch *touch = [touches anyObject];
-			if (SlideGestureMoveWithRotatedLocation([touch locationInView:self.view]))
+			if (SlideGestureMoveWithRotatedLocation(self, [touch locationInView:self.view]))
 				self.state = UIGestureRecognizerStateRecognized;
 		} else {
-			startedSlideGestureName = nil;
+			self.state = UIGestureRecognizerStateFailed;
 		}
 	}
 }
 
 - (void)touchesEnded:(NSSet *)touches withEvent:(UIEvent *)event
 {
-	startedSlideGestureName = nil;
 	if (self.state == UIGestureRecognizerStatePossible)
 		self.state = UIGestureRecognizerStateFailed;
 }
 
 - (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event
 {
-	startedSlideGestureName = nil;
 	if (self.state == UIGestureRecognizerStatePossible)
 		self.state = UIGestureRecognizerStateFailed;
 }
