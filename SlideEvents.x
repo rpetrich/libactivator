@@ -265,7 +265,6 @@ static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
 			CFDictionarySetValue(forcedOpenRecognizers, self, (id)self.handler ?: (id)[NSNull null]);
 			self.handler = nil;
 		}
-		%orig(2);
 	} else {
 		%orig;
 	}
