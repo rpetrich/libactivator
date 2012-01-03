@@ -99,15 +99,17 @@ __attribute__((visibility("hidden")))
 __attribute__((visibility("hidden")))
 extern NSMutableDictionary *listenerBundles;
 static inline NSBundle *ListenerBundle(NSString *listenerName) {
-	if (!listenerBundles) {
-		// Cache listener data
-		listenerBundles = [[NSMutableDictionary alloc] init];
-		NSString *listenersPath = SCRootPath(@"/Library/Activator/Listeners");
-		for (NSString *fileName in [[NSFileManager defaultManager] contentsOfDirectoryAtPath:listenersPath error:NULL])
-			if (![fileName hasPrefix:@"."])
-				[listenerBundles setObject:[NSBundle bundleWithPath:[listenersPath stringByAppendingPathComponent:fileName]] forKey:fileName];
+	NSBundle *result = [listenerBundles objectForKey:listenerName];
+	if (!result) {
+		NSString *path = [SCRootPath(@"/Library/Activator/Listeners") stringByAppendingPathComponent:listenerName];
+		result = [NSBundle bundleWithPath:path];
+		if (result) {
+			if (!listenerBundles)
+				listenerBundles = [[NSMutableDictionary alloc] init];
+			[listenerBundles setObject:result forKey:listenerName];
+		}
 	}
-	return [listenerBundles objectForKey:listenerName];
+	return result;
 }
 __attribute__((visibility("hidden")))
 extern NSBundle *activatorBundle;
