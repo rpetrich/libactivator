@@ -4,6 +4,7 @@
 #import "LAApplicationListener.h"
 #import <UIKit/UIKit2.h>
 #import <SpringBoard/SpringBoard.h>
+#import <SpringBoard/SBGestureRecognizer.h>
 #import <GraphicsServices/GraphicsServices.h>
 #import <CaptainHook/CaptainHook.h>
 #import <MediaPlayer/MediaPlayer.h>
@@ -83,13 +84,6 @@ static LASimpleListener *sharedSimpleListener;
 
 @interface SBAlertItemsController (iOS42)
 - (BOOL)hasAlertOfClass:(Class)alertClass;
-@end
-
-@interface SBBulletinListController : NSObject
-+ (SBBulletinListController *)sharedInstance;
-- (void)showListViewAnimated:(BOOL)animated;
-- (void)hideListViewAnimated:(BOOL)animated;
-- (BOOL)listViewIsActive;
 @end
 
 @interface TWTweetComposeViewController : UIViewController
@@ -550,7 +544,9 @@ static UIWindow *tweetFormerKeyWindow;
 + (void)initialize
 {
 	if (self == [LASimpleListener class]) {
+#ifndef SINGLE
 		%init;
+#endif
 		sharedSimpleListener = [[self alloc] init];
 		// System
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.homebutton"];

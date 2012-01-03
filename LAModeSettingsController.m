@@ -1,10 +1,12 @@
 #import "Settings.h"
 #import "libactivator-private.h"
 
+#ifndef SINGLE
 static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 {
 	return [[LASharedActivator localizedTitleForEventName:a] localizedCaseInsensitiveCompare:[LASharedActivator localizedTitleForEventName:b]];
 }
+#endif
 
 @implementation LAModeSettingsController (API)
 

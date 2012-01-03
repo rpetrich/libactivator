@@ -477,7 +477,9 @@ static void NewCydiaStatusChanged()
 		if (![[_preferences objectForKey:@"LAHasNewCydia"] boolValue]) {
 			CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL, (void *)NewCydiaStatusChanged, CFSTR("com.saurik.Cydia.status"), NULL, CFNotificationSuspensionBehaviorCoalesce);
 		}
+#ifndef SINGLE
 		%init;
+#endif
 	}
 	return self;
 }

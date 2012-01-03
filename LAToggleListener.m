@@ -30,19 +30,19 @@ static CFMutableDictionaryRef toggles;
 
 @implementation LAToggleListener
 
-static LAToggleListener *sharedInstance;
+static LAToggleListener *sharedToggleListener;
 static UIAlertView *alertView;
 
 + (void)initialize
 {
 	if (self == [LAToggleListener class]) {
-		sharedInstance = [[self alloc] init];
+		sharedToggleListener = [[self alloc] init];
 	}
 }
 
 + (id)sharedInstance
 {
-	return sharedInstance;
+	return sharedToggleListener;
 }
 
 + (NSString *)togglesPath

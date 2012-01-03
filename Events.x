@@ -55,11 +55,11 @@ static inline id<LAListener> LAListenerForEventWithName(NSString *eventName)
 - (void)hideVolumeHUDIfVisible;
 @end
 
-@interface SBIconController (OS40)
+@interface SBIconController (iOS40)
 - (id)currentFolderIconList;
 @end
 
-@interface SBUIController (OS40)
+@interface SBUIController (iOS40)
 - (BOOL)isSwitcherShowing;
 @end
 

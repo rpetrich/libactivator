@@ -4,17 +4,17 @@
 
 @implementation LADefaultEventDataSource
 
-static LADefaultEventDataSource *sharedInstance;
+static LADefaultEventDataSource *sharedDefaultEventDataSource;
 
 + (void)initialize
 {
 	if (self == [LADefaultEventDataSource class])
-		sharedInstance = [[self alloc] init];
+		sharedDefaultEventDataSource = [[self alloc] init];
 }
 
 + (LADefaultEventDataSource *)sharedInstance
 {
-	return sharedInstance;
+	return sharedDefaultEventDataSource;
 }
 
 - (id)init

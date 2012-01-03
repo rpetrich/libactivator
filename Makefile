@@ -7,18 +7,30 @@ else
 LIBRARY_NAME = libactivator Settings SpringBoard
 
 # libactivator.dylib (/usr/lib)
-libactivator_FILES = LAEvent.m LARemoteListener.m LAListener.m libactivator.x LAEventDataSource.m StatusBarEvents.x LASettingsViewControllers.m
+ifeq ($(SINGLE),1)
+	libactivator_FILES = single_libactivator.xi
+else
+	libactivator_FILES = LAEvent.m LARemoteListener.m LAListener.m libactivator.x LAEventDataSource.m StatusBarEvents.x LASettingsViewControllers.m
+endif
 libactivator_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 libactivator_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
 
 # Settings.dylib (/Library/Activator)
-Settings_FILES = LAListenerSettingsViewController.m LASettingsViewController.m LAWebSettingsController.m LARootSettingsController.m LAModeSettingsController.m LAEventSettingsController.m LAEventGroupSettingsController.m LAMenuSettingsController.m LAMenuItemsController.m LAMenuListenerSelectionController.m ActivatorEventViewHeader.m LAListenerTableViewDataSource.m LABlacklistSettingsController.m
+ifeq ($(SINGLE),1)
+	Settings_FILES = single_Settings.m
+else
+	Settings_FILES = LAListenerSettingsViewController.m LASettingsViewController.m LAWebSettingsController.m LARootSettingsController.m LAModeSettingsController.m LAEventSettingsController.m LAEventGroupSettingsController.m LAMenuSettingsController.m LAMenuItemsController.m LAMenuListenerSelectionController.m ActivatorEventViewHeader.m LAListenerTableViewDataSource.m LABlacklistSettingsController.m
+endif
 Settings_INSTALL_PATH = /Library/Activator
 Settings_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 Settings_LDFLAGS = -L$(FW_OBJ_DIR) -lactivator
 
 # SpringBoard.dylib (/Library/Activator)
-SpringBoard_FILES = Events.x SlideEvents.x LASimpleListener.x LAApplicationListener.x LAToggleListener.m LASpringBoardActivator.x LAMenuListener.m LADefaultEventDataSource.m
+ifeq ($(SINGLE),1)
+	SpringBoard_FILES = single_SpringBoard.xi
+else
+	SpringBoard_FILES = Events.x SlideEvents.x LASimpleListener.x LAApplicationListener.x LAToggleListener.m LASpringBoardActivator.x LAMenuListener.m LADefaultEventDataSource.m
+endif
 SpringBoard_INSTALL_PATH = /Library/Activator
 SpringBoard_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 SpringBoard_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
@@ -40,6 +52,10 @@ Activator_LDFLAGS = -L$(FW_OBJ_DIR) -lactivator
 ADDITIONAL_CFLAGS = -std=c99 -fomit-frame-pointer
 OPTFLAG = -Os
 TARGET_IPHONEOS_DEPLOYMENT_VERSION = 3.0
+
+ifeq ($(SINGLE),1)
+	ADDITIONAL_CFLAGS += -DSINGLE
+endif
 
 ifeq ($(PROFILING),1)
 	ADDITIONAL_CFLAGS += -DCHEnableProfiling
