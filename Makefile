@@ -79,8 +79,8 @@ include Localization/makefiles/common.mk
 internal-stage::
 	mkdir -p $(THEOS_STAGING_DIR)/usr/include/libactivator
 	mkdir -p $(THEOS_STAGING_DIR)/Library/Activator/Listeners
-	cp -a libactivator.h $(FW_STAGING_DIR)/usr/include/libactivator/
-	cp -a LICENSE $(FW_STAGING_DIR)/Library/Activator
+	$(ECHO_NOTHING)rsync -a ./libactivator.h $(THEOS_STAGING_DIR)/usr/include/libactivator $(FW_RSYNC_EXCLUDES)$(ECHO_END)
+	$(ECHO_NOTHING)rsync -a ./LICENSE $(THEOS_STAGING_DIR)/Library/Activator $(FW_RSYNC_EXCLUDES)$(ECHO_END)
 	- find $(THEOS_STAGING_DIR) -iname '*.plist' -or -iname '*.strings' -exec plutil -convert binary1 {} \;
 
 internal-after-install::
