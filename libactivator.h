@@ -247,6 +247,15 @@ extern NSString * const LAEventNameStatusBarSwipeDown; // Now a slide gesture in
 extern NSString * const LAEventNameSlideInFromTopLeft;
 extern NSString * const LAEventNameSlideInFromTopRight;
 
+extern NSString * const LAEventNameTwoFingerSlideInFromBottom;
+extern NSString * const LAEventNameTwoFingerSlideInFromBottomLeft;
+extern NSString * const LAEventNameTwoFingerSlideInFromBottomRight;
+extern NSString * const LAEventNameTwoFingerSlideInFromLeft;
+extern NSString * const LAEventNameTwoFingerSlideInFromRight;
+extern NSString * const LAEventNameTwoFingerSlideInFromTop;
+extern NSString * const LAEventNameTwoFingerSlideInFromTopLeft;
+extern NSString * const LAEventNameTwoFingerSlideInFromTopRight;
+
 extern NSString * const LAEventNameMotionShake;
 
 extern NSString * const LAEventNameHeadsetButtonPressSingle;

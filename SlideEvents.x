@@ -142,6 +142,10 @@ static void *kStartedSlideGestureName;
 #define SetStartedSlideGestureName(value) objc_setAssociatedObject(self, &kStartedSlideGestureName, value, OBJC_ASSOCIATION_ASSIGN)
 #define GetStartedSlideGestureName() objc_getAssociatedObject(self, &kStartedSlideGestureName)
 
+static void *kStartedTwoFingerSlideGestureName;
+#define SetStartedTwoFingerSlideGestureName(value) objc_setAssociatedObject(self, &kStartedTwoFingerSlideGestureName, value, OBJC_ASSOCIATION_ASSIGN)
+#define GetStartedTwoFingerSlideGestureName() objc_getAssociatedObject(self, &kStartedTwoFingerSlideGestureName)
+
 static void *kRectToEnterToSendSlideGesture;
 #define SetRectToEnterToSendSlideGesture(value) objc_setAssociatedObject(self, &kRectToEnterToSendSlideGesture, [NSValue valueWithCGRect:value], OBJC_ASSOCIATION_RETAIN_NONATOMIC)
 #define GetRectToEnterToSendSlideGesture() [objc_getAssociatedObject(self, &kRectToEnterToSendSlideGesture) CGRectValue]
@@ -153,6 +157,7 @@ static inline BOOL SlideGestureStartWithRotatedLocation(id self, CGPoint locatio
 	CGSize screenSize = [UIScreen mainScreen].bounds.size;
 	UIInterfaceOrientation interfaceOrientation = [(SpringBoard *)UIApp activeInterfaceOrientation];
 	NSString *startedSlideGestureName;
+	NSString *startedTwoFingerSlideGestureName;
 	CGRect rectToEnterToSendSlideGesture;
 	if (UIInterfaceOrientationIsLandscape(interfaceOrientation)) {
 		CGFloat temp = screenSize.width;
@@ -160,26 +165,36 @@ static inline BOOL SlideGestureStartWithRotatedLocation(id self, CGPoint locatio
 		screenSize.height = temp;
 	}
 	if (location.y + kSlideGestureWindowHeight >= screenSize.height) {
-		if (location.x < screenSize.width * 0.25f)
+		if (location.x < screenSize.width * 0.25f) {
 			startedSlideGestureName = LAEventNameSlideInFromBottomLeft;
-		else if (location.x < screenSize.width * 0.75f)
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromBottomLeft;
+		} else if (location.x < screenSize.width * 0.75f) {
 			startedSlideGestureName = LAEventNameSlideInFromBottom;
-		else
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromBottom;
+		} else {
 			startedSlideGestureName = LAEventNameSlideInFromBottomRight;
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromBottomRight;
+		}
 		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, 0.0f }, { screenSize.width, screenSize.height - (kSlideGestureWindowHeight + 50.0f) }};
 	} else if (location.y < kSlideGestureWindowHeight) {
-		if (location.x < screenSize.width * 0.25f)
+		if (location.x < screenSize.width * 0.25f) {
 			startedSlideGestureName = LAEventNameSlideInFromTopLeft;
-		else if (location.x < screenSize.width * 0.75f)
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromTopLeft;
+		} else if (location.x < screenSize.width * 0.75f) {
 			startedSlideGestureName = LAEventNameSlideInFromTop;
-		else
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromTop;
+		} else {
 			startedSlideGestureName = LAEventNameSlideInFromTopRight;
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromTopRight;
+		}
 		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, kSlideGestureWindowHeight + 50.0f }, { screenSize.width, screenSize.height - (kSlideGestureWindowHeight + 50.0f) }};
 	} else if (location.x < kSlideGestureWindowHeight) {
 		startedSlideGestureName = LAEventNameSlideInFromLeft;
+		startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromLeft;
 		rectToEnterToSendSlideGesture = (CGRect){ { kSlideGestureWindowHeight + 50.0f, 0.0f }, { screenSize.width - (kSlideGestureWindowHeight + 50.0f), screenSize.height }};
 	} else if (location.x >= screenSize.width - kSlideGestureWindowHeight) {
 		startedSlideGestureName = LAEventNameSlideInFromRight;
+		startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromRight;
 		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, 0.0f }, { screenSize.width - (kSlideGestureWindowHeight + 50.0f), screenSize.height }};
 	} else {
 #ifdef DEBUG
@@ -187,16 +202,18 @@ static inline BOOL SlideGestureStartWithRotatedLocation(id self, CGPoint locatio
 #endif
 		if (GetStartedSlideGestureName()) {
 			SetStartedSlideGestureName(nil);
+			SetStartedTwoFingerSlideGestureName(nil);
 			activeSlideGestures--;
 		}
 		return NO;
 	}
-	if (![LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:startedSlideGestureName mode:LASharedActivator.currentEventMode]])  {
+	if (![LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:startedSlideGestureName mode:LASharedActivator.currentEventMode]] && ![LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:startedTwoFingerSlideGestureName mode:LASharedActivator.currentEventMode]])  {
 #ifdef DEBUG
 		NSLog(@"Activator: No listener assigned to %@", startedSlideGestureName);
 #endif
 		if (GetStartedSlideGestureName()) {
 			SetStartedSlideGestureName(nil);
+			SetStartedTwoFingerSlideGestureName(nil);
 			activeSlideGestures--;
 		}
 		return NO;
@@ -207,14 +224,15 @@ static inline BOOL SlideGestureStartWithRotatedLocation(id self, CGPoint locatio
 	if (!GetStartedSlideGestureName())
 		activeSlideGestures++;
 	SetStartedSlideGestureName(startedSlideGestureName);
+	SetStartedTwoFingerSlideGestureName(startedTwoFingerSlideGestureName);
 	SetRectToEnterToSendSlideGesture(rectToEnterToSendSlideGesture);
 	return YES;
 }
 
-static inline LAEvent *SlideGestureMoveWithRotatedLocation(id self, CGPoint location)
+static inline LAEvent *SlideGestureMoveWithRotatedLocation(id self, CGPoint location, NSInteger tapCount)
 {
 	if (CGRectContainsPoint(GetRectToEnterToSendSlideGesture(), location)) {
-		NSString *gestureName = GetStartedSlideGestureName();
+		NSString *gestureName = (tapCount == 1) ? GetStartedSlideGestureName() : GetStartedTwoFingerSlideGestureName();
 		if (gestureName) {
 #ifdef DEBUG
 			NSLog(@"Activator: Sending %@ in rect %@", gestureName, NSStringFromCGRect(GetRectToEnterToSendSlideGesture()));
@@ -223,6 +241,7 @@ static inline LAEvent *SlideGestureMoveWithRotatedLocation(id self, CGPoint loca
 			LAEvent *result = LASendEventWithName(gestureName);
 			if (!result.handled) {
 				SetStartedSlideGestureName(nil);
+				SetStartedTwoFingerlideGestureName(nil);
 				activeSlideGestures--;
 			}
 			return result;
@@ -238,6 +257,7 @@ static inline void SlideGestureClear(id self)
 {
 	if (GetStartedSlideGestureName()) {
 		SetStartedSlideGestureName(nil);
+		SetStartedTwoFingerlideGestureName(nil);
 		activeSlideGestures--;
 	}
 }
@@ -316,7 +336,7 @@ static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
 		if (activeRecognizer != self)
 			SlideGestureClear(self);
 	} else {
-		LAEvent *event = SlideGestureMoveWithRotatedLocation(self, CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location);
+		LAEvent *event = SlideGestureMoveWithRotatedLocation(self, CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location, CHIvar(self, m_activeTouchesCount, NSUInteger));
 		if (event) {
 			activeRecognizer = self;
 			if (event.handled) {
@@ -397,9 +417,10 @@ __attribute__((visibility("hidden")))
 - (void)touchesMoved:(NSSet *)touches withEvent:(UIEvent *)event
 {
 	if (self.state == UIGestureRecognizerStatePossible) {
-		if ([touches count] == 1) {
+		NSInteger count = [touches count];
+		if (count) {
 			UITouch *touch = [touches anyObject];
-			if (SlideGestureMoveWithRotatedLocation(self, [touch locationInView:self.view]))
+			if (SlideGestureMoveWithRotatedLocation(self, [touch locationInView:self.view], count))
 				self.state = UIGestureRecognizerStateRecognized;
 		} else {
 			self.state = UIGestureRecognizerStateFailed;

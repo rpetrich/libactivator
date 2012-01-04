@@ -49,6 +49,15 @@ NSString * const LAEventNameStatusBarSwipeDown     = @"libactivator.statusbar.sw
 NSString * const LAEventNameSlideInFromTopLeft     = @"libactivator.slide-in.top-left";
 NSString * const LAEventNameSlideInFromTopRight    = @"libactivator.slide-in.top-right";
 
+NSString * const LAEventNameTwoFingerSlideInFromBottom      = @"libactivator.two-finger-slide-in.bottom";
+NSString * const LAEventNameTwoFingerSlideInFromBottomLeft  = @"libactivator.two-finger-slide-in.bottom-left";
+NSString * const LAEventNameTwoFingerSlideInFromBottomRight = @"libactivator.two-finger-slide-in.bottom-right";
+NSString * const LAEventNameTwoFingerSlideInFromLeft        = @"libactivator.two-finger-slide-in.left";
+NSString * const LAEventNameTwoFingerSlideInFromRight       = @"libactivator.two-finger-slide-in.right";
+NSString * const LAEventNameTwoFingerSlideInFromTop         = @"libactivator.two-finger-slide-in.top";
+NSString * const LAEventNameTwoFingerSlideInFromTopLeft     = @"libactivator.two-finger-slide-in.top-left";
+NSString * const LAEventNameTwoFingerSlideInFromTopRight    = @"libactivator.two-finger-slide-in.top-right";
+
 NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake";
 
 NSString * const LAEventNameHeadsetButtonPressSingle = @"libactivator.headset-button.press.single";

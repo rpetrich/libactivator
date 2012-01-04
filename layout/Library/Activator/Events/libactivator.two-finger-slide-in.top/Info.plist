@@ -1,0 +1,6 @@
+{
+	title = "From Screen Top";
+	group = "Two Finger Slide In Gesture";
+	description = "Drag onto screen from statusbar";
+	CoreFoundationVersion = (675.00);
+}
