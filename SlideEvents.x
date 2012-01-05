@@ -241,7 +241,7 @@ static inline LAEvent *SlideGestureMoveWithRotatedLocation(id self, CGPoint loca
 			LAEvent *result = LASendEventWithName(gestureName);
 			if (!result.handled) {
 				SetStartedSlideGestureName(nil);
-				SetStartedTwoFingerlideGestureName(nil);
+				SetStartedTwoFingerSlideGestureName(nil);
 				activeSlideGestures--;
 			}
 			return result;
@@ -257,7 +257,7 @@ static inline void SlideGestureClear(id self)
 {
 	if (GetStartedSlideGestureName()) {
 		SetStartedSlideGestureName(nil);
-		SetStartedTwoFingerlideGestureName(nil);
+		SetStartedTwoFingerSlideGestureName(nil);
 		activeSlideGestures--;
 	}
 }
