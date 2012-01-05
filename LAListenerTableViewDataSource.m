@@ -3,8 +3,16 @@
 
 @implementation LAListenerTableViewDataSource
 
++ (void)initialize
+{
+	if (self == [LAListenerTableViewDataSource class]) {
+		[LASharedActivator _cacheAllListenerMetadata];
+	}
+}
+
 - (void)dealloc
 {
+	[_pendingTableCells release];
 	[_searchText release];
 	[_filteredListeners release];
 	[_filteredGroups release];
@@ -156,13 +164,67 @@
 	return [[self groupAtIndex:section] count];
 }
 
+- (void)finishedFetchingIconForListenerName:(NSString *)listenerName
+{
+	UITableViewCell *cell = [_pendingTableCells objectForKey:listenerName];
+	if (cell) {
+		cell.imageView.image = [LASharedActivator cachedSmallIconForListenerName:listenerName];
+		[cell setNeedsLayout];
+	}
+}
+
+- (void)fetchIconsInBackground
+{
+	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
+	NSThread *mainThread = [NSThread mainThread];
+	NSArray *modes = [NSArray arrayWithObjects:NSRunLoopCommonModes, UITrackingRunLoopMode, nil];
+	for (;;) {
+		NSString *listenerName;
+		@synchronized (self) {
+			if (![_pendingListenerNames count]) {
+				[_pendingListenerNames release];
+				_pendingListenerNames = nil;
+				break;
+			}
+			listenerName = [[_pendingListenerNames objectAtIndex:0] retain];
+			[_pendingListenerNames removeObjectAtIndex:0];
+		}
+		[LASharedActivator smallIconForListenerName:listenerName];
+		[self performSelector:@selector(finishedFetchingIconForListenerName:) onThread:mainThread withObject:listenerName waitUntilDone:NO modes:modes];
+		[listenerName release];
+	}
+	[pool drain];
+}
+
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
 	UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell"] ?: [[[UITableViewCell alloc] initWithStyle:UITableViewCellStyleSubtitle reuseIdentifier:@"cell"] autorelease];
 	NSString *listenerName = [self listenerNameForRowAtIndexPath:indexPath];
 	cell.textLabel.text = [LASharedActivator localizedTitleForListenerName:listenerName];
 	cell.detailTextLabel.text = [LASharedActivator localizedDescriptionForListenerName:listenerName];
-	cell.imageView.image = [LASharedActivator smallIconForListenerName:listenerName];
+	UIImage *image = [LASharedActivator cachedSmallIconForListenerName:listenerName];
+	cell.imageView.image = image;
+	if (!image) {
+		@synchronized (self) {
+			if (!_pendingListenerNames) {
+				_pendingListenerNames = [[NSMutableArray alloc] init];
+				if (!_pendingTableCells)
+					_pendingTableCells = [[NSMutableDictionary alloc] init];
+				[NSThread detachNewThreadSelector:@selector(fetchIconsInBackground) toTarget:self withObject:nil];
+			}
+			NSInteger index = [_pendingListenerNames indexOfObject:listenerName];
+			if (index != NSNotFound)
+				[_pendingListenerNames removeObjectAtIndex:index];
+			[_pendingListenerNames insertObject:listenerName atIndex:0];
+		}
+		for (NSString *otherListenerName in _pendingTableCells) {
+			if ([_pendingTableCells objectForKey:otherListenerName] == cell) {
+				[_pendingTableCells removeObjectForKey:otherListenerName];
+				break;
+			}
+		}
+		[_pendingTableCells setObject:cell forKey:listenerName];
+	}
 	[_delegate dataSource:self appliedContentToCell:cell forListenerWithName:listenerName];
 	return cell;
 }

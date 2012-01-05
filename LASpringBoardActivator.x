@@ -320,6 +320,10 @@ static void NewCydiaStatusChanged()
 	return _cachedAndSortedListeners;
 }
 
+- (void)_cacheAllListenerMetadata
+{
+}
+
 // Event Modes
 
 - (NSArray *)availableEventModes

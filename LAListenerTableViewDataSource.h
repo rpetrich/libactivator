@@ -11,6 +11,8 @@ __attribute__((visibility("hidden")))
 	NSArray *_groups;
 	NSMutableArray *_filteredGroups;
 	NSString *_searchText;
+	NSMutableArray *_pendingListenerNames;
+	NSMutableDictionary *_pendingTableCells;
 }
 
 @property (nonatomic, assign) id<LAListenerTableViewDataSourceDelegate> delegate;

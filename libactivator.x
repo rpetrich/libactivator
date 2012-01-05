@@ -78,6 +78,8 @@ LAActivator *LASharedActivator;
 NSMutableDictionary *listenerBundles;
 NSBundle *activatorBundle;
 
+static NSNull *sharedNull;
+
 #define ListenerKeyForEventNameAndMode(eventName, eventMode) \
 	[NSString stringWithFormat:@"LAEventListener(%@)-%@", (eventMode), (eventName)]
 
@@ -142,11 +144,13 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 		return nil;
 	}
 	if ((self = [super init])) {
+		sharedNull = [[NSNull null] retain];
 		messagingCenter = [[CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"] retain];
 		_availableEventModes = [[NSArray arrayWithObjects:LAEventModeSpringBoard, LAEventModeApplication, LAEventModeLockScreen, nil] retain];
 		// Caches
 		_cachedListenerGroups = [[NSMutableDictionary alloc] init];
 		_cachedListenerTitles = [[NSMutableDictionary alloc] init];
+		_cachedListenerDescriptions = [[NSMutableDictionary alloc] init];
 		_cachedListenerIcons = [[NSMutableDictionary alloc] init];
 		_cachedListenerSmallIcons = [[NSMutableDictionary alloc] init];
 		_listenerInstances = CFSetCreateMutable(kCFAllocatorDefault, 0, NULL);
@@ -163,6 +167,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 		CFRelease(_listenerInstances);
 	[_cachedListenerSmallIcons release];
 	[_cachedListenerIcons release];
+	[_cachedListenerDescriptions release];
 	[_cachedListenerTitles release];
 	[_cachedListenerGroups release];
 	[_availableEventModes release];
@@ -174,9 +179,12 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 {
 	[listenerBundles release];
 	listenerBundles = nil;
-	[_cachedListenerSmallIcons removeAllObjects];
+	@synchronized (self) {
+		[_cachedListenerSmallIcons removeAllObjects];
+	}
 	[_cachedListenerIcons removeAllObjects];
 	[_cachedListenerTitles removeAllObjects];
+	[_cachedListenerDescriptions removeAllObjects];
 	[_cachedListenerGroups removeAllObjects];
 }
 
@@ -469,6 +477,14 @@ static UIAlertView *inCydiaAlert;
 	return [self _performRemoteMessage:_cmd withObject:nil];
 }
 
+- (void)_cacheAllListenerMetadata
+{
+	for (NSString *listenerName in self.availableListenerNames) {
+		[self localizedTitleForListenerName:listenerName];
+		[self localizedDescriptionForListenerName:listenerName];
+	}
+}
+
 - (id)infoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)name
 {
 	return [[self listenerForName:name] activator:self requiresInfoDictionaryValueOfKey:key forListenerWithName:name];
@@ -519,7 +535,10 @@ static UIAlertView *inCydiaAlert;
 
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName
 {
-	UIImage *result = [_cachedListenerSmallIcons objectForKey:listenerName];
+	id result;
+	@synchronized (self) {
+		result = [_cachedListenerSmallIcons objectForKey:listenerName];
+	}
 	if (!result) {
 		CGFloat scale = [UIScreen instancesRespondToSelector:@selector(scale)] ? [[UIScreen mainScreen] scale] : 1.0f;
 		id<LAListener> listener = [self listenerForName:listenerName];
@@ -528,12 +547,20 @@ static UIAlertView *inCydiaAlert;
 			NSData *data = [listener activator:self requiresSmallIconDataForListenerName:listenerName scale:&scale];
 			result = [UIImage imageWithData:data];
 			if ([UIImage respondsToSelector:@selector(imageWithCGImage:scale:orientation:)])
-				result = [UIImage imageWithCGImage:result.CGImage scale:scale orientation:result.imageOrientation];
+				result = [UIImage imageWithCGImage:[result CGImage] scale:scale orientation:[result imageOrientation]];
 		}
-		if (result)
-			[_cachedListenerSmallIcons setObject:result forKey:listenerName];
+		@synchronized (self) {
+			[_cachedListenerSmallIcons setObject:result ?: sharedNull forKey:listenerName];
+		}
 	}
-	return result;
+	return (result == sharedNull) ? nil : result;
+}
+
+- (UIImage *)cachedSmallIconForListenerName:(NSString *)listenerName
+{
+	@synchronized (self) {
+		return [_cachedListenerSmallIcons objectForKey:listenerName];
+	}
 }
 
 // Event Modes
@@ -631,12 +658,11 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 
 - (NSString *)localizedTitleForListenerName:(NSString *)listenerName
 {
-	NSString *result = [_cachedListenerTitles objectForKey:listenerName];
+	id result = [_cachedListenerTitles objectForKey:listenerName];
 	if (result)
-		return result;
+		return (result == sharedNull) ? nil : result;
 	result = [[self listenerForName:listenerName] activator:self requiresLocalizedTitleForListenerName:listenerName];
-	if (result)
-		[_cachedListenerTitles setObject:result forKey:listenerName];
+	[_cachedListenerTitles setObject:result ?: sharedNull forKey:listenerName];
 	return result;
 }
 
@@ -647,12 +673,11 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 
 - (NSString *)localizedGroupForListenerName:(NSString *)listenerName
 {
-	NSString *result = [_cachedListenerGroups objectForKey:listenerName];
+	id result = [_cachedListenerGroups objectForKey:listenerName];
 	if (result)
-		return result;
+		return (result == sharedNull) ? nil : result;
 	result = [[self listenerForName:listenerName] activator:self requiresLocalizedGroupForListenerName:listenerName];
-	if (result)
-		[_cachedListenerGroups setObject:result forKey:listenerName];
+	[_cachedListenerGroups setObject:result ?: sharedNull forKey:listenerName];
 	return result;
 }
 
@@ -674,7 +699,12 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 
 - (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName
 {
-	return [[self listenerForName:listenerName] activator:self requiresLocalizedDescriptionForListenerName:listenerName];
+	id result = [_cachedListenerDescriptions objectForKey:listenerName];
+	if (result)
+		return (result == sharedNull) ? nil : result;
+	result = [[self listenerForName:listenerName] activator:self requiresLocalizedDescriptionForListenerName:listenerName];
+	[_cachedListenerDescriptions setObject:result ?: sharedNull forKey:listenerName];
+	return result;
 }
 
 @end

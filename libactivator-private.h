@@ -22,6 +22,9 @@
 - (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject;
 
 - (NSDictionary *)_cachedAndSortedListeners;
+- (void)_cacheAllListenerMetadata;
+
+- (UIImage *)cachedSmallIconForListenerName:(NSString *)listenerName;
 
 @property (nonatomic, readonly) NSURL *moreActionsURL;
 @property (nonatomic, readonly) NSURL *adPaneURL;

@@ -58,6 +58,7 @@ typedef enum {
 	NSArray *_availableEventModes;
 @protected
 	NSMutableDictionary *_cachedListenerTitles;
+	NSMutableDictionary *_cachedListenerDescriptions;
 	NSMutableDictionary *_cachedListenerGroups;
 	NSMutableDictionary *_cachedListenerIcons;
 	NSMutableDictionary *_cachedListenerSmallIcons;
