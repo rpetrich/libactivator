@@ -78,7 +78,7 @@ static inline int PermissionsForFile(const char *path)
 		case 3:
 			return [LASharedActivator localizedStringForKey:@"LOCALIZATION_ABOUT" value:@""];
 		case 4:
-			return @"\u00A9 2009-2011 Ryan Petrich";
+			return @"\u00A9 2009-2012 Ryan Petrich";
 		default:
 			return nil;
 	}
