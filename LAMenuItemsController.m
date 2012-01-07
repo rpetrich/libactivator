@@ -23,6 +23,14 @@
 	_items = [items mutableCopy];
 }
 
+- (void)viewDidLoad
+{
+	[super viewDidLoad];
+	UITableView *tableView = self.tableView;
+	tableView.allowsSelectionDuringEditing = YES;
+	tableView.editing = YES;
+}
+
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView
 {
 	return 2;
@@ -49,21 +57,24 @@
 			cell.textLabel.text = [LASharedActivator localizedTitleForListenerName:listenerName];
 			cell.detailTextLabel.text = [LASharedActivator localizedDescriptionForListenerName:listenerName];
 			cell.imageView.image = [LASharedActivator smallIconForListenerName:listenerName];
+			cell.showsReorderControl = YES;
+			cell.editingAccessoryType = UITableViewCellAccessoryNone;
 			break;
 		}
 		case 1:
 			cell.textLabel.text = [LASharedActivator localizedStringForKey:@"ADD_ACTION" value:@"Add Action"];
 			cell.detailTextLabel.text = nil;
 			cell.imageView.image = nil;
+			cell.showsReorderControl = NO;
+			cell.editingAccessoryType = UITableViewCellAccessoryDisclosureIndicator;
 			break;
 	}
-	cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
 	return cell;	
 }
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	return indexPath.section == 0;
+	return YES;
 }
 
 - (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -78,10 +89,17 @@
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	[self willChangeValueForKey:@"items"];
-	[_items removeObjectAtIndex:indexPath.row];
-	[self didChangeValueForKey:@"items"];
-	[tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationLeft];
+	switch (indexPath.section) {
+		case 0:
+			[self willChangeValueForKey:@"items"];
+			[_items removeObjectAtIndex:indexPath.row];
+			[self didChangeValueForKey:@"items"];
+			[tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationLeft];
+			break;
+		default:
+			[self tableView:tableView didSelectRowAtIndexPath:indexPath];
+			break;
+	}
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
@@ -99,6 +117,30 @@
 	}
 	[vc addObserver:self forKeyPath:@"selectedListenerName" options:NSKeyValueObservingOptionNew context:NULL];
 	[self pushSettingsController:vc];
+}
+
+- (BOOL)tableView:(UITableView *)tableView canMoveRowAtIndexPath:(NSIndexPath *)indexPath
+{
+	return indexPath.section == 0;
+}
+
+- (NSIndexPath *)tableView:(UITableView *)tableView targetIndexPathForMoveFromRowAtIndexPath:(NSIndexPath *)sourceIndexPath toProposedIndexPath:(NSIndexPath *)proposedDestinationIndexPath
+{
+	return (proposedDestinationIndexPath.section == 0) ? proposedDestinationIndexPath : [NSIndexPath indexPathForRow:_items.count-1 inSection:0];
+}
+
+- (void)tableView:(UITableView *)tableView moveRowAtIndexPath:(NSIndexPath *)fromIndexPath toIndexPath:(NSIndexPath *)toIndexPath
+{
+	NSInteger fromIndex = fromIndexPath.row;
+	NSInteger toIndex = toIndexPath.row;
+	if (fromIndex != toIndex) {
+		[self willChangeValueForKey:@"items"];
+		NSString *listenerName = [[_items objectAtIndex:fromIndex] retain];
+		[_items removeObjectAtIndex:fromIndex];
+		[_items insertObject:listenerName atIndex:toIndex];
+		[listenerName release];
+		[self didChangeValueForKey:@"items"];
+	}
 }
 
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context
