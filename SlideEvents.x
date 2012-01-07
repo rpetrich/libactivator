@@ -420,8 +420,9 @@ __attribute__((visibility("hidden")))
 		NSInteger count = [touches count];
 		if (count) {
 			UITouch *touch = [touches anyObject];
-			if (SlideGestureMoveWithRotatedLocation(self, [touch locationInView:self.view], count))
-				self.state = UIGestureRecognizerStateRecognized;
+			LAEvent *event = SlideGestureMoveWithRotatedLocation(self, [touch locationInView:self.view], count);
+			if (event)
+				self.state = event.handled ? UIGestureRecognizerStateRecognized : UIGestureRecognizerStateFailed;
 		} else {
 			self.state = UIGestureRecognizerStateFailed;
 		}
