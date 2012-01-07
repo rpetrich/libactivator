@@ -29,6 +29,14 @@
 	[super dealloc];
 }
 
+- (void)viewDidLoad
+{
+	[super viewDidLoad];
+	UITableView *tableView = self.tableView;
+	tableView.allowsSelectionDuringEditing = YES;
+	tableView.editing = YES;
+}
+
 - (void)saveSettings
 {
 	[LASharedActivator _setObject:menus forPreference:@"LAMenuSettings"];
@@ -58,13 +66,13 @@
 	NSString *title;
 	switch (indexPath.section) {
 		case 0: {
-		cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+			cell.editingAccessoryType = UITableViewCellAccessoryDisclosureIndicator;
 			NSString *key = [sortedMenus objectAtIndex:indexPath.row];
 			title = [[menus objectForKey:key] objectForKey:@"title"];
 			break;
 		}
 		case 1:
-			cell.accessoryType = UITableViewCellAccessoryNone;
+			cell.editingAccessoryType = UITableViewCellAccessoryNone;
 			title = [LASharedActivator localizedStringForKey:@"ADD_NEW_MENU" value:@"Add New Menu"];
 			break;
 		default:
@@ -77,7 +85,7 @@
 
 - (BOOL)tableView:(UITableView *)tableView canEditRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	return indexPath.section == 0;
+	return YES;
 }
 
 - (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath
@@ -92,12 +100,20 @@
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
 {
-	NSString *key = [sortedMenus objectAtIndex:indexPath.row];
-	[menus removeObjectForKey:key];
-	[sortedMenus removeObjectAtIndex:indexPath.row];
-	[tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationLeft];
-	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(saveSettings) object:nil];
-	[self performSelector:@selector(saveSettings) withObject:nil afterDelay:0.0];
+	switch (indexPath.section) {
+		case 0: {
+			NSString *key = [sortedMenus objectAtIndex:indexPath.row];
+			[menus removeObjectForKey:key];
+			[sortedMenus removeObjectAtIndex:indexPath.row];
+			[tableView deleteRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationLeft];
+			[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(saveSettings) object:nil];
+			[self performSelector:@selector(saveSettings) withObject:nil afterDelay:0.0];
+			break;
+		}
+		case 1:
+			[self tableView:tableView didSelectRowAtIndexPath:indexPath];
+			break;
+	}
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
