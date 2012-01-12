@@ -1,13 +1,13 @@
 #import "libactivator.h"
 
-@class UIAlertView;
+@class LAMenuListenerViewController;
 __attribute__((visibility("hidden")))
 @interface LAMenuListener : NSObject <LAListener> {
 @private
 	NSDictionary *menus;
 	UIWindow *alertWindow;
 	UIActionSheet *currentActionSheet;
-	UIViewController *viewController;
+	LAMenuListenerViewController *viewController;
 	NSArray *currentItems;
 	LAEvent *currentEvent;
 	NSData *imageData;

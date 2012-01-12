@@ -22,13 +22,16 @@
 
 __attribute__((visibility("hidden")))
 @interface LAMenuListenerViewController : UIViewController
+@property (nonatomic, assign) BOOL allowAllOrientations;
 @end
 
 @implementation LAMenuListenerViewController
 
+@synthesize allowAllOrientations;
+
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)toInterfaceOrientation
 {
-	return YES;
+	return allowAllOrientations;
 }
 
 @end
@@ -134,6 +137,7 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 				[actionSheet addButtonWithTitle:[activator localizedTitleForListenerName:item] ?: @""];
 			}
 		}
+		UIInterfaceOrientation currentOrientation = [UIApp statusBarOrientation];
 		actionSheet.cancelButtonIndex = [actionSheet addButtonWithTitle:[activator localizedStringForKey:@"CANCEL" value:@"Cancel"]];
 		actionSheet.delegate = self;
 		if (!alertWindow) {
@@ -143,6 +147,7 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 		alertWindow.hidden = NO;
 		if (!viewController)
 			viewController = [[LAMenuListenerViewController alloc] init];
+		viewController.allowAllOrientations = YES;
 		UIView *view = viewController.view;
 		if ([alertWindow respondsToSelector:@selector(setRootViewController:)])
 			[alertWindow setRootViewController:viewController];
@@ -168,6 +173,7 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 			[actionSheet showFromRect:bounds inView:view animated:YES];
 		} else {
 			[actionSheet showInView:view];
+			[UIApp setStatusBarOrientation:currentOrientation animated:NO];
 		}
 		currentActionSheet = actionSheet;
 		[currentEvent release];
@@ -175,6 +181,7 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 		[currentItems release];
 		currentItems = compatibleItems;
 		event.handled = YES;
+		viewController.allowAllOrientations = NO;
 	}
 }
 
