@@ -96,6 +96,11 @@ static LASimpleListener *sharedSimpleListener;
 
 @interface SpringBoard (iOS5)
 - (void)activateAssistantWithOptions:(id)options withCompletion:(id)completionBlock;
+- (BOOL)canShowLockScreenCameraButton;
+@end
+
+@interface SBAwayController (iOS5)
+- (void)toggleCameraButton;
 @end
 
 @interface SBAssistantController : NSObject
@@ -365,8 +370,11 @@ __attribute__((visibility("hidden")))
 	}
 	if ([%c(SBAwayController) instancesRespondToSelector:@selector(toggleMediaControls)]) {
 		SBAwayController *ac = [%c(SBAwayController) sharedAwayController];
-		if ([ac isLocked])
+		if ([ac isLocked]) {
+			if ([UIApp respondsToSelector:@selector(canShowLockScreenCameraButton)] && [(SpringBoard *)UIApp canShowLockScreenCameraButton] && [ac respondsToSelector:@selector(toggleCameraButton)])
+				[ac toggleCameraButton];
 			return [ac toggleMediaControls];
+		}
 	}
 	SBMediaController *mc = (SBMediaController *)[%c(SBMediaController) sharedInstance];
 	if ([mc respondsToSelector:@selector(mediaControlsDestinationApp)] && ![mc mediaControlsDestinationApp]) {
