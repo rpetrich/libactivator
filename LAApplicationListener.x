@@ -49,7 +49,58 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 - (void)activateApplicationAnimated:(SBApplication *)application;
 - (void)activateApplicationFromSwitcher:(SBApplication *)application;
 @end
+@interface SpringBoard (OS50)
+- (BOOL)canShowLockScreenCameraButton;
+@end
+@interface SBAwayController (OS50)
+- (BOOL)cameraIsActive;
+- (void)activateCamera;
+- (void)dismissCameraAnimated:(BOOL)animated;
+@end
 #endif
+
+__attribute__((visibility("hidden")))
+@interface LACameraApplicationListener : LAApplicationListener
+@end
+
+@implementation LACameraApplicationListener
+
+static LACameraApplicationListener *sharedCameraApplicationListener;
+
++ (void)initialize
+{
+	if ((self == [LACameraApplicationListener class])) {
+		sharedCameraApplicationListener = [[self alloc] init];
+	}
+}
+
++ (id)sharedInstance
+{
+	return sharedCameraApplicationListener;
+}
+
+- (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)name
+{
+	return [(SpringBoard *)UIApp canShowLockScreenCameraButton] ? activator.availableEventModes : [super activator:activator requiresCompatibleEventModesForListenerWithName:name];
+}
+
+- (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
+{
+	NSString *eventMode = [activator currentEventMode];
+	if ((eventMode == LAEventModeLockScreen) && [(SpringBoard *)UIApp canShowLockScreenCameraButton]) {
+		SBAwayController *ac = [%c(SBAwayController) sharedAwayController];
+		if ([ac cameraIsActive])
+			[ac dismissCameraAnimated:YES];
+		else {
+			[ac activateCamera];
+			event.handled = YES;
+		}
+	} else {
+		[super activator:activator receiveEvent:event forListenerName:listenerName];
+	}
+}
+
+@end
 
 @implementation LAApplicationListener
 
@@ -232,7 +283,7 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 			}
 		}
 		if (![LASharedActivator listenerForName:listenerName])
-			[LASharedActivator registerListener:sharedApplicationListener forName:listenerName ignoreHasSeen:YES];
+			[LASharedActivator registerListener:[listenerName isEqualToString:@"com.apple.camera"] ? [LACameraApplicationListener sharedInstance] : sharedApplicationListener forName:listenerName ignoreHasSeen:YES];
 	}
 	return self;
 }
