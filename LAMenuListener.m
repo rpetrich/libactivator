@@ -177,6 +177,7 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 			[actionSheet showInView:view];
 			[UIApp setStatusBarOrientation:currentOrientation animated:NO];
 		}
+		[currentActionSheet release];
 		currentActionSheet = actionSheet;
 		[currentEvent release];
 		currentEvent = [event copy];
@@ -191,12 +192,16 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event
 {
+	[currentListenerName release];
+	currentListenerName = nil;
 	[currentActionSheet dismissWithClickedButtonIndex:currentActionSheet.cancelButtonIndex animated:YES];
 	[self performSelector:@selector(cleanup) withObject:nil afterDelay:0.0];
 }
 
 - (void)activator:(LAActivator *)activator receiveDeactivateEvent:(LAEvent *)event
 {
+	[currentListenerName release];
+	currentListenerName = nil;
 	if (currentActionSheet) {
 		[currentActionSheet dismissWithClickedButtonIndex:currentActionSheet.cancelButtonIndex animated:YES];
 		[self performSelector:@selector(cleanup) withObject:nil afterDelay:0.0];

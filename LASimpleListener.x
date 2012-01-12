@@ -2,6 +2,8 @@
 #import "libactivator-private.h"
 #import "LASimpleListener.h"
 #import "LAApplicationListener.h"
+#import "SpringBoard/AdditionalAPIs.h"
+
 #import <UIKit/UIKit2.h>
 #import <SpringBoard/SpringBoard.h>
 #import <SpringBoard/SBGestureRecognizer.h>
@@ -12,102 +14,6 @@
 %config(generator=internal);
 
 static LASimpleListener *sharedSimpleListener;
-
-@interface SBIconController (OS40)
-@property (nonatomic, readonly) SBSearchController *searchController;
-- (void)closeFolderAnimated:(BOOL)animated;
-@end
-
-@interface SBUIController (OS40Switcher)
-- (BOOL)isSwitcherShowing;
-- (BOOL)activateSwitcher;
-- (void)dismissSwitcher;
-- (void)_toggleSwitcher;
-@end
-
-@interface SBUIController (iOS50)
-- (void)lockFromSource:(int)source;
-- (void)dismissSwitcherAnimated:(BOOL)animated;
-@end
-
-@interface SBMediaController (OS4)
-- (id)mediaControlsDestinationApp;
-@end
-
-@interface SBStatusBarDataManager : NSObject {
-	struct {
-		BOOL itemIsEnabled[20];
-		BOOL timeString[64];
-		int gsmSignalStrengthRaw;
-		int gsmSignalStrengthBars;
-		BOOL serviceString[100];
-		BOOL serviceImageBlack[100];
-		BOOL serviceImageSilver[100];
-		BOOL operatorDirectory[1024];
-		unsigned serviceContentType;
-		int wifiSignalStrengthRaw;
-		int wifiSignalStrengthBars;
-		unsigned dataNetworkType;
-		int batteryCapacity;
-		unsigned batteryState;
-		int bluetoothBatteryCapacity;
-		int thermalColor;
-		unsigned slowActivity : 1;
-		BOOL activityDisplayId[256];
-		unsigned bluetoothConnected : 1;
-		unsigned displayRawGSMSignal : 1;
-		unsigned displayRawWifiSignal : 1;
-	} _data;
-	int _actions;
-	BOOL _itemIsEnabled[20];
-	BOOL _itemIsCloaked[20];
-	int _updateBlockDepth;
-	BOOL _dataChangedSinceLastPost;
-	NSDateFormatter *_timeItemDateFormatter;
-	NSTimer *_timeItemTimer;
-	NSString *_timeItemTimeString;
-	BOOL _cellRadio;
-	BOOL _registered;
-	BOOL _simError;
-	BOOL _simulateInCallStatusBar;
-	NSString *_serviceString;
-	NSString *_serviceImageBlack;
-	NSString *_serviceImageSilver;
-	NSString *_operatorDirectory;
-	BOOL _showsActivityIndicatorOnHomeScreen;
-	int _thermalColor;
-}
-+ (SBStatusBarDataManager *)sharedDataManager;
-- (void)enableLock:(BOOL)showLock time:(BOOL)showTime;
-- (void)_postData;
-@end
-
-@interface SBAlertItemsController (iOS42)
-- (BOOL)hasAlertOfClass:(Class)alertClass;
-@end
-
-@interface TWTweetComposeViewController : UIViewController
-@property (nonatomic, copy) id completionHandler;
-@end
-
-@interface UIViewController (iOS5)
-@property (nonatomic, readwrite, assign) UIInterfaceOrientation interfaceOrientation;
-@end
-
-@interface SpringBoard (iOS5)
-- (void)activateAssistantWithOptions:(id)options withCompletion:(id)completionBlock;
-- (BOOL)canShowLockScreenCameraButton;
-@end
-
-@interface SBAwayController (iOS5)
-- (void)toggleCameraButton;
-@end
-
-@interface SBAssistantController : NSObject
-+ (BOOL)deviceSupported;
-+ (BOOL)preferenceEnabled;
-+ (BOOL)shouldEnterAssistant;
-@end
 
 void UIKeyboardEnableAutomaticAppearance();
 void UIKeyboardDisableAutomaticAppearance();

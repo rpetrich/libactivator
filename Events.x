@@ -6,6 +6,7 @@
 #import "LASpringBoardActivator.h"
 #import "LADefaultEventDataSource.h"
 #import "Constants.h"
+#import "SpringBoard/AdditionalAPIs.h"
 
 %config(generator=internal);
 
@@ -30,48 +31,6 @@ static inline id<LAListener> LAListenerForEventWithName(NSString *eventName)
 {
 	return [LASharedActivator listenerForEvent:[LAEvent eventWithName:eventName mode:[LASharedActivator currentEventMode]]];
 }
-
-@interface SpringBoard (OS40)
-- (void)resetIdleTimerAndUndim;
-@end
-
-@interface SpringBoard (OS50)
-- (NSArray *)appsRegisteredForVolumeEvents;
-- (BOOL)isCameraApp;
-@end
-
-@interface SBAwayController (OS40)
-- (void)_unlockWithSound:(BOOL)sound isAutoUnlock:(BOOL)unlock;
-@end
-
-@interface SBAlert (OS50)
-- (BOOL)handleVolumeUpButtonPressed;
-- (BOOL)handleVolumeDownButtonPressed;
-@end
-
-@interface VolumeControl (OS40)
-+ (float)volumeStep;
-- (void)_changeVolumeBy:(float)volumeAdjust;
-- (void)hideVolumeHUDIfVisible;
-@end
-
-@interface SBIconController (iOS40)
-- (id)currentFolderIconList;
-@end
-
-@interface SBUIController (iOS40)
-- (BOOL)isSwitcherShowing;
-@end
-
-@interface SBUIController (OS50)
-- (void)lockFromSource:(int)source;
-@end
-
-@interface SBAppSwitcherController : NSObject {
-}
-- (NSDictionary *)_currentIcons;
-@end
-
 
 #if __IPHONE_OS_VERSION_MAX_ALLOWED < __IPHONE_3_2
 // Workaround to compile with 3.0 SDK

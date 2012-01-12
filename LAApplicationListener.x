@@ -1,6 +1,7 @@
 #import "libactivator.h"
 #import "libactivator-private.h"
 #import "LAApplicationListener.h"
+#import "SpringBoard/AdditionalAPIs.h"
 
 #import <Foundation/Foundation.h>
 #import <SpringBoard/SpringBoard.h>
@@ -23,41 +24,6 @@ static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 #define SBWSuspendedEventOnlyDisplayStack SBWGetDisplayStackAtIndex(3)
 
 #define SBApp(dispId) [(SBApplicationController *)[%c(SBApplicationController) sharedInstance] applicationWithDisplayIdentifier:dispId]
-
-// TODO: Figure out the proper way to put this in the headers
-#if __IPHONE_OS_VERSION_MIN_REQUIRED >= __IPHONE_3_2
-@interface SBIcon (OS30)
-- (UIImage *)icon;
-- (UIImage *)smallIcon;
-@end
-@interface SBApplication (OS30)
-- (NSString *)pathForIcon;
-- (NSString *)pathForSmallIcon;
-@end
-#else
-@interface SBIcon (OS32)
-- (UIImage *)getIconImage:(NSInteger)sizeIndex;
-@end
-@interface SBIconModel (OS40)
-- (SBIcon *)leafIconForIdentifier:(NSString *)displayIdentifier;
-- (NSArray *)leafIcons;
-@end
-@interface UIImage (OS40)
-@property (nonatomic, readonly) CGFloat scale;
-@end
-@interface SBUIController (OS40)
-- (void)activateApplicationAnimated:(SBApplication *)application;
-- (void)activateApplicationFromSwitcher:(SBApplication *)application;
-@end
-@interface SpringBoard (OS50)
-- (BOOL)canShowLockScreenCameraButton;
-@end
-@interface SBAwayController (OS50)
-- (BOOL)cameraIsActive;
-- (void)activateCamera;
-- (void)dismissCameraAnimated:(BOOL)animated;
-@end
-#endif
 
 __attribute__((visibility("hidden")))
 @interface LACameraApplicationListener : LAApplicationListener
