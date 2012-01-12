@@ -13,5 +13,6 @@ __attribute__((visibility("hidden")))
 
 
 @property (nonatomic, copy) NSArray *items;
+@property (nonatomic, copy) NSSet *disallowedListenerNames;
 
 @end

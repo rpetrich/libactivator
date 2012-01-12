@@ -8,6 +8,7 @@ __attribute__((visibility("hidden")))
 	UIWindow *alertWindow;
 	UIActionSheet *currentActionSheet;
 	LAMenuListenerViewController *viewController;
+	NSString *currentListenerName;
 	NSArray *currentItems;
 	LAEvent *currentEvent;
 	NSData *imageData;

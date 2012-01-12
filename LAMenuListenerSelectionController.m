@@ -7,11 +7,12 @@
 
 @implementation LAMenuListenerSelectionController
 
+@synthesize disallowedListenerNames;
+
 - (id)init
 {
 	if ((self = [super init])) {
 		_dataSource = [[LAListenerTableViewDataSource alloc] init];
-		_dataSource.delegate = self;
 	}
 	return self;
 }
@@ -21,6 +22,7 @@
 	_dataSource.delegate = nil;
 	[_dataSource release];
 	[_selectedListenerName release];
+	[disallowedListenerNames release];
 	[super dealloc];
 }
 
@@ -29,12 +31,14 @@
 - (void)loadView
 {
 	[super loadView];
+	_dataSource.delegate = nil;
+	_dataSource.delegate = self;
 	self.tableView.dataSource = _dataSource;
 }
 
 - (BOOL)dataSource:(LAListenerTableViewDataSource *)dataSource shouldAllowListenerWithName:(NSString *)listenerName
 {
-	return ![listenerName hasPrefix:@"libactivator.menu."];
+	return ![disallowedListenerNames containsObject:listenerName];
 }
 
 - (void)dataSource:(LAListenerTableViewDataSource *)dataSource appliedContentToCell:(UITableViewCell *)cell forListenerWithName:(NSString *)listenerName

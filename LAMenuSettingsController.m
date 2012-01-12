@@ -128,6 +128,7 @@
 			vc = [[LAMenuItemsController alloc] init];
 			vc.navigationItem.title = [menuData objectForKey:@"title"];
 			vc.items = [menuData objectForKey:@"items"];
+			vc.disallowedListenerNames = [NSSet setWithObject:key];
 			[selectedMenu release];
 			selectedMenu = [key copy];
 			[vc addObserver:self forKeyPath:@"items" options:NSKeyValueObservingOptionNew context:NULL];

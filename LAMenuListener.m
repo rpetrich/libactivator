@@ -75,6 +75,7 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 	[imageData2x release];
 	[imageData release];
 	[currentItems release];
+	[currentListenerName release];
 	currentActionSheet.delegate = nil;
 	[currentActionSheet release];
 	[currentEvent release];
@@ -123,10 +124,11 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
-	if (currentActionSheet) {
+	if (currentActionSheet && [listenerName isEqualToString:currentListenerName]) {
 		[currentActionSheet dismissWithClickedButtonIndex:currentActionSheet.cancelButtonIndex animated:YES];
 		[self performSelector:@selector(cleanup) withObject:nil afterDelay:0.0];
 	} else {
+		[currentActionSheet dismissWithClickedButtonIndex:currentActionSheet.cancelButtonIndex animated:YES];
 		NSDictionary *menuData = [menus objectForKey:listenerName];
 		UIActionSheet *actionSheet = [[UIActionSheet alloc] init];
 		actionSheet.title = [menuData objectForKey:@"title"];
@@ -180,6 +182,8 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 		currentEvent = [event copy];
 		[currentItems release];
 		currentItems = compatibleItems;
+		[currentListenerName release];
+		currentListenerName = [listenerName copy];
 		event.handled = YES;
 		viewController.allowAllOrientations = NO;
 	}

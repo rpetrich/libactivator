@@ -8,5 +8,6 @@ __attribute__((visibility("hidden")))
 }
 
 @property (nonatomic, copy) NSString *selectedListenerName;
+@property (nonatomic, copy) NSSet *disallowedListenerNames;
 
 @end

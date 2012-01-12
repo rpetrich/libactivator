@@ -4,11 +4,14 @@
 
 @implementation LAMenuItemsController
 
+@synthesize disallowedListenerNames;
+
 - (void)dealloc
 {
 	[vc removeObserver:self forKeyPath:@"selectedListenerName"];
 	[vc release];
 	[_items release];
+	[disallowedListenerNames release];
 	[super dealloc];
 }
 
@@ -115,6 +118,7 @@
 		vc.selectedListenerName = [_items objectAtIndex:indexPath.row];
 		destinationIndex = indexPath.row;
 	}
+	vc.disallowedListenerNames = disallowedListenerNames;
 	[vc addObserver:self forKeyPath:@"selectedListenerName" options:NSKeyValueObservingOptionNew context:NULL];
 	[self pushSettingsController:vc];
 }
