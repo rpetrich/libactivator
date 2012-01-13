@@ -2,7 +2,7 @@
 
 #define kSpringBoardPinchThreshold         0.95f
 #define kSpringBoardSpreadThreshold        1.05f
-#define kButtonHoldDelay                   0.3
+#define kButtonHoldDelay                   0.45
 #define kVolumeRepeatDelay                 0.15
 #define kStatusBarHorizontalSwipeThreshold 50.0f
 #define kStatusBarVerticalSwipeThreshold   10.0f
