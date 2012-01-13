@@ -10,7 +10,7 @@ LIBRARY_NAME = libactivator Settings SpringBoard
 ifeq ($(SINGLE),1)
 	libactivator_FILES = single_libactivator.xi
 else
-	libactivator_FILES = LAEvent.m LARemoteListener.m LAListener.m libactivator.x LAEventDataSource.m StatusBarEvents.x LASettingsViewControllers.m
+	libactivator_FILES = LAEvent.m LARemoteListener.m LAListener.m libactivator.x LAEventDataSource.m EverywhereHooks.x LASettingsViewControllers.m
 endif
 libactivator_FRAMEWORKS = UIKit CoreGraphics QuartzCore
 libactivator_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
