@@ -306,7 +306,7 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)showPhoneRecents
 {
-	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:(kCFCoreFoundationVersionNumber < 675.0) ? @"doubletap://com.apple.mobilephone?view=RECENTS" : @"mobilephone-recents"] publicURLsOnly:NO];
+	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:(kCFCoreFoundationVersionNumber < 675.0) ? @"doubletap://com.apple.mobilephone?view=RECENTS" : @"mobilephone-recents:"] publicURLsOnly:NO];
 	return YES;
 }
 
