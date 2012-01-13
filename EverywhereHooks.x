@@ -107,3 +107,35 @@ static void StatusBarTapCallback(CFRunLoopTimerRef timer, void *info)
 }
 
 %end
+
+@interface PhoneRootViewController : UIViewController
+@property (nonatomic, readonly) UITabBarController *tabBarViewController;
+@end
+
+@interface PhoneApplication : UIApplication
+- (void)applicationOpenURL:(NSURL *)url;
+- (PhoneRootViewController *)rootViewController;
+@end
+
+%hook PhoneApplication
+
+- (void)applicationOpenURL:(NSURL *)url
+{
+	NSString *string = [url absoluteString];
+	SEL selector;
+	if ([string isEqualToString:@"mobilephone-recents:favorites"])
+		selector = @selector(favoritesNavigationController);
+	else if ([string isEqualToString:@"mobilephone-recents:contacts"])
+		selector = @selector(contactsViewController);
+	else if ([string isEqualToString:@"mobilephone-recents:keypad"])
+		selector = @selector(keypadViewController);
+	else {
+		%orig;
+		return;
+	}
+	%orig;
+	UITabBarController *tabBarController = [self rootViewController].tabBarViewController;
+	tabBarController.selectedViewController = objc_msgSend(tabBarController, selector);
+}
+
+%end

@@ -300,7 +300,7 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)showPhoneFavorites
 {
-	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=FAVORITES"] publicURLsOnly:NO];
+	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:(kCFCoreFoundationVersionNumber < 675.0) ? @"doubletap://com.apple.mobilephone?view=FAVORITES" : @"mobilephone-recents:favorites"] publicURLsOnly:NO];
 	return YES;
 }
 
@@ -312,13 +312,13 @@ __attribute__((visibility("hidden")))
 
 - (BOOL)showPhoneContacts
 {
-	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=CONTACTS"] publicURLsOnly:NO];
+	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:(kCFCoreFoundationVersionNumber < 675.0) ? @"doubletap://com.apple.mobilephone?view=CONTACTS" : @"mobilephone-recents:contacts"] publicURLsOnly:NO];
 	return YES;
 }
 
 - (BOOL)showPhoneKeypad
 {
-	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:@"doubletap://com.apple.mobilephone?view=KEYPAD"] publicURLsOnly:NO];
+	[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:(kCFCoreFoundationVersionNumber < 675.0) ? @"doubletap://com.apple.mobilephone?view=KEYPAD" : @"mobilephone-recents:keypad"] publicURLsOnly:NO];
 	return YES;
 }
 
@@ -502,11 +502,9 @@ static UIWindow *tweetFormerKeyWindow;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.music-controls"];
 		// Phone
 		if (GSSystemHasCapability(CFSTR("telephony"))) {
-			if (kCFCoreFoundationVersionNumber < 675.0) {
-				[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.favorites"];
-				[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.contacts"];
-				[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.keypad"];
-			}
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.favorites"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.contacts"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.keypad"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.recents"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.voicemail"];
 		}
