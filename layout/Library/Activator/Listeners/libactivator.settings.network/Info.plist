@@ -1,0 +1,8 @@
+{
+	title = "Network";
+	description = "Open Settings to Network page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=General&path=Network";
+}

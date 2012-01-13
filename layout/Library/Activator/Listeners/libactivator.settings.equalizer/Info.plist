@@ -1,0 +1,8 @@
+{
+	title = "Equalizer";
+	description = "Open Settings to Equalizer page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=MUSIC&path=EQ";
+}

@@ -434,10 +434,20 @@ static UIWindow *tweetFormerKeyWindow;
 	return YES;
 }
 
+- (BOOL)openURLWithActivator:(LAActivator *)activator event:(LAEvent *)event listenerName:(NSString *)listenerName
+{
+	NSString *url = [activator infoDictionaryValueOfKey:@"url" forListenerWithName:listenerName];
+	if (url) {
+		[(SpringBoard *)UIApp applicationOpenURL:[NSURL URLWithString:url] publicURLsOnly:NO];
+		return YES;
+	}
+	return NO;
+}
+
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
 	NSString *selector = [activator infoDictionaryValueOfKey:@"selector" forListenerWithName:listenerName];
-	if (objc_msgSend(self, NSSelectorFromString(selector), activator, event))
+	if (objc_msgSend(self, NSSelectorFromString(selector), activator, event, listenerName))
 		[event setHandled:YES];
 }
 
@@ -475,8 +485,10 @@ static UIWindow *tweetFormerKeyWindow;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.first-springboard-page"];
 		if ([%c(SBVoiceControlAlert) shouldEnterVoiceControl])
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.voice-control"];
-		if ([%c(SBAssistantController) deviceSupported])
+		if ([%c(SBAssistantController) deviceSupported]) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.virtual-assistant"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.virtual-assistant"];
+		}
 		if (GSSystemHasCapability(CFSTR("multitasking"))) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.activate-switcher"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.system.show-now-playing-bar"];
@@ -501,12 +513,44 @@ static UIWindow *tweetFormerKeyWindow;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.next-track"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.music-controls"];
 		// Phone
-		if (GSSystemHasCapability(CFSTR("telephony"))) {
+		bool hasTelephony = GSSystemHasCapability(CFSTR("telephony"));
+		if (hasTelephony) {
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.favorites"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.contacts"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.keypad"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.recents"];
 			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.phone.voicemail"];
+		}
+		if (kCFCoreFoundationVersionNumber >= 675.0) {
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.about"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.accessibility"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.auto-lock"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.bluetooth"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.brightness"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.date-time"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.equalizer"];
+			if (GSSystemHasCapability(CFSTR("venice")))
+				[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.facetime"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.general"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.icloud"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.international"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.keyboard"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.location-services"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.music"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.network"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.notes"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.notifications"];
+			if (hasTelephony)
+				[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.phone"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.photos"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.safari"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.sounds"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.store"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.twitter"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.usage"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.vpn"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.wallpaper"];
+			[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.settings.wifi"];
 		}
 	}
 }

@@ -1,0 +1,8 @@
+{
+	title = "Bluetooth";
+	description = "Open Settings to Bluetooth page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=General&path=Bluetooth";
+}

@@ -1,0 +1,8 @@
+{
+	title = "Safari";
+	description = "Open Settings to Safari page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=Safari";
+}

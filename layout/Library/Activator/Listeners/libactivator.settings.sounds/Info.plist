@@ -1,0 +1,8 @@
+{
+	title = "Sounds";
+	description = "Open Settings to Sounds page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=Sounds";
+}

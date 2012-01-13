@@ -1,0 +1,8 @@
+{
+	title = "Store";
+	description = "Open Settings to Store page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=STORE";
+}

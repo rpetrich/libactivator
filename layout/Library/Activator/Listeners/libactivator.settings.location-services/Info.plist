@@ -1,0 +1,8 @@
+{
+	title = "Location Services";
+	description = "Open Settings to Location Services page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=LOCATION_SERVICES";
+}

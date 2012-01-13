@@ -1,0 +1,8 @@
+{
+	title = "About";
+	description = "Open Settings to About page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=General&path=About";
+}

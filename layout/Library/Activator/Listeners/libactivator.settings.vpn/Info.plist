@@ -1,0 +1,8 @@
+{
+	title = "VPN";
+	description = "Open Settings to VPN page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=General&path=Network/VPN";
+}

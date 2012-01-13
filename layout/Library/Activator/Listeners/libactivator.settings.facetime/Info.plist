@@ -1,0 +1,8 @@
+{
+	title = "FaceTime";
+	description = "Open Settings to FaceTime page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=FACETIME";
+}

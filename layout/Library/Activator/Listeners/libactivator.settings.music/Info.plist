@@ -1,0 +1,8 @@
+{
+	title = "Music";
+	description = "Open Settings to Music page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=MUSIC";
+}

@@ -1,0 +1,8 @@
+{
+	title = "Photos";
+	description = "Open Settings to Photos page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=Photos";
+}

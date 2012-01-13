@@ -1,0 +1,8 @@
+{
+	title = "Usage";
+	description = "Open Settings to Usage page";
+	group = "Settings";
+	"compatible-modes" = ("springboard", "application");
+	selector = "openURLWithActivator:event:listenerName:";
+	url = "prefs:root=General&path=USAGE";
+}
