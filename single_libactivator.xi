@@ -2,6 +2,6 @@
 #import "LAEvent.m"
 #import "LARemoteListener.m"
 #import "LAListener.m"
-#import "StatusBarEvents.x"
+#import "EverywhereHooks.x"
 #import "libactivator.x"
 #import "LAEventDataSource.m"
