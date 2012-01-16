@@ -225,7 +225,26 @@ static CFAbsoluteTime lastRingerChangedTime;
 
 static BOOL ignoreHeadsetButtonUp;
 
+// iOS4.x
 - (void)_performDelayedHeadsetAction
+{
+	if (LASendEventWithName(LAEventNameHeadsetButtonHoldShort).handled)
+		ignoreHeadsetButtonUp = YES;
+	else
+		%orig;
+}
+
+// iOS5.x with Siri
+- (void)_performDelayedHeadsetActionForAssistant
+{
+	if (LASendEventWithName(LAEventNameHeadsetButtonHoldShort).handled)
+		ignoreHeadsetButtonUp = YES;
+	else
+		%orig;
+}
+
+// iOS5.x with Voice Controls
+- (void)_performDelayedHeadsetActionForVoiceControl
 {
 	if (LASendEventWithName(LAEventNameHeadsetButtonHoldShort).handled)
 		ignoreHeadsetButtonUp = YES;
@@ -262,6 +281,8 @@ static BOOL ignoreHeadsetButtonUp;
 	// Cleanup hold events
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_performDelayedHeadsetAction) object:nil];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_performDelayedHeadsetClickTimeout) object:nil];
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_performDelayedHeadsetActionForAssistant) object:nil];
+	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_performDelayedHeadsetActionForVoiceControl) object:nil];
 }
 
 - (void)_handleMenuButtonEvent
