@@ -841,6 +841,8 @@ static BOOL justSuppressedNotificationSound;
 	}
 	if ([%c(SBUIController) instancesRespondToSelector:@selector(isSwitcherShowing)] && [(SBUIController *)[%c(SBUIController) sharedInstance] isSwitcherShowing])
 		return %orig;
+	if ([(SBBulletinListController *)[%c(SBBulletinListController) sharedInstance] listViewIsActive])
+		return %orig;
 	[LASharedActivator sendEventToListener:event];
 	if (![event isHandled])
 		return %orig;

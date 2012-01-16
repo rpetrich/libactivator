@@ -125,15 +125,3 @@ typedef struct {
 - (BOOL)secondTouchInRange:(CGPoint)touchPoint;
 - (void)_updateAnimationDistanceAndEdgeCenter;
 @end
-
-@interface SBBulletinListController : NSObject
-+ (SBBulletinListController *)sharedInstance;
-- (void)showListViewAnimated:(BOOL)animated;
-- (void)hideListViewAnimated:(BOOL)animated;
-- (BOOL)listViewIsActive;
-- (void)handleShowNotificationsGestureBeganWithTouchLocation:(CGPoint)touchLocation;
-- (void)handleShowNotificationsGestureChangedWithTouchLocation:(CGPoint)touchLocation velocity:(CGPoint)velocity;
-- (void)handleShowNotificationsGestureEndedWithVelocity:(CGPoint)velocity completion:(void (^)())completion;
-- (void)handleShowNotificationsGestureCanceled;
-@end
-

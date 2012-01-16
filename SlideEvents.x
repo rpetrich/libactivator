@@ -5,6 +5,7 @@
 #import <UIKit/UIKit.h>
 #import <SpringBoard/SpringBoard.h>
 #import <SpringBoard/SBGestureRecognizer.h>
+#import <SpringBoard/AdditionalAPIs.h>
 #import <UIKit/UIGestureRecognizerSubclass.h>
 #import <CaptainHook/CaptainHook.h>
 
