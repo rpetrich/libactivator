@@ -526,6 +526,12 @@ __attribute__((visibility("hidden")))
 	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
 }
 
+- (void)restoreIconListAnimated:(BOOL)animated animateWallpaper:(BOOL)animatedWallpaper keepSwitcher:(BOOL)keepSwitcher
+{
+	%orig;
+	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
+}
+
 - (void)lock
 {
 	%orig;
@@ -537,6 +543,12 @@ __attribute__((visibility("hidden")))
 {
 	%orig;
 	[LASlideGestureWindow updateVisibility];
+	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
+}
+
+- (void)_unlockWithSound:(BOOL)sound isAutoUnlock:(BOOL)isAutoUnlock unlockSource:(int)unlockSource
+{
+	%orig;
 	[(LASpringBoardActivator *)LASharedActivator _eventModeChanged];
 }
 
