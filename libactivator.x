@@ -559,7 +559,8 @@ static UIAlertView *inCydiaAlert;
 - (UIImage *)cachedSmallIconForListenerName:(NSString *)listenerName
 {
 	@synchronized (self) {
-		return [_cachedListenerSmallIcons objectForKey:listenerName];
+		id result = [_cachedListenerSmallIcons objectForKey:listenerName];
+		return (result == sharedNull) ? nil : result;
 	}
 }
 
