@@ -258,8 +258,9 @@ static BOOL ignoreHeadsetButtonUp;
 	if (LAListenerForEventWithName(LAEventNameHeadsetButtonHoldShort)) {
 		%orig;
 		// Require _performDelayedHeadsetAction timer, event when Voice Control isn't available
-		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(_performDelayedHeadsetAction) object:nil];
-		[self performSelector:@selector(_performDelayedHeadsetAction) withObject:nil afterDelay:0.8];
+		SEL selector = [self respondsToSelector:@selector(_performDelayedHeadsetAction)] ? @selector(_performDelayedHeadsetAction) : ([%c(SBAssistantController) shouldEnterAssistant] ? @selector(_performDelayedHeadsetActionForAssistant) : @selector(_performDelayedHeadsetActionForVoiceControl));
+		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:selector object:nil];
+		[self performSelector:selector withObject:nil afterDelay:0.8];
 	} else {
 		%orig;
 	}
