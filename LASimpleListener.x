@@ -153,6 +153,22 @@ __attribute__((visibility("hidden")))
 	return YES;
 }
 
+- (void)showNowPlayingBarInternal
+{
+	SBUIController *sharedController = (SBUIController *)[%c(SBUIController) sharedInstance];
+	if (![sharedController isSwitcherShowing]) {
+		[sharedController _toggleSwitcher];
+		// Repeatedly attempt to Activate switcher
+		// Apple bug--will not activate if taps are active
+		[self performSelector:@selector(showNowPlayingBarInternal) withObject:nil afterDelay:0.0];
+	} else {
+		UIScrollView *scrollView = CHIvar(CHIvar((SBAppSwitcherController *)[%c(SBAppSwitcherController) sharedInstance], _bottomBar, id), _scrollView, UIScrollView *);
+		CGPoint contentOffset = scrollView.contentOffset;
+		contentOffset.x = 0.0f;
+		[scrollView setContentOffset:contentOffset animated:NO];
+	}
+}
+
 - (BOOL)showNowPlayingBar
 {
 	SBUIController *sharedController = (SBUIController *)[%c(SBUIController) sharedInstance];
@@ -160,23 +176,29 @@ __attribute__((visibility("hidden")))
 		[sharedController _toggleSwitcher];
 		// Repeatedly attempt to Activate switcher
 		// Apple bug--will not activate if taps are active
-		[self performSelector:@selector(showNowPlayingBar) withObject:nil afterDelay:0.0];
+		[self performSelector:@selector(showNowPlayingBarInternal) withObject:nil afterDelay:0.0];
+		return YES;
 	} else {
 		UIScrollView *scrollView = CHIvar(CHIvar((SBAppSwitcherController *)[%c(SBAppSwitcherController) sharedInstance], _bottomBar, id), _scrollView, UIScrollView *);
+		CGFloat switcherWidth = scrollView.bounds.size.width;
+		if (!scrollView || (switcherWidth <= 0.0f)) {
+			[self performSelector:@selector(showNowPlayingBarInternal) withObject:nil afterDelay:0.0];
+			return YES;
+		}
 		CGPoint contentOffset = scrollView.contentOffset;
-		CGFloat desiredOffset = (kCFCoreFoundationVersionNumber <= kCFCoreFoundationVersionNumber_iOS_4_2) ? 0.0f : scrollView.bounds.size.width;
-		if (contentOffset.x == desiredOffset) {
+		if (contentOffset.x == 0.0f) {
+			SBUIController *sharedController = (SBUIController *)[%c(SBUIController) sharedInstance];
 			if ([sharedController respondsToSelector:@selector(dismissSwitcherAnimated:)])
 				[sharedController dismissSwitcherAnimated:YES];
 			else
 				[sharedController dismissSwitcher];
 			return NO;
 		} else {
-			contentOffset.x = desiredOffset;
+			contentOffset.x = 0.0f;
 			[scrollView setContentOffset:contentOffset animated:NO];
+			return YES;
 		}
 	}
-	return YES;
 }
 
 - (BOOL)showVolumeBar
