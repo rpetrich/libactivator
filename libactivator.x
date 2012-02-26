@@ -62,6 +62,8 @@ NSString * const LAEventNameMotionShake            = @"libactivator.motion.shake
 
 NSString * const LAEventNameHeadsetButtonPressSingle = @"libactivator.headset-button.press.single";
 NSString * const LAEventNameHeadsetButtonHoldShort = @"libactivator.headset-button.hold.short";
+NSString * const LAEventNameHeadsetConnected       = @"libactivator.headset.connected";
+NSString * const LAEventNameHeadsetDisconnected    = @"libactivator.headset.disconnected";
 
 NSString * const LAEventNameLockScreenClockDoubleTap = @"libactivator.lockscreen.clock.double-tap";
 

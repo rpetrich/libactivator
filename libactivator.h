@@ -263,6 +263,8 @@ extern NSString * const LAEventNameMotionShake;
 
 extern NSString * const LAEventNameHeadsetButtonPressSingle;
 extern NSString * const LAEventNameHeadsetButtonHoldShort;
+extern NSString * const LAEventNameHeadsetConnected;
+extern NSString * const LAEventNameHeadsetDisconnected;
 
 extern NSString * const LAEventNameLockScreenClockDoubleTap;
 

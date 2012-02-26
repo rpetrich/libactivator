@@ -8,6 +8,8 @@
 #import "Constants.h"
 #import "SpringBoard/AdditionalAPIs.h"
 
+#import <Celestial/Celestial.h>
+
 %config(generator=internal);
 
 #import <CaptainHook/CaptainHook.h>
@@ -876,11 +878,29 @@ static BOOL justSuppressedNotificationSound;
 	return YES;
 }
 
+static BOOL wasHeadphoneJackConnected;
+
+static inline BOOL HeadphoneJackIsConnected()
+{
+	return [[[%c(AVSystemController) sharedAVSystemController] attributeForKey:@"AVSystemController_HeadphoneJackIsConnectedAttribute"] boolValue];
+}
+
+static void HeadphoneJackConnectedCallback(CFNotificationCenterRef center, void *observer, CFStringRef name, const void *object, CFDictionaryRef userInfo)
+{
+	BOOL newValue = HeadphoneJackIsConnected();
+	if (wasHeadphoneJackConnected != newValue) {
+		wasHeadphoneJackConnected = newValue;
+		LASendEventWithName(newValue ? LAEventNameHeadsetConnected : LAEventNameHeadsetDisconnected);
+	}
+}
+
 - (void)finishLaunching
 {
 	[LASimpleListener sharedInstance];
 	[LAToggleListener sharedInstance];
 	[LAMenuListener sharedMenuListener];
+	wasHeadphoneJackConnected = HeadphoneJackIsConnected();
+	CFNotificationCenterAddObserver(CFNotificationCenterGetLocalCenter(), NULL, HeadphoneJackConnectedCallback, CFSTR("AVSystemController_HeadphoneJackIsConnectedDidChangeNotification"), NULL, CFNotificationSuspensionBehaviorDeliverImmediately);
 	%orig;
 }
 
