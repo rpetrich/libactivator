@@ -194,21 +194,39 @@ static void NewCydiaStatusChanged()
 	CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
 	CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
 	CFRelease(url);
-	CFWriteStreamOpen(stream);
-	CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, NULL);
-	CFWriteStreamClose(stream);
+	if (CFWriteStreamOpen(stream)) {
+		CFStringRef errorString = NULL;
+		if (CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, &errorString) == 0) {
+			NSLog(@"Activator Failed to write to settings file: %@", errorString);
+			CFRelease(errorString);
+		}
+		CFWriteStreamClose(stream);
+	} else {
+		NSLog(@"Activator: Failed ot open settings file for writing");
+	}
 	CFRelease(stream);
 	chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-	waitingToWriteSettings = NO;
+}
+
+static CFRunLoopObserverRef writeSettingsObserver;
+
+static void WriteSettingsCallback(CFRunLoopObserverRef observer, CFRunLoopActivity activity, void *info)
+{
+	CFRunLoopObserverInvalidate(writeSettingsObserver);
+	CFRelease(writeSettingsObserver);
+	writeSettingsObserver = NULL;
+	[(LASpringBoardActivator *)LASharedActivator _savePreferences];
 }
 
 - (void)_setObject:(id)value forPreference:(NSString *)preference
 {
+	if (!preference)
+		return;
 #ifdef DEBUG
 	NSLog(@"Activator: Setting preference %@ to %@", preference, value);
 #endif
 	if (value) {
-		if ([[_preferences objectForKey:preference] isEqual:preference])
+		if ([[_preferences objectForKey:preference] isEqual:value])
 			return;
 		[_preferences setObject:value forKey:preference];
 	} else {
@@ -216,9 +234,11 @@ static void NewCydiaStatusChanged()
 			return;
 		[_preferences removeObjectForKey:preference];
 	}
-	if (!waitingToWriteSettings) {
-		waitingToWriteSettings = YES;
-		[self performSelector:@selector(_savePreferences) withObject:nil afterDelay:0.2];
+	if (!writeSettingsObserver) {
+		writeSettingsObserver = CFRunLoopObserverCreate(kCFAllocatorDefault, kCFRunLoopAllActivities, false, 0, WriteSettingsCallback, NULL);
+		CFRunLoopRef runLoop = CFRunLoopGetMain();
+		CFRunLoopAddObserver(runLoop, writeSettingsObserver, kCFRunLoopCommonModes);
+		CFRunLoopAddObserver(runLoop, writeSettingsObserver, (CFStringRef)UITrackingRunLoopMode);
 	}
 }
 

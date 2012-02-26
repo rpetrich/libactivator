@@ -8,7 +8,6 @@ __attribute__((visibility("hidden")))
 	NSMutableDictionary *_eventData;
 	NSDictionary *_cachedAndSortedListeners;
 	int notify_token;
-	BOOL waitingToWriteSettings;
 }
 
 - (void)_eventModeChanged;
