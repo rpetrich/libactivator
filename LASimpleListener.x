@@ -333,6 +333,11 @@ __attribute__((visibility("hidden")))
 	SBIconController *ic = (SBIconController *)[%c(SBIconController) sharedInstance];
 	SBUIController *uic = (SBUIController *)[%c(SBUIController) sharedInstance];
 	BOOL result = NO;
+	SBBulletinListController *blc = (SBBulletinListController *)[%c(SBBulletinListController) sharedInstance];
+	if ([blc listViewIsActive]) {
+		[blc hideListViewAnimated:YES];
+		result = YES;
+	}
 	if ([uic respondsToSelector:@selector(isSwitcherShowing)] && [uic isSwitcherShowing]) {
 		if ([uic respondsToSelector:@selector(dismissSwitcherAnimated:)])
 			[uic dismissSwitcherAnimated:YES];
