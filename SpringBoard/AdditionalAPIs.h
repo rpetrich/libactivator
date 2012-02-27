@@ -146,9 +146,12 @@
 @end
 
 @interface SBAssistantController : NSObject
++ (SBAssistantController *)sharedInstance;
 + (BOOL)deviceSupported;
 + (BOOL)preferenceEnabled;
 + (BOOL)shouldEnterAssistant;
+- (void)dismissAssistant;
+- (BOOL)isAssistantVisible;
 @end
 
 @interface SBBulletinListController : NSObject
