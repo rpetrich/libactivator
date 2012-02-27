@@ -129,9 +129,9 @@ __attribute__((visibility("hidden")))
 	if ([%c(SBAssistantController) preferenceEnabled]) {
 		if ([%c(SBAssistantController) shouldEnterAssistant]) {
 			if ([[%c(SBAssistantController) sharedInstance]isAssistantVisible]) {
-				[(SpringBoard *)UIApp activateAssistantWithOptions:nil withCompletion:nil];
-			} else {
 				[[%c(SBAssistantController) sharedInstance]dismissAssistant];
+			} else {
+				[(SpringBoard *)UIApp activateAssistantWithOptions:nil withCompletion:nil];
 			}
 			return YES;
 		}
