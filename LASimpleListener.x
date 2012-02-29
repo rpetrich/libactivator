@@ -169,7 +169,7 @@ __attribute__((visibility("hidden")))
 	} else {
 		UIScrollView *scrollView = CHIvar(CHIvar((SBAppSwitcherController *)[%c(SBAppSwitcherController) sharedInstance], _bottomBar, id), _scrollView, UIScrollView *);
 		CGPoint contentOffset = scrollView.contentOffset;
-		contentOffset.x = 0.0f;
+		contentOffset.x = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) ? 0.0f : scrollView.bounds.size.width;
 		[scrollView setContentOffset:contentOffset animated:NO];
 	}
 }
@@ -190,8 +190,9 @@ __attribute__((visibility("hidden")))
 			[self performSelector:@selector(showNowPlayingBarInternal) withObject:nil afterDelay:0.0];
 			return YES;
 		}
+		CGFloat scrollOffset = (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) ? 0.0f : switcherWidth;
 		CGPoint contentOffset = scrollView.contentOffset;
-		if (contentOffset.x == 0.0f) {
+		if (contentOffset.x == scrollOffset) {
 			SBUIController *sharedController = (SBUIController *)[%c(SBUIController) sharedInstance];
 			if ([sharedController respondsToSelector:@selector(dismissSwitcherAnimated:)])
 				[sharedController dismissSwitcherAnimated:YES];
@@ -199,7 +200,7 @@ __attribute__((visibility("hidden")))
 				[sharedController dismissSwitcher];
 			return NO;
 		} else {
-			contentOffset.x = 0.0f;
+			contentOffset.x = scrollOffset;
 			[scrollView setContentOffset:contentOffset animated:NO];
 			return YES;
 		}
