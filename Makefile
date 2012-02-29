@@ -13,7 +13,7 @@ else
 	libactivator_FILES = LAEvent.m LARemoteListener.m LAListener.m libactivator.x LAEventDataSource.m EverywhereHooks.x LASettingsViewControllers.m
 endif
 libactivator_FRAMEWORKS = UIKit CoreGraphics QuartzCore
-libactivator_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices
+libactivator_PRIVATE_FRAMEWORKS = AppSupport GraphicsServices SpringBoardServices
 
 # Settings.dylib (/Library/Activator)
 ifeq ($(SINGLE),1)

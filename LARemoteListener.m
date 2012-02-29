@@ -4,6 +4,9 @@
 #import <AppSupport/AppSupport.h>
 
 static LARemoteListener *sharedInstance;
+static NSSet *applicationDisplayIdentifiers;
+
+CFArrayRef SBSCopyApplicationDisplayIdentifiers(bool activeOnly, bool debugCapable);
 
 @interface UIImage (UIApplicationIconPrivate)
 + (UIImage *)_applicationIconImageForBundleIdentifier:(NSString *)bundleIdentifier format:(NSInteger)format scale:(CGFloat)scale;
@@ -13,7 +16,16 @@ static LARemoteListener *sharedInstance;
 
 + (void)initialize
 {
-	sharedInstance = [[self alloc] init];
+	if (self == [LARemoteListener class]) {
+		if ([UIImage respondsToSelector:@selector(_applicationIconImageForBundleIdentifier:format:scale:)]) {
+			CFArrayRef displayIdentifiers = SBSCopyApplicationDisplayIdentifiers(false, false);
+			if (displayIdentifiers) {
+				applicationDisplayIdentifiers = [[NSSet alloc] initWithArray:(NSArray *)displayIdentifiers];
+				CFRelease(displayIdentifiers);
+			}
+		}
+		sharedInstance = [[self alloc] init];
+	}
 }
 
 + (LARemoteListener *)sharedInstance
@@ -178,7 +190,7 @@ static LARemoteListener *sharedInstance;
 
 - (UIImage *)activator:(LAActivator *)activator requiresSmallIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
 {
-	if ([UIImage respondsToSelector:@selector(_applicationIconImageForBundleIdentifier:format:scale:)]) {
+	if ([applicationDisplayIdentifiers containsObject:listenerName]) {
 		UIImage *result = [UIImage _applicationIconImageForBundleIdentifier:listenerName format:0 scale:scale];
 		if (result)
 			return result;
