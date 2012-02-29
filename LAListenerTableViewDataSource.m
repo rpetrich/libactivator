@@ -3,10 +3,14 @@
 
 @implementation LAListenerTableViewDataSource
 
+static UIImage *defaultIconImage;
+
 + (void)initialize
 {
 	if (self == [LAListenerTableViewDataSource class]) {
 		[LASharedActivator _cacheAllListenerMetadata];
+		if ([UIImage respondsToSelector:@selector(_applicationIconImageForBundleIdentifier:format:scale:)])
+			defaultIconImage = [[UIImage _applicationIconImageForBundleIdentifier:@"com.apple.WebSheet" format:0 scale:[UIScreen mainScreen].scale] retain];
 	}
 }
 
@@ -203,8 +207,10 @@
 	cell.textLabel.text = [LASharedActivator localizedTitleForListenerName:listenerName];
 	cell.detailTextLabel.text = [LASharedActivator localizedDescriptionForListenerName:listenerName];
 	UIImage *image = [LASharedActivator cachedSmallIconForListenerName:listenerName];
-	cell.imageView.image = image;
-	if (!image) {
+	if (image)
+		cell.imageView.image = image;
+	else {
+		cell.imageView.image = defaultIconImage;
 		@synchronized (self) {
 			if (!_pendingListenerNames) {
 				_pendingListenerNames = [[NSMutableArray alloc] init];

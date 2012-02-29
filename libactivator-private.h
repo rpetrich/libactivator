@@ -142,3 +142,7 @@ static inline LAEvent *LASendEventWithName(NSString *eventName)
 	[LASharedActivator sendEventToListener:event];
 	return event;
 }
+
+@interface UIImage (UIApplicationIconPrivate)
++ (UIImage *)_applicationIconImageForBundleIdentifier:(NSString *)bundleIdentifier format:(NSInteger)format scale:(CGFloat)scale;
+@end

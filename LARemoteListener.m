@@ -8,10 +8,6 @@ static NSSet *applicationDisplayIdentifiers;
 
 CFArrayRef SBSCopyApplicationDisplayIdentifiers(bool activeOnly, bool debugCapable);
 
-@interface UIImage (UIApplicationIconPrivate)
-+ (UIImage *)_applicationIconImageForBundleIdentifier:(NSString *)bundleIdentifier format:(NSInteger)format scale:(CGFloat)scale;
-@end
-
 @implementation LARemoteListener
 
 + (void)initialize
