@@ -149,6 +149,9 @@
 + (BOOL)deviceSupported;
 + (BOOL)preferenceEnabled;
 + (BOOL)shouldEnterAssistant;
++ (SBAssistantController *)sharedInstance;
+@property (nonatomic, readonly, getter=isAssistantVisible) BOOL assistantVisible;
+- (void)dismissAssistant;
 @end
 
 @interface SBBulletinListController : NSObject
