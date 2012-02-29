@@ -14,6 +14,7 @@
 
 @interface UIActionSheet (OS32)
 - (void)showFromRect:(CGRect)rect inView:(UIView *)view animated:(BOOL)animated;
+- (id)addMediaButtonWithTitle:(NSString *)title iconView:(UIImageView *)imageView andTableIconView:(UIImageView *)imageView;
 @end
 
 @interface UIViewController (Private)
@@ -133,10 +134,19 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 		UIActionSheet *actionSheet = [[UIActionSheet alloc] init];
 		actionSheet.title = [menuData objectForKey:@"title"];
 		NSMutableArray *compatibleItems = [[NSMutableArray alloc] init];
+		BOOL respondsToAddMediaButton = [actionSheet respondsToSelector:@selector(addMediaButtonWithTitle:iconView:andTableIconView:)];
 		for (NSString *item in [menuData objectForKey:@"items"]) {
 			if ([LASharedActivator listenerWithName:item isCompatibleWithMode:event.mode]) {
 				[compatibleItems addObject:item];
-				[actionSheet addButtonWithTitle:[activator localizedTitleForListenerName:item] ?: @""];
+				NSString *title = [activator localizedTitleForListenerName:item] ?: @"";
+				UIImage *image;
+				if (respondsToAddMediaButton && (image = [activator smallIconForListenerName:item])) {
+					UIImageView *imageView = [[UIImageView alloc] initWithImage:image];
+					[actionSheet addMediaButtonWithTitle:title iconView:imageView andTableIconView:imageView];
+					[imageView release];
+				} else {
+					[actionSheet addButtonWithTitle:title];
+				}
 			}
 		}
 		UIInterfaceOrientation currentOrientation = [UIApp statusBarOrientation];
