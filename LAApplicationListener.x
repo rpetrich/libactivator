@@ -13,6 +13,10 @@ static NSMutableArray *displayStacks;
 static NSArray *allEventModesExceptLockScreen;
 static NSArray *ignoredDisplayIdentifiers;
 
+static NSString *systemApplicationsGroupName;
+static NSString *userApplicationsGroupName;
+static NSString *webClipApplicationsGroupName;
+
 static inline SBDisplayStack *SBWGetDisplayStackAtIndex(NSInteger index)
 {
 	return index < [displayStacks count] ? [displayStacks objectAtIndex:index] : nil;
@@ -168,10 +172,12 @@ static LACameraApplicationListener *sharedCameraApplicationListener;
 
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedGroupForListenerName:(NSString *)listenerName
 {
-	if ([SBApp(listenerName) isSystemApplication])
-		return [activator localizedStringForKey:@"LISTENER_GROUP_TITLE_System Applications" value:@"System Applications"];
-	else
-		return [activator localizedStringForKey:@"LISTENER_GROUP_TITLE_User Applications" value:@"User Applications"];
+	SBApplication *app = SBApp(listenerName);
+	if ([app isSystemApplication]) {
+		return ([app respondsToSelector:@selector(webClip)] && [app webClip]) ? webClipApplicationsGroupName : systemApplicationsGroupName;
+	} else {
+		return userApplicationsGroupName;
+	}
 }
 
 - (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)name
@@ -316,6 +322,9 @@ static LACameraApplicationListener *sharedCameraApplicationListener;
 	%init;
 #endif
 	sharedApplicationListener = [[LAApplicationListener alloc] init];
+	systemApplicationsGroupName = [[LASharedActivator localizedStringForKey:@"LISTENER_GROUP_TITLE_System Applications" value:@"System Applications"] retain];
+	userApplicationsGroupName = [[LASharedActivator localizedStringForKey:@"LISTENER_GROUP_TITLE_User Applications" value:@"User Applications"] retain];
+	webClipApplicationsGroupName = [[LASharedActivator localizedStringForKey:@"LISTENER_GROUP_TITLE_Web Clips" value:@"Web Clips"] retain];
 	allEventModesExceptLockScreen = [[NSArray alloc] initWithObjects:LAEventModeSpringBoard, LAEventModeApplication, nil];
 	ignoredDisplayIdentifiers = [[NSArray alloc] initWithObjects:@"com.apple.DemoApp", @"com.apple.fieldtest", @"com.apple.springboard", @"com.apple.AdSheet", @"com.apple.iphoneos.iPodOut", @"com.apple.TrustMe", @"com.apple.DataActivation", @"com.apple.WebSheet", @"com.apple.AdSheetPhone", @"com.apple.AdSheetPad", @"com.apple.iosdiagnostics", @"com.apple.purplebuddy", nil];
 	displayStacks = (NSMutableArray *)CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);

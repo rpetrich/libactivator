@@ -70,6 +70,7 @@
 @interface SBApplication (OS30)
 - (NSString *)pathForIcon;
 - (NSString *)pathForSmallIcon;
+- (id)webClip;
 @end
 
 @interface SBIconModel (iOS40)
