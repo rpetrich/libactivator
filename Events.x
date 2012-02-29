@@ -863,6 +863,10 @@ static BOOL justSuppressedNotificationSound;
 		if ([iconController isEditing] || ([iconController respondsToSelector:@selector(currentFolderIconList)] && [iconController currentFolderIconList]))
 			return %orig;
 	}
+	if ([(SBAssistantController *)[%c(SBAssistantController) sharedInstance] isAssistantVisible])
+		return %orig;
+	if ([%c(SBVoiceControlAlert) pendingOrActiveAlert])
+		return %orig;
 	if ([%c(SBUIController) instancesRespondToSelector:@selector(isSwitcherShowing)] && [(SBUIController *)[%c(SBUIController) sharedInstance] isSwitcherShowing])
 		return %orig;
 	if ([(SBBulletinListController *)[%c(SBBulletinListController) sharedInstance] listViewIsActive])
