@@ -106,6 +106,13 @@ static void StatusBarTapCallback(CFRunLoopTimerRef timer, void *info)
 	}
 }
 
+- (void)touchesCancelled:(NSSet *)touches withEvent:(UIEvent *)event
+{
+	DestroyCurrentStatusBarHoldTimer();
+	DestroyCurrentStatusBarTapTimer();
+	%orig;
+}
+
 %end
 
 @interface PhoneRootViewController : UIViewController
