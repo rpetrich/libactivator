@@ -64,22 +64,31 @@
 {
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
 	NSString *title;
+	NSString *subtitle;
 	switch (indexPath.section) {
 		case 0: {
 			cell.editingAccessoryType = UITableViewCellAccessoryDisclosureIndicator;
 			NSString *key = [sortedMenus objectAtIndex:indexPath.row];
-			title = [[menus objectForKey:key] objectForKey:@"title"];
+			NSDictionary *menuData = [menus objectForKey:key];
+			title = [menuData objectForKey:@"title"];
+			NSMutableArray *titles = [NSMutableArray array];
+			for (NSString *listenerName in [menuData objectForKey:@"items"])
+				[titles addObject:[LASharedActivator localizedTitleForListenerName:listenerName]];
+			subtitle = [titles count] ? [titles componentsJoinedByString:@", "] : nil;
 			break;
 		}
 		case 1:
 			cell.editingAccessoryType = UITableViewCellAccessoryNone;
 			title = [LASharedActivator localizedStringForKey:@"ADD_NEW_MENU" value:@"Add New Menu"];
+			subtitle = nil;
 			break;
 		default:
 			title = nil;
+			subtitle = nil;
 			break;
 	}
 	cell.textLabel.text = title;
+	cell.detailTextLabel.text = subtitle;
 	return cell;	
 }
 
@@ -182,6 +191,7 @@
 	[menus setObject:menuData forKey:selectedMenu];
 	[menuData release];
 	[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(saveSettings) object:nil];
+	[self.tableView reloadData];
 	[self performSelector:@selector(saveSettings) withObject:nil afterDelay:0.0];
 }
 
