@@ -33,6 +33,7 @@ typedef BOOL (*libhideIsHiddenFunction)(NSString *);
 @interface LAModeSettingsController : LASettingsViewController {
 @protected
 	NSString *_eventMode;
+	NSArray *_resolvedModes;
 	NSMutableDictionary *_events;
 	NSArray *_groups;
 }

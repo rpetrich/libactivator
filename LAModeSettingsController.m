@@ -14,11 +14,26 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 {
 	if ((self = [super init])) {
 		_eventMode = [mode copy];
+		_resolvedModes = [_eventMode ? [NSArray arrayWithObject:_eventMode] : [LASharedActivator availableEventModes] retain];
 		self.navigationItem.title = [LASharedActivator localizedTitleForEventMode:_eventMode];
 		BOOL showHidden = [[LASharedActivator _getObjectForPreference:@"LAShowHiddenEvents"] boolValue];
 		_events = [[NSMutableDictionary alloc] init];
-		for (NSString *eventName in [LASharedActivator availableEventNames]) {
-			if ([LASharedActivator eventWithName:eventName isCompatibleWithMode:mode]) {
+		if (mode) {
+			for (NSString *eventName in [LASharedActivator availableEventNames]) {
+				if ([LASharedActivator eventWithName:eventName isCompatibleWithMode:mode]) {
+					if (!([LASharedActivator eventWithNameIsHidden:eventName] || showHidden)) {
+						NSString *key = [LASharedActivator localizedGroupForEventName:eventName] ?: @"";
+						NSMutableArray *groupList = [_events objectForKey:key];
+						if (!groupList) {
+							groupList = [NSMutableArray array];
+							[_events setObject:groupList forKey:key];
+						}
+						[groupList addObject:eventName];
+					}
+				}
+			}
+		} else {
+			for (NSString *eventName in [LASharedActivator availableEventNames]) {
 				if (!([LASharedActivator eventWithNameIsHidden:eventName] || showHidden)) {
 					NSString *key = [LASharedActivator localizedGroupForEventName:eventName] ?: @"";
 					NSMutableArray *groupList = [_events objectForKey:key];
@@ -40,6 +55,7 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 
 - (void)dealloc
 {
+	[_resolvedModes release];
 	[_groups release];
 	[_events release];
 	[_eventMode release];
@@ -92,9 +108,14 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 		NSString *eventName = [self eventNameForIndexPath:indexPath];
 		label.text = [LASharedActivator localizedTitleForEventName:eventName];
 		detailLabel.text = [LASharedActivator localizedDescriptionForEventName:eventName];
-		alpha = [LASharedActivator eventWithNameIsHidden:eventName] ? 0.66f : 1.0f;
+		alpha = 2.0f / 3.0f;
+		for (NSString *mode in _resolvedModes) {
+			if ([LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]]) {
+				alpha = 1.0f;
+				break;
+			}
+		}
 	}
-	label.alpha = alpha;
 	detailLabel.alpha = alpha;
 	cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
 	return cell;	
@@ -104,11 +125,10 @@ static NSInteger CompareEventNamesCallback(id a, id b, void *context)
 {
 	[super tableView:tableView didSelectRowAtIndexPath:indexPath];
 	LASettingsViewController *vc;
-	NSArray *modes = _eventMode ? [NSArray arrayWithObject:_eventMode] : [LASharedActivator availableEventModes];
 	if ([self groupAtIndexIsLarge:indexPath.section])
-		vc = [[LAEventGroupSettingsController alloc] initWithModes:modes events:[self groupAtIndex:indexPath.section] groupName:[_groups objectAtIndex:indexPath.section]];
+		vc = [[LAEventGroupSettingsController alloc] initWithModes:_resolvedModes events:[self groupAtIndex:indexPath.section] groupName:[_groups objectAtIndex:indexPath.section]];
 	else
-		vc = [[LAEventSettingsController alloc] initWithModes:modes eventName:[self eventNameForIndexPath:indexPath]];
+		vc = [[LAEventSettingsController alloc] initWithModes:_resolvedModes eventName:[self eventNameForIndexPath:indexPath]];
 	[self pushSettingsController:vc];
 	[vc release];
 }

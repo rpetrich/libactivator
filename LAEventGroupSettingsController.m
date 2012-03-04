@@ -31,12 +31,17 @@
 {
 	UITableViewCell *cell = [super tableView:tableView cellForRowAtIndexPath:indexPath];
 	NSString *eventName = [_events objectAtIndex:indexPath.row];
-	CGFloat alpha = [LASharedActivator eventWithNameIsHidden:eventName] ? 0.66f : 1.0f;
 	UILabel *label = cell.textLabel;
 	label.text = [LASharedActivator localizedTitleForEventName:eventName];
-	label.alpha = alpha;
 	UILabel *detailLabel = cell.detailTextLabel;
 	detailLabel.text = [LASharedActivator localizedDescriptionForEventName:eventName];
+	CGFloat alpha = 2.0f / 3.0f;
+	for (NSString *mode in _modes) {
+		if ([LASharedActivator assignedListenerNameForEvent:[LAEvent eventWithName:eventName mode:mode]]) {
+			alpha = 1.0f;
+			break;
+		}
+	}
 	detailLabel.alpha = alpha;
 	cell.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
 	return cell;	
