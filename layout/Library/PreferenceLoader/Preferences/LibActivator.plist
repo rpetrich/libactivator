@@ -1,7 +1,7 @@
 entry = {
   bundle = LibActivator;
   cell = PSLinkCell;
-  icon = icon.png;
+  icon = "/Applications/Activator.app/Icon-Small.png";
   isController = 1;
   label = Activator;
 };

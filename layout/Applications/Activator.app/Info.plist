@@ -2,8 +2,8 @@
 	CFBundleExecutable = Activator;
 	CFBundleIconFile = "Icon.png";
 	CFBundleIconFiles = (
-		"iPadAppIcon.png",
 		"icon.png",
+		"icon-72.png",
 		"icon@2x.png",
 		"Icon-Small.png",
 		"Icon-Small@2x.png",
