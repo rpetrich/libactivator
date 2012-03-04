@@ -263,116 +263,37 @@ static inline void SlideGestureClear(id self)
 	}
 }
 
-static CFMutableSetRef activeRecognizers;
-static CFMutableDictionaryRef forcedOpenRecognizers;
-static SBOffscreenSwipeGestureRecognizer *activeRecognizer;
+static int lastActiveTouchCount;
 
-%hook SBGestureRecognizer
+%hook SBHandMotionExtractor
 
-- (id)init
+- (void)extractHandMotionForActiveTouches:(void *)activeTouches count:(NSUInteger)count centroid:(CGPoint)centroid
 {
-	if ((self = %orig)) {
-		if (!activeRecognizers) {
-			activeRecognizers = CFSetCreateMutable(NULL, 0, NULL);
-			forcedOpenRecognizers = CFDictionaryCreateMutable(NULL, 0, NULL, &kCFTypeDictionaryValueCallBacks);
-		}
-		CFSetAddValue(activeRecognizers, self);
-	}
-	return self;
-}
-
-- (void)dealloc
-{
-	CFDictionaryRemoveValue(forcedOpenRecognizers, self);
-	SlideGestureClear(self);
-	if (activeRecognizer == self)
-		activeRecognizer = nil;
-	CFSetRemoveValue(activeRecognizers, self);
-	%orig;
-}
-
-%end
-
-%hook SBOffscreenSwipeGestureRecognizer
-
-- (void)setState:(int)state
-{
-	switch (state) {
-		case 4:
-			if (!CFDictionaryContainsKey(forcedOpenRecognizers, self)) {
-				CFDictionarySetValue(forcedOpenRecognizers, self, (id)self.handler ?: (id)[NSNull null]);
-				self.handler = nil;
+	dispatch_async(dispatch_get_main_queue(), ^{
+		if (count && !lastActiveTouchCount) {
+			// New gesture
+			if (![(SBBulletinListController *)[%c(SBBulletinListController) sharedInstance] listViewIsActive]) {
+				SlideGestureStartWithRotatedLocation(self, centroid);
 			}
-			break;
-		case 5: {
-			const void *handler;
-			if (CFDictionaryGetValueIfPresent(forcedOpenRecognizers, self, &handler)) {
-				if (!self.handler && (handler != [NSNull null]))
-					self.handler = handler;
-				CFDictionaryRemoveValue(forcedOpenRecognizers, self);
-			}
-			if (activeRecognizer == self)
-				activeRecognizer = nil;
-		}
-		default:
-			%orig;
-	}
-}
-
-- (void)reset
-{
-	const void *handler;
-	if (CFDictionaryGetValueIfPresent(forcedOpenRecognizers, self, &handler)) {
-		if (!self.handler && (handler != [NSNull null]))
-			self.handler = handler;
-		CFDictionaryRemoveValue(forcedOpenRecognizers, self);
-	}
-	if (activeRecognizer == self)
-		activeRecognizer = nil;
-	%orig;
-}
-
-- (void)touchesBegan:(SBGestureContextRef)touches
-{
-	if ([(SBBulletinListController *)[%c(SBBulletinListController) sharedInstance] listViewIsActive])
-		%orig;
-	else {
-		%orig;
-		SlideGestureStartWithRotatedLocation(self, CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location);
-	}
-}
-
-- (void)touchesMoved:(SBGestureContextRef)touches
-{
-	%orig;
-	if (activeRecognizer) {
-		if (activeRecognizer != self)
-			SlideGestureClear(self);
-	} else {
-		LAEvent *event = SlideGestureMoveWithRotatedLocation(self, CHIvar(self, m_activeTouches, SBGestureRecognizerTouchData).location, CHIvar(self, m_activeTouchesCount, NSUInteger));
-		if (event) {
-			activeRecognizer = self;
+		} else if (count) {
+			// Continuing gesture
+			LAEvent *event = SlideGestureMoveWithRotatedLocation(self, centroid, count);
 			if (event.handled) {
-				self.state = 2;
-				[self sendTouchesCancelledToApplicationIfNeeded];
-				for (SBGestureRecognizer *recognizer in (NSSet *)activeRecognizers)
-					if (recognizer != self)
-						recognizer.state = 4;
+				// Cancel touch events
+	            [UIApp _cancelAllTouches];
+				SBGestureRecognizer *recognizer = [[%c(SBGestureRecognizer) alloc] init];
+				recognizer.state = 4;
+				recognizer.sendsTouchesCancelledToApplication = YES;
+				[recognizer sendTouchesCancelledToApplicationIfNeeded];
+				[recognizer release];
 			}
+		} else {
+			// Finishing gesture
+			SlideGestureClear(self);
 		}
-	}
-}
-
-- (void)touchesEnded:(SBGestureContextRef)touches
-{
+		lastActiveTouchCount = count;
+	});
 	%orig;
-	SlideGestureClear(self);
-}
-
-- (void)touchesCancelled:(SBGestureContextRef)touches
-{
-	%orig;
-	SlideGestureClear(self);
 }
 
 %end

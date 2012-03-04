@@ -417,6 +417,10 @@ static void WriteSettingsCallback(CFRunLoopObserverRef observer, CFRunLoopActivi
 
 - (void)sendDeactivateEventToListeners:(LAEvent *)event
 {
+	if (![NSThread isMainThread]) {
+		[self performSelectorOnMainThread:_cmd withObject:event waitUntilDone:YES];
+		return;
+	}
 	BOOL handled = [event isHandled];
 	[event setHandled:NO];
 	for (id<LAListener> listener in (NSSet *)_listenerInstances) {

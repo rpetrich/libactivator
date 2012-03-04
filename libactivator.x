@@ -283,6 +283,10 @@ static UIAlertView *inCydiaAlert;
 
 - (void)sendEventToListener:(LAEvent *)event
 {
+	if (![NSThread isMainThread]) {
+		[self performSelectorOnMainThread:_cmd withObject:event waitUntilDone:YES];
+		return;
+	}
 	NSString *listenerName = [self assignedListenerNameForEvent:event];
 	if (listenerName && [self listenerWithName:listenerName isCompatibleWithEventName:[event name]]) {
 		if ([self isDangerousToSendEvents]) {
@@ -321,6 +325,10 @@ static UIAlertView *inCydiaAlert;
 
 - (void)sendAbortToListener:(LAEvent *)event
 {
+	if (![NSThread isMainThread]) {
+		[self performSelectorOnMainThread:_cmd withObject:event waitUntilDone:YES];
+		return;
+	}
 	NSString *listenerName = [self assignedListenerNameForEvent:event];
 	if ([self listenerWithName:listenerName isCompatibleWithEventName:[event name]])
 		[[self listenerForName:listenerName] activator:self abortEvent:event forListenerName:listenerName];
