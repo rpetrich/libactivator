@@ -225,6 +225,15 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 	return [menuData objectForKey:@"title"];
 }
 
+- (NSString *)activator:(LAActivator *)activator requiresLocalizedDescriptionForListenerName:(NSString *)listenerName
+{
+	NSMutableArray *titles = [NSMutableArray array];
+	NSDictionary *menuData = [menus objectForKey:listenerName];
+	for (NSString *listenerName in [menuData objectForKey:@"items"])
+		[titles addObject:[LASharedActivator localizedTitleForListenerName:listenerName]];
+	return [titles count] ? [titles componentsJoinedByString:@", "] : nil;
+}
+
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedGroupForListenerName:(NSString *)listenerName
 {
 	return [activator localizedStringForKey:@"MENUS" value:@"Menus"];
