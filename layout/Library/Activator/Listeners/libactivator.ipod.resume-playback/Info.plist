@@ -1,0 +1,6 @@
+{
+	title = "Play";
+	description = "Resumes iPod playback";
+	group = "Audio";
+	selector = "playMedia";
+}

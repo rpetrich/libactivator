@@ -90,3 +90,7 @@ stage::
 	$(ECHO_NOTHING)./symlink_localizations.sh "$(FW_PROJECT_DIR)/Localization/$(LOCALIZATION_PROJECT_NAME)" "$(LOCALIZATION_DEST_PATH)" "$(FW_STAGING_DIR)/Applications/Activator.app"$(ECHO_END)
 
 endif
+
+.PHONY: printvars
+printvars:
+	@$(foreach V,$(sort $(.VARIABLES)),$(if $(filter-out environment% default automatic,$(origin $V)),$(warning $V=$($V) ($(value $V)))))

@@ -1,0 +1,6 @@
+{
+	title = "Pause";
+	description = "Suspends iPod playback";
+	group = "Audio";
+	selector = "pauseMedia";
+}

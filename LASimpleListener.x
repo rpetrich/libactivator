@@ -278,6 +278,26 @@ __attribute__((visibility("hidden")))
 	return YES;
 }
 
+- (BOOL)playMedia
+{
+	SBMediaController *mc = (SBMediaController *)[%c(SBMediaController) sharedInstance];
+	if (![mc isPlaying]) {
+		[mc togglePlayPause];
+		return YES;
+	}
+	return NO;
+}
+
+- (BOOL)pauseMedia
+{
+	SBMediaController *mc = (SBMediaController *)[%c(SBMediaController) sharedInstance];
+	if ([mc isPlaying]) {
+		[mc togglePlayPause];
+		return YES;
+	}
+	return NO;
+}
+
 - (BOOL)previousTrack
 {
 	[(SBMediaController *)[%c(SBMediaController) sharedInstance] changeTrack:-1];
@@ -542,6 +562,8 @@ static UIWindow *tweetFormerKeyWindow;
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.lockscreen.toggle"];
 		// iPod
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.toggle-playback"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.pause-playback"];
+		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.resume-playback"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.previous-track"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.next-track"];
 		[LASharedActivator registerListener:sharedSimpleListener forName:@"libactivator.ipod.music-controls"];
