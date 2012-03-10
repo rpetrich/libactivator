@@ -19,35 +19,32 @@
 
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName
 {
-	NSBundle *bundle = ListenerBundle(listenerName);
-	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"title"] ?: listenerName;
-	return Localize(activatorBundle, [@"LISTENER_TITLE_" stringByAppendingString:listenerName], Localize(bundle, unlocalized, unlocalized) ?: listenerName);
+	NSString *unlocalized = ListenerDictionaryValue(listenerName, @"title") ?: listenerName;
+	return Localize(activatorBundle, [@"LISTENER_TITLE_" stringByAppendingString:listenerName], Localize(ListenerBundle(listenerName), unlocalized, unlocalized) ?: listenerName);
 }
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedDescriptionForListenerName:(NSString *)listenerName
 {
-	NSBundle *bundle = ListenerBundle(listenerName);
-	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"description"];
+	NSString *unlocalized = ListenerDictionaryValue(listenerName, @"description");
 	if (unlocalized)
-		return Localize(activatorBundle, [@"LISTENER_DESCRIPTION_" stringByAppendingString:listenerName], Localize(bundle, unlocalized, unlocalized));
+		return Localize(activatorBundle, [@"LISTENER_DESCRIPTION_" stringByAppendingString:listenerName], Localize(ListenerBundle(listenerName), unlocalized, unlocalized));
 	NSString *key = [@"LISTENER_DESCRIPTION_" stringByAppendingString:listenerName];
 	NSString *result = Localize(activatorBundle, key, nil);
 	return [result isEqualToString:key] ? nil : result;
 }
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedGroupForListenerName:(NSString *)listenerName
 {
-	NSBundle *bundle = ListenerBundle(listenerName);
-	NSString *unlocalized = [bundle objectForInfoDictionaryKey:@"group"] ?: @"";
+	NSString *unlocalized = ListenerDictionaryValue(listenerName, @"group") ?: @"";
 	if ([unlocalized length] == 0)
 		return @"";
-	return Localize(activatorBundle, [@"LISTENER_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(bundle, unlocalized, unlocalized));
+	return Localize(activatorBundle, [@"LISTENER_GROUP_TITLE_" stringByAppendingString:unlocalized], Localize(ListenerBundle(listenerName), unlocalized, unlocalized));
 }
 - (NSNumber *)activator:(LAActivator *)activator requiresRequiresAssignmentForListenerName:(NSString *)name
 {
-	return [ListenerBundle(name) objectForInfoDictionaryKey:@"requires-event"];
+	return ListenerDictionaryValue(name, @"requires-event");
 }
 - (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)name
 {
-	return [ListenerBundle(name) objectForInfoDictionaryKey:@"compatible-modes"];
+	return ListenerDictionaryValue(name, @"compatible-modes");
 }
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName
 {
@@ -125,7 +122,7 @@
 		return [self activator:activator requiresRequiresAssignmentForListenerName:listenerName];
 	if ([key isEqualToString:@"compatible-modes"])
 		return [self activator:activator requiresCompatibleEventModesForListenerWithName:listenerName];
-	return [ListenerBundle(listenerName) objectForInfoDictionaryKey:key];
+	return ListenerDictionaryValue(listenerName, key);
 }
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event

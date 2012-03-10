@@ -86,6 +86,7 @@ NSString * const LAEventModeLockScreen  = @"lockscreen";
 LAActivator *LASharedActivator;
 
 NSMutableDictionary *listenerBundles;
+NSMutableDictionary *listenerDictionaries;
 NSBundle *activatorBundle;
 
 static NSNull *sharedNull;
@@ -189,6 +190,8 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 {
 	[listenerBundles release];
 	listenerBundles = nil;
+	[listenerDictionaries release];
+	listenerDictionaries = nil;
 	@synchronized (self) {
 		[_cachedListenerSmallIcons removeAllObjects];
 	}
