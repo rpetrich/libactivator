@@ -773,6 +773,8 @@ static BOOL justSuppressedNotificationSound;
 				}
 			} else if (lastVolumeEvent == kGSEventVolumeDownButtonUp) {
 				lastVolumeEvent = 0;
+				if (!performedFirstHoldEvent)
+					IncreaseVolumeStep(volumeControl);
 				LASendEventWithName(LAEventNameVolumeDownUp);
 			} else {
 				lastVolumeEvent = 0;
@@ -830,6 +832,8 @@ static BOOL justSuppressedNotificationSound;
 				}
 			} else if (lastVolumeEvent == kGSEventVolumeUpButtonUp) {
 				lastVolumeEvent = 0;
+				if (!performedFirstHoldEvent)
+					DecreaseVolumeStep(volumeControl);
 				LASendEventWithName(LAEventNameVolumeUpDown);
 			} else {
 				lastVolumeEvent = 0;
