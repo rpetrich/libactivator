@@ -118,14 +118,17 @@ __attribute__((visibility("hidden")))
 extern NSMutableDictionary *listenerDictionaries;
 static inline NSDictionary *ListenerDictionary(NSString *listenerName) {
 	NSDictionary *result = [listenerDictionaries objectForKey:listenerName];
-	if (!result) {
-		result = [ListenerBundle(listenerName) infoDictionary];
-		if (result) {
-			if (!listenerDictionaries)
-				listenerDictionaries = [[NSMutableDictionary alloc] init];
-			[listenerDictionaries setObject:result forKey:listenerName];
-		}
+	if (result)
+		return result;
+	if (!listenerDictionaries) {
+		listenerDictionaries = [[NSMutableDictionary alloc] initWithContentsOfFile:SCRootPath(@"/Library/Activator/Listeners/bundled.plist")];
+		result = [listenerDictionaries objectForKey:listenerName];
+		if (result)
+			return result;
 	}
+	result = [ListenerBundle(listenerName) infoDictionary];
+	if (result)
+		[listenerDictionaries setObject:result forKey:listenerName];
 	return result;
 }
 static inline id ListenerDictionaryValue(NSString *listenerName, NSString *key) {

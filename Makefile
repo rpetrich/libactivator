@@ -81,6 +81,7 @@ internal-stage::
 	mkdir -p $(THEOS_STAGING_DIR)/Library/Activator/Listeners
 	$(ECHO_NOTHING)rsync -a ./libactivator.h $(THEOS_STAGING_DIR)/usr/include/libactivator $(FW_RSYNC_EXCLUDES)$(ECHO_END)
 	$(ECHO_NOTHING)rsync -a ./LICENSE $(THEOS_STAGING_DIR)/Library/Activator $(FW_RSYNC_EXCLUDES)$(ECHO_END)
+	./coalesce_info_plists.sh "$(THEOS_STAGING_DIR)/Library/Activator/Listeners/" > "$(THEOS_STAGING_DIR)/Library/Activator/Listeners/bundled.plist"
 	- find $(THEOS_STAGING_DIR) -iname '*.plist' -or -iname '*.strings' -exec plutil -convert binary1 {} \;
 
 internal-after-install::
