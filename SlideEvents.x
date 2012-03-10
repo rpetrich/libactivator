@@ -199,12 +199,28 @@ static inline BOOL SlideGestureStartWithRotatedLocation(id self, CGPoint locatio
 		}
 		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, kSlideGestureWindowHeight + 50.0f }, { screenSize.width, screenSize.height - (kSlideGestureWindowHeight + 50.0f) }};
 	} else if (location.x < kSlideGestureWindowHeight) {
-		startedSlideGestureName = LAEventNameSlideInFromLeft;
-		startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromLeft;
+		if (location.y < screenSize.height * 0.25f) {
+			startedSlideGestureName = LAEventNameSlideInFromLeftTop;
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromLeftTop;
+		} else if (location.y < screenSize.height * 0.75f) {
+			startedSlideGestureName = LAEventNameSlideInFromLeft;
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromLeft;
+		} else {
+			startedSlideGestureName = LAEventNameSlideInFromLeftBottom;
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromLeftBottom;
+		}
 		rectToEnterToSendSlideGesture = (CGRect){ { kSlideGestureWindowHeight + 50.0f, 0.0f }, { screenSize.width - (kSlideGestureWindowHeight + 50.0f), screenSize.height }};
 	} else if (location.x >= screenSize.width - kSlideGestureWindowHeight) {
-		startedSlideGestureName = LAEventNameSlideInFromRight;
-		startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromRight;
+		if (location.y < screenSize.height * 0.25f) {
+			startedSlideGestureName = LAEventNameSlideInFromRightTop;
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromRightTop;
+		} else if (location.y < screenSize.height * 0.75f) {
+			startedSlideGestureName = LAEventNameSlideInFromRight;
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromRight;
+		} else {
+			startedSlideGestureName = LAEventNameSlideInFromRightBottom;
+			startedTwoFingerSlideGestureName = LAEventNameTwoFingerSlideInFromRightBottom;
+		}
 		rectToEnterToSendSlideGesture = (CGRect){ { 0.0f, 0.0f }, { screenSize.width - (kSlideGestureWindowHeight + 50.0f), screenSize.height }};
 	} else {
 #ifdef DEBUG

@@ -1,0 +1,6 @@
+{
+	title = "From Screen Right-Top";
+	group = "Two Finger Slide In Gesture";
+	description = "Drag onto screen from right-top";
+	CoreFoundationVersion = (675.00);
+}
