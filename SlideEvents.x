@@ -277,6 +277,7 @@ void SlideGestureClearAll(void)
 		CFDictionaryRemoveAllValues(rectsToEnterToSendSlideGesture);
 	else
 		rectsToEnterToSendSlideGesture = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, &kCFTypeDictionaryValueCallBacks);
+	activeSlideGestures = 0;
 }
 
 static inline void SlideGestureClear(id self)
