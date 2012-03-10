@@ -51,23 +51,31 @@ static LACameraApplicationListener *sharedCameraApplicationListener;
 
 - (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)name
 {
-	return [(SpringBoard *)UIApp canShowLockScreenCameraButton] ? activator.availableEventModes : [super activator:activator requiresCompatibleEventModesForListenerWithName:name];
+	SpringBoard *sb = (SpringBoard *)UIApp;
+	BOOL canShowLockScreenCameraButton = [sb respondsToSelector:@selector(canShowLockScreenHUDControls)] ? [sb canShowLockScreenHUDControls] : [sb canShowLockScreenCameraButton];
+	return canShowLockScreenCameraButton ? activator.availableEventModes : [super activator:activator requiresCompatibleEventModesForListenerWithName:name];
 }
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
 	NSString *eventMode = [activator currentEventMode];
-	if ((eventMode == LAEventModeLockScreen) && [(SpringBoard *)UIApp canShowLockScreenCameraButton]) {
-		SBAwayController *ac = [%c(SBAwayController) sharedAwayController];
-		if ([ac cameraIsActive])
-			[ac dismissCameraAnimated:YES];
-		else {
-			[ac activateCamera];
-			event.handled = YES;
+	if (eventMode == LAEventModeLockScreen) {
+		SpringBoard *sb = (SpringBoard *)UIApp;
+		if ([sb respondsToSelector:@selector(canShowLockScreenHUDControls)] ? [sb canShowLockScreenHUDControls] : [sb canShowLockScreenCameraButton]) {
+			SBAwayController *ac = [%c(SBAwayController) sharedAwayController];
+			if ([ac cameraIsActive])
+				[ac dismissCameraAnimated:YES];
+			else {
+				if (kCFCoreFoundationVersionNumber >= 690.10)
+					[ac _activateCameraAfterCall];
+				else
+					[ac activateCamera];
+				event.handled = YES;
+			}
+			return;
 		}
-	} else {
-		[super activator:activator receiveEvent:event forListenerName:listenerName];
 	}
+	[super activator:activator receiveEvent:event forListenerName:listenerName];
 }
 
 @end

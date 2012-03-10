@@ -9,7 +9,10 @@
 - (BOOL)isCameraApp;
 - (BOOL)canShowLockScreenCameraButton;
 - (void)activateAssistantWithOptions:(id)options withCompletion:(id)completionBlock;
-- (BOOL)canShowLockScreenCameraButton;
+@end
+
+@interface SpringBoard (iOS51)
+- (BOOL)canShowLockScreenHUDControls;
 @end
 
 @interface SBAwayController (iOS40)
@@ -21,6 +24,7 @@
 - (void)activateCamera;
 - (void)dismissCameraAnimated:(BOOL)animated;
 - (void)toggleCameraButton;
+- (void)_activateCameraAfterCall;
 @end
 
 @interface SBAlert (iOS50)

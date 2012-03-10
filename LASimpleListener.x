@@ -324,9 +324,15 @@ __attribute__((visibility("hidden")))
 	}
 	if ([%c(SBAwayController) instancesRespondToSelector:@selector(toggleMediaControls)]) {
 		SBAwayController *ac = [%c(SBAwayController) sharedAwayController];
-		if ([ac isLocked]) {
-			if ([UIApp respondsToSelector:@selector(canShowLockScreenCameraButton)] && [(SpringBoard *)UIApp canShowLockScreenCameraButton] && [ac respondsToSelector:@selector(toggleCameraButton)])
-				[ac toggleCameraButton];
+		if ([ac isLocked] && [ac respondsToSelector:@selector(toggleCameraButton)]) {
+			SpringBoard *sb = (SpringBoard *)UIApp;
+			if ([sb respondsToSelector:@selector(canShowLockScreenCameraButton)]) {
+				if ([sb canShowLockScreenCameraButton])
+					[ac toggleCameraButton];
+			} else if ([sb respondsToSelector:@selector(canShowLockScreenHUDControls)]) {
+				if ([sb canShowLockScreenHUDControls])
+					[ac toggleCameraButton];
+			}
 			return [ac toggleMediaControls];
 		}
 	}
