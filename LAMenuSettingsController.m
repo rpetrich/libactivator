@@ -72,8 +72,12 @@
 			NSDictionary *menuData = [menus objectForKey:key];
 			title = [menuData objectForKey:@"title"];
 			NSMutableArray *titles = [NSMutableArray array];
-			for (NSString *listenerName in [menuData objectForKey:@"items"])
-				[titles addObject:[LASharedActivator localizedTitleForListenerName:listenerName]];
+			for (NSString *listenerName in [menuData objectForKey:@"items"]) {
+				NSString *listenerTitle = [LASharedActivator localizedTitleForListenerName:listenerName];
+				if (listenerTitle) {
+					[titles addObject:listenerTitle];
+				}
+			}
 			subtitle = [titles count] ? [titles componentsJoinedByString:@", "] : nil;
 			break;
 		}
