@@ -1,6 +1,7 @@
 #import "LASpringBoardActivator.h"
 #import "LAApplicationListener.h"
 #import "libactivator-private.h"
+#import "SlideEvents.h"
 
 #import <SpringBoard/SpringBoard.h>
 #include <sys/stat.h>
@@ -252,6 +253,7 @@ static void WriteSettingsCallback(CFRunLoopObserverRef observer, CFRunLoopActivi
 	CFIndex count = CFSetGetCount(_listenerInstances);
 	const void *instances[count];
 	CFSetGetValues(_listenerInstances, instances);
+	SlideGestureClearAll();
 	for (int i = 0; i < count; i++)
 		[(id<LAListener>)instances[i] activator:self didChangeToEventMode:eventMode];
 }
@@ -508,6 +510,7 @@ static void WriteSettingsCallback(CFRunLoopObserverRef observer, CFRunLoopActivi
 #ifndef SINGLE
 		%init;
 #endif
+		SlideGestureClearAll();
 	}
 	return self;
 }

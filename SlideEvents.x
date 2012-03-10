@@ -139,17 +139,26 @@ static LASlideGestureWindow *rightSlideGestureWindow;
 
 @end
 
-static void *kStartedSlideGestureName;
-#define SetStartedSlideGestureName(value) objc_setAssociatedObject(self, &kStartedSlideGestureName, value, OBJC_ASSOCIATION_ASSIGN)
-#define GetStartedSlideGestureName() objc_getAssociatedObject(self, &kStartedSlideGestureName)
+__attribute__((always_inline))
+static inline void _CFDictionarySetOrRemoveValue(CFMutableDictionaryRef dict, const void *key, const void *value)
+{
+	if (value)
+		CFDictionarySetValue(dict, key, value);
+	else
+		CFDictionaryRemoveValue(dict, key);
+}
 
-static void *kStartedTwoFingerSlideGestureName;
-#define SetStartedTwoFingerSlideGestureName(value) objc_setAssociatedObject(self, &kStartedTwoFingerSlideGestureName, value, OBJC_ASSOCIATION_ASSIGN)
-#define GetStartedTwoFingerSlideGestureName() objc_getAssociatedObject(self, &kStartedTwoFingerSlideGestureName)
+static CFMutableDictionaryRef startedSlideGestureNames;
+#define SetStartedSlideGestureName(value) _CFDictionarySetOrRemoveValue(startedSlideGestureNames, self, value)
+#define GetStartedSlideGestureName() ((id)CFDictionaryGetValue(startedSlideGestureNames, self))
 
-static void *kRectToEnterToSendSlideGesture;
-#define SetRectToEnterToSendSlideGesture(value) objc_setAssociatedObject(self, &kRectToEnterToSendSlideGesture, [NSValue valueWithCGRect:value], OBJC_ASSOCIATION_RETAIN_NONATOMIC)
-#define GetRectToEnterToSendSlideGesture() [objc_getAssociatedObject(self, &kRectToEnterToSendSlideGesture) CGRectValue]
+static CFMutableDictionaryRef startedTwoFingerSlideGestureNames;
+#define SetStartedTwoFingerSlideGestureName(value) _CFDictionarySetOrRemoveValue(startedTwoFingerSlideGestureNames, self, value)
+#define GetStartedTwoFingerSlideGestureName() ((id)CFDictionaryGetValue(startedTwoFingerSlideGestureNames, self))
+
+static CFMutableDictionaryRef rectsToEnterToSendSlideGesture;
+#define SetRectToEnterToSendSlideGesture(value) _CFDictionarySetOrRemoveValue(rectsToEnterToSendSlideGesture, self, [NSValue valueWithCGRect:value])
+#define GetRectToEnterToSendSlideGesture() ({ id _value = (id)CFDictionaryGetValue(rectsToEnterToSendSlideGesture, self); _value ? [_value CGRectValue] : CGRectZero; })
 
 static NSInteger activeSlideGestures;
 
@@ -252,6 +261,22 @@ static inline LAEvent *SlideGestureMoveWithRotatedLocation(id self, CGPoint loca
 	NSLog(@"Activator: Touch at %@ does not match rect %@", NSStringFromCGPoint(location), NSStringFromCGRect(GetRectToEnterToSendSlideGesture()));
 #endif
 	return nil;
+}
+
+void SlideGestureClearAll(void)
+{
+	if (startedSlideGestureNames)
+		CFDictionaryRemoveAllValues(startedSlideGestureNames);
+	else
+		startedSlideGestureNames = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, &kCFTypeDictionaryValueCallBacks);
+	if (startedTwoFingerSlideGestureNames)
+		CFDictionaryRemoveAllValues(startedTwoFingerSlideGestureNames);
+	else
+		startedTwoFingerSlideGestureNames = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, &kCFTypeDictionaryValueCallBacks);
+	if (rectsToEnterToSendSlideGesture)
+		CFDictionaryRemoveAllValues(rectsToEnterToSendSlideGesture);
+	else
+		rectsToEnterToSendSlideGesture = CFDictionaryCreateMutable(kCFAllocatorDefault, 0, NULL, &kCFTypeDictionaryValueCallBacks);
 }
 
 static inline void SlideGestureClear(id self)
