@@ -84,7 +84,7 @@ typedef enum {
 		case 4:
 			return LASystemVersionStatusJustRight;
 		case 5:
-			return [[components objectAtIndex:1] integerValue] <= 0 ? LASystemVersionStatusJustRight : LASystemVersionStatusTooHot;
+			return [[components objectAtIndex:1] integerValue] <= 1 ? LASystemVersionStatusJustRight : LASystemVersionStatusTooHot;
 		default:
 			return LASystemVersionStatusTooHot;
 	}
