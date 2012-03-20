@@ -1,5 +1,6 @@
 #import "LARemoteListener.h"
 #import "libactivator-private.h"
+#import "LAMessaging.h"
 
 #import <AppSupport/AppSupport.h>
 
@@ -29,96 +30,60 @@ CFArrayRef SBSCopyApplicationDisplayIdentifiers(bool activeOnly, bool debugCapab
 	return sharedInstance;
 }
 
-- (void)_performRemoteSelector:(SEL)selector withEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
+static inline void LASendEventMessage(SInt32 messageId, LAEvent *event, NSString *listenerName)
 {
-	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:listenerName, @"listenerName", [NSKeyedArchiver archivedDataWithRootObject:event], @"event", nil];
-	NSData *result = [[messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo] objectForKey:@"result"];
-	LAEvent *newEvent = [NSKeyedUnarchiver unarchiveObjectWithData:result];
-	[event setHandled:[newEvent isHandled]];
+	NSMutableData *data = [[NSMutableData alloc] init];
+	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:data];
+	[archiver encodeObject:event forKey:@"event"];
+	[archiver encodeObject:listenerName forKey:@"event"];
+	[archiver finishEncoding];
+	event.handled = LAConsume(LATransformDataToBOOL, LASendTwoWayMessage(messageId, (CFDataRef)data), NO);
+	[archiver release];
+	[data release];
 }
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
-	[self _performRemoteSelector:_cmd withEvent:event forListenerName:listenerName];
+	LASendEventMessage(LAMessageIdReceiveEventForListenerName, event, listenerName);
 }
 
 - (void)activator:(LAActivator *)activator abortEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
-	[self _performRemoteSelector:_cmd withEvent:event forListenerName:listenerName];
-}
-
-- (id)_performRemoteSelector:(SEL)selector withObject:(id)object withObject:(id)object2 forListenerName:(NSString *)listenerName
-{
-	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:listenerName, @"listenerName", object, @"object", object2, @"object2", nil];
-	return [[messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo] objectForKey:@"result"];
-}
-
-- (id)_performRemoteSelector:(SEL)selector withObject:(id)object withScalePtr:(CGFloat *)scale forListenerName:(NSString *)listenerName
-{
-	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:listenerName, @"listenerName", [NSNumber numberWithFloat:*scale], @"scale", object, @"object", nil];
-	NSDictionary *result = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
-	*scale = [[result objectForKey:@"scale"] floatValue];
-	return [result objectForKey:@"result"];
-}
-
-- (UIImage *)_performRemoteImageSelector:(SEL)selector withObject:(id)object withScale:(CGFloat)scale forListenerName:(NSString *)listenerName
-{
-	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:listenerName, @"listenerName", [NSNumber numberWithFloat:scale], @"scale", object, @"object", nil];
-	NSDictionary *result = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
-	NSData *data = [result objectForKey:@"data"];
-	if (data) {
-		size_t width = [[result objectForKey:@"width"] longValue];
-		size_t height = [[result objectForKey:@"height"] longValue];
-		size_t bitsPerComponent = [[result objectForKey:@"bitsPerComponent"] longValue];
-		size_t bitsPerPixel = [[result objectForKey:@"bitsPerPixel"] longValue];
-		size_t bytesPerRow = [[result objectForKey:@"bytesPerRow"] longValue];
-		CGBitmapInfo bitmapInfo = [[result objectForKey:@"bitmapInfo"] longValue];
-		CGDataProviderRef provider = CGDataProviderCreateWithCFData((CFDataRef)data);
-		CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
-		CGImageRef cgImage = CGImageCreate(width, height, bitsPerComponent, bitsPerPixel, bytesPerRow, colorSpace, bitmapInfo, provider, NULL, false, kCGRenderingIntentDefault);
-		CGColorSpaceRelease(colorSpace);
-		CGDataProviderRelease(provider);
-		UIImage *image = [UIImage imageWithData:[result objectForKey:@"result"]];
-		if ([UIImage respondsToSelector:@selector(imageWithCGImage:scale:orientation:)]) {
-			image = [UIImage imageWithCGImage:cgImage scale:[[result objectForKey:@"scale"] floatValue] orientation:[[result objectForKey:@"orientation"] longValue]];
-		} else {
-			image = [UIImage imageWithCGImage:cgImage];
-		}
-		CGImageRelease(cgImage);
-		return image;
-	}
-	return nil;
+	LASendEventMessage(LAMessageIdAbortEventForListenerName, event, listenerName);
 }
 
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedTitleForListenerName:(NSString *)listenerName
 {
-	return [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
+	return LAConsume(LATransformDataToString, LASendTwoWayMessage(LAMessageIdGetLocalizedTitleForListenerName, (CFDataRef)LATransformStringToData(listenerName)), nil);
 }
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedDescriptionForListenerName:(NSString *)listenerName
 {
-	return [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
+	return LAConsume(LATransformDataToString, LASendTwoWayMessage(LAMessageIdGetLocalizedDescriptionForListenerName, (CFDataRef)LATransformStringToData(listenerName)), nil);
 }
 - (NSString *)activator:(LAActivator *)activator requiresLocalizedGroupForListenerName:(NSString *)listenerName
 {
-	return [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
+	return LAConsume(LATransformDataToString, LASendTwoWayMessage(LAMessageIdGetLocalizedGroupForListenerName, (CFDataRef)LATransformStringToData(listenerName)), nil);
 }
 - (NSNumber *)activator:(LAActivator *)activator requiresRequiresAssignmentForListenerName:(NSString *)listenerName
 {
-	return [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
+	return LAConsume(LATransformDataToPropertyList, LASendTwoWayMessage(LAMessageIdGetRequiresAssignmentForListenerName, (CFDataRef)LATransformStringToData(listenerName)), nil);
 }
 - (NSArray *)activator:(LAActivator *)activator requiresCompatibleEventModesForListenerWithName:(NSString *)listenerName
 {
-	return [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
+	return LAConsume(LATransformDataToPropertyList, LASendTwoWayMessage(LAMessageIdGetCompatibleEventModesForListenerName, (CFDataRef)LATransformStringToData(listenerName)), nil);
 }
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName
 {
-	// Read data without CPDistributedMessagingCenter if possible
-	return [super activator:activator requiresIconDataForListenerName:listenerName]
-		?: [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
+	// Read data without IPC if possible
+	NSData *result = [super activator:activator requiresIconDataForListenerName:listenerName];
+	if (result)
+		return result;
+	result = [(NSData *)LASendTwoWayMessage(LAMessageIdGetIconDataForListenerName, (CFDataRef)LATransformStringToData(listenerName)) autorelease];
+	return [result length] ? result : nil;
 }
 - (NSData *)activator:(LAActivator *)activator requiresIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
-	// Read data without CPDistributedMessagingCenter if possible
+	// Read data without IPC if possible
 	NSBundle *bundle = ListenerBundle(listenerName);
 	NSData *result;
 	CGFloat scaleCopy = *scale;
@@ -137,18 +102,34 @@ CFArrayRef SBSCopyApplicationDisplayIdentifiers(bool activeOnly, bool debugCapab
 	if (result) {
 		*scale = 1.0f;
 		return result;
-	}		
-	return [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
+	}
+	NSArray *args = [NSArray arrayWithObjects:listenerName, [NSNumber numberWithFloat:scaleCopy], nil];
+	CFDataRef headeredResult = LASendTwoWayMessage(LAMessageIdGetIconDataForListenerNameWithScale, (CFDataRef)LATransformPropertyListToData(args));
+	if (headeredResult) {
+		CFIndex dataLength = CFDataGetLength(headeredResult);
+		if (dataLength >= sizeof(CGFloat)) {
+			const UInt8 *bytes = CFDataGetBytePtr(headeredResult);
+			const CGFloat *actualScale = (const CGFloat *)bytes;
+			*scale = *actualScale;
+			// TODO: Have this not make a copy
+			result = [NSData dataWithBytes:bytes + sizeof(CGFloat) length:dataLength - sizeof(CGFloat)];
+		}
+		CFRelease(headeredResult);
+	}
+	return result;
 }
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName
 {
-	// Read data without CPDistributedMessagingCenter if possible
-	return [super activator:activator requiresSmallIconDataForListenerName:listenerName]
-		?: [self _performRemoteSelector:_cmd withObject:listenerName withObject:nil forListenerName:listenerName];
+	// Read data without IPC if possible
+	NSData *result = [super activator:activator requiresSmallIconDataForListenerName:listenerName];
+	if (result)
+		return result;
+	result = [(NSData *)LASendTwoWayMessage(LAMessageIdGetSmallIconDataForListenerName, (CFDataRef)LATransformStringToData(listenerName)) autorelease];
+	return [result length] ? result : nil;
 }
 - (NSData *)activator:(LAActivator *)activator requiresSmallIconDataForListenerName:(NSString *)listenerName scale:(CGFloat *)scale
 {
-	// Read data without CPDistributedMessagingCenter if possible
+	// Read data without IPC if possible
 	NSBundle *bundle = ListenerBundle(listenerName);
 	NSData *result;
 	CGFloat scaleCopy = *scale;
@@ -168,20 +149,36 @@ CFArrayRef SBSCopyApplicationDisplayIdentifiers(bool activeOnly, bool debugCapab
 		*scale = 1.0f;
 		return result;
 	}		
-	return [self _performRemoteSelector:_cmd withObject:listenerName withScalePtr:scale forListenerName:listenerName];
+	NSArray *args = [NSArray arrayWithObjects:listenerName, [NSNumber numberWithFloat:scaleCopy], nil];
+	CFDataRef headeredResult = LASendTwoWayMessage(LAMessageIdGetSmallIconDataForListenerNameWithScale, (CFDataRef)LATransformPropertyListToData(args));
+	if (headeredResult) {
+		CFIndex dataLength = CFDataGetLength(headeredResult);
+		if (dataLength >= sizeof(CGFloat)) {
+			const UInt8 *bytes = CFDataGetBytePtr(headeredResult);
+			const CGFloat *actualScale = (const CGFloat *)bytes;
+			*scale = *actualScale;
+			// TODO: Have this not make a copy
+			result = [NSData dataWithBytes:bytes + sizeof(CGFloat) length:dataLength - sizeof(CGFloat)];
+		}
+		CFRelease(headeredResult);
+	}
+	return result;
 }
 - (NSNumber *)activator:(LAActivator *)activator requiresIsCompatibleWithEventName:(NSString *)eventName listenerName:(NSString *)listenerName
 {
-	return [self _performRemoteSelector:_cmd withObject:eventName withObject:listenerName forListenerName:listenerName];
+	NSArray *args = [NSArray arrayWithObjects:listenerName, eventName, nil];
+	return LAConsume(LATransformDataToPropertyList, LASendTwoWayMessage(LAMessageIdGetListenerNameIsCompatibleWithEventName, (CFDataRef)LATransformPropertyListToData(args)), nil);
 }
 - (id)activator:(LAActivator *)activator requiresInfoDictionaryValueOfKey:(NSString *)key forListenerWithName:(NSString *)listenerName
 {
-	return [self _performRemoteSelector:_cmd withObject:key withObject:listenerName forListenerName:listenerName];
+	NSArray *args = [NSArray arrayWithObjects:listenerName, key, nil];
+	return LAConsume(LATransformDataToPropertyList, LASendTwoWayMessage(LAMessageIdGetValueOfInfoDictionaryKeyForListenerName, (CFDataRef)LATransformPropertyListToData(args)), nil);
 }
 
 - (UIImage *)activator:(LAActivator *)activator requiresIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
 {
-	return [self _performRemoteImageSelector:_cmd withObject:listenerName withScale:scale forListenerName:listenerName];
+	NSArray *args = [NSArray arrayWithObjects:listenerName, [NSNumber numberWithFloat:scale], nil];
+	return LAConsume(LATransformDataToUIImage, LASendTwoWayMessage(LAMessageIdGetIconWithScaleForListenerName, (CFDataRef)LATransformPropertyListToData(args)), nil);
 }
 
 - (UIImage *)activator:(LAActivator *)activator requiresSmallIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale
@@ -191,7 +188,8 @@ CFArrayRef SBSCopyApplicationDisplayIdentifiers(bool activeOnly, bool debugCapab
 		if (result)
 			return result;
 	}
-	return [self _performRemoteImageSelector:_cmd withObject:listenerName withScale:scale forListenerName:listenerName];
+	NSArray *args = [NSArray arrayWithObjects:listenerName, [NSNumber numberWithFloat:scale], nil];
+	return LAConsume(LATransformDataToUIImage, LASendTwoWayMessage(LAMessageIdGetSmallIconWithScaleForListenerName, (CFDataRef)LATransformPropertyListToData(args)), nil);
 }
 
 

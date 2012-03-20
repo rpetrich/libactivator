@@ -2,6 +2,7 @@
 #import "LARemoteListener.h"
 #import "libactivator-private.h"
 #import "SimulatorCompat.h"
+#import "LAMessaging.h"
 
 #import <SpringBoard/SpringBoard.h>
 #import <AppSupport/AppSupport.h>
@@ -106,7 +107,7 @@ static NSNull *sharedNull;
 + (UIImage *)imageWithData:(NSData *)data scale:(CGFloat)scale;
 @end
 
-CPDistributedMessagingCenter *messagingCenter;
+CFMessagePortRef serverPort;
 
 static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 {
@@ -156,7 +157,7 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 	}
 	if ((self = [super init])) {
 		sharedNull = [[NSNull null] retain];
-		messagingCenter = [[CPDistributedMessagingCenter centerNamed:@"libactivator.springboard"] retain];
+		serverPort = CFMessagePortCreateRemote(kCFAllocatorDefault, kLAMessageServerName);
 		_availableEventModes = [[NSArray arrayWithObjects:LAEventModeSpringBoard, LAEventModeApplication, LAEventModeLockScreen, nil] retain];
 		// Caches
 		_cachedListenerGroups = [[NSMutableDictionary alloc] init];
@@ -229,46 +230,24 @@ static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 
 - (void)_resetPreferences
 {
-	[messagingCenter sendMessageName:@"resetPreferences" userInfo:nil];
-}
-
-- (NSDictionary *)_getObjectForPreferenceFromMessageName:(NSString *)messageName userInfo:(NSDictionary *)userInfo
-{
-	id result = [self _getObjectForPreference:[userInfo objectForKey:@"preference"]];
-	if (result)
-		return [NSDictionary dictionaryWithObject:result forKey:@"value"];
-	else
-		return [NSDictionary dictionary];
+	LASendOneWayMessage(LAMessageIdResetPreferences, NULL);
 }
 
 - (id)_getObjectForPreference:(NSString *)preference
 {
-	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:@"getObjectForPreference" userInfo:[NSDictionary dictionaryWithObject:preference forKey:@"preference"]];
-	return [response objectForKey:@"value"];
+	return LAConsume(LATransformDataToPropertyList, LASendTwoWayMessage(LAMessageIdGetPreference, (CFDataRef)LATransformStringToData(preference)), nil);
 }
 
 - (void)_setObject:(id)value forPreference:(NSString *)preference
 {
-	[messagingCenter sendMessageName:@"setObjectForPreference" userInfo:[NSDictionary dictionaryWithObjectsAndKeys:preference, @"preference", value, @"value", nil]];
-}
-
-- (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject
-{
-	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:withObject, @"withObject", nil];
-	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
-	return [response objectForKey:@"result"];
-}
-
-- (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject withObject:(id)withObject2
-{
-	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:withObject, @"withObject", withObject2, @"withObject2", nil];
-	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:NSStringFromSelector(selector) userInfo:userInfo];
-	return [response objectForKey:@"result"];
+	NSArray *args = [NSArray arrayWithObjects:preference, value, nil];
+	LASendOneWayMessage(LAMessageIdSetPreference, (CFDataRef)LATransformPropertyListToData(args));
 }
 
 - (BOOL)isAlive
 {
-	return [[self _performRemoteMessage:_cmd withObject:nil] boolValue];
+	CFMessagePortRef mp = LAGetServerPort();
+	return mp && CFMessagePortIsValid(mp);
 }
 
 // Sending Events
@@ -350,13 +329,10 @@ static UIAlertView *inCydiaAlert;
 
 - (void)sendDeactivateEventToListeners:(LAEvent *)event
 {
-	NSDictionary *userInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-		event.name, @"name",
-		event.handled ? (id)kCFBooleanTrue : (id)kCFBooleanFalse, @"handled",
-		event.mode, @"mode",
-		nil];
-	NSDictionary *response = [messagingCenter sendMessageAndReceiveReplyName:@"sendDeactivateEventToListeners:" userInfo:userInfo];
-	event.handled = [[response objectForKey:@"result"] boolValue];
+	if (event) {
+		NSData *input = [NSKeyedArchiver archivedDataWithRootObject:event];
+		event.handled = LAConsume(LATransformDataToBOOL, LASendTwoWayMessage(LAMessageIdSendDeactivateEventToListeners, (CFDataRef)input), NO);
+	}
 }
 
 // Registration of listeners
@@ -458,22 +434,23 @@ static UIAlertView *inCydiaAlert;
 
 - (NSArray *)availableEventNames
 {
-	return [self _performRemoteMessage:_cmd withObject:nil];
+	return LAConsume(LATransformDataToPropertyList, LASendTwoWayMessage(LAMessageIdGetAvaliableEventNames, NULL), nil);
 }
 
 - (BOOL)eventWithNameIsHidden:(NSString *)name
 {
-	return [[self _performRemoteMessage:_cmd withObject:name] boolValue];
+	return LAConsume(LATransformDataToBOOL, LASendTwoWayMessage(LAMessageIdGetEventIsHidden, (CFDataRef)LATransformStringToData(name)), NO);
 }
 
 - (NSArray *)compatibleModesForEventWithName:(NSString *)name
 {
-	return [self _performRemoteMessage:_cmd withObject:name];
+	return LAConsume(LATransformDataToPropertyList, LASendTwoWayMessage(LAMessageIdGetCompatibleModesForEventName, (CFDataRef)LATransformStringToData(name)), nil);
 }
 
 - (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode
 {
-	return [[self _performRemoteMessage:_cmd withObject:eventName withObject:eventMode] boolValue];
+	NSArray *args = [NSArray arrayWithObjects:eventMode, eventName, nil];
+	return LAConsume(LATransformDataToBOOL, LASendTwoWayMessage(LAMessageIdGetEventWithNameIsCompatibleWithMode, (CFDataRef)LATransformPropertyListToData(args)), NO);
 }
 
 - (void)registerEventDataSource:(id<LAEventDataSource>)dataSource forEventName:(NSString *)eventName
@@ -490,12 +467,12 @@ static UIAlertView *inCydiaAlert;
 
 - (NSArray *)availableListenerNames
 {
-	return [self _performRemoteMessage:_cmd withObject:nil];
+	return LAConsume(LATransformDataToPropertyList, LASendTwoWayMessage(LAMessageIdGetListenerNames, NULL), nil);
 }
 
 - (NSDictionary *)_cachedAndSortedListeners
 {
-	return [self _performRemoteMessage:_cmd withObject:nil];
+	return LAConsume(LATransformDataToPropertyList, LASendTwoWayMessage(LAMessageIdGetCachedAnsSortedListeners, NULL), nil);
 }
 
 - (void)_cacheAllListenerMetadata
@@ -594,12 +571,12 @@ static UIAlertView *inCydiaAlert;
 
 - (NSString *)currentEventMode
 {
-	return [self _performRemoteMessage:_cmd withObject:nil];
+	return LAConsume(LATransformDataToString, LASendTwoWayMessage(LAMessageIdGetCurrentEventMode, NULL), nil);
 }
 
 - (NSString *)displayIdentifierForCurrentApplication
 {
-	return [self _performRemoteMessage:_cmd withObject:nil];
+	return LAConsume(LATransformDataToString, LASendTwoWayMessage(LAMessageIdGetDisplayIdentifierForCurrentApplication, NULL), nil);
 }
 
 - (BOOL)applicationWithDisplayIdentifierIsBlacklisted:(NSString *)displayIdentifier
@@ -643,11 +620,6 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 	return URLWithDeviceData(@"http://rpetri.ch/cydia/activator/ads/");
 }
 
-- (CPDistributedMessagingCenter *)messagingCenter
-{
-	return messagingCenter;
-}
-
 - (NSBundle *)bundle
 {
 	return activatorBundle;
@@ -674,8 +646,8 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 }
 
 - (NSString *)localizedTitleForEventName:(NSString *)eventName
-{	
-	return [self _performRemoteMessage:_cmd withObject:eventName];
+{
+	return LAConsume(LATransformDataToString, LASendTwoWayMessage(LAMessageIdGetLocalizedTitleForEventName, (CFDataRef)LATransformStringToData(eventName)), nil);
 }
 
 - (NSString *)localizedTitleForListenerName:(NSString *)listenerName
@@ -690,7 +662,7 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 
 - (NSString *)localizedGroupForEventName:(NSString *)eventName
 {
-	return [self _performRemoteMessage:_cmd withObject:eventName];
+	return LAConsume(LATransformDataToString, LASendTwoWayMessage(LAMessageIdGetLocalizedGroupForEventName, (CFDataRef)LATransformStringToData(eventName)), nil);
 }
 
 - (NSString *)localizedGroupForListenerName:(NSString *)listenerName
@@ -716,7 +688,7 @@ static inline NSURL *URLWithDeviceData(NSString *format)
 
 - (NSString *)localizedDescriptionForEventName:(NSString *)eventName
 {
-	return [self _performRemoteMessage:_cmd withObject:eventName];
+	return LAConsume(LATransformDataToString, LASendTwoWayMessage(LAMessageIdGetLocalizedDescriptionForEventName, (CFDataRef)LATransformStringToData(eventName)), nil);
 }
 
 - (NSString *)localizedDescriptionForListenerName:(NSString *)listenerName

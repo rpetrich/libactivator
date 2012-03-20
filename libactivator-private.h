@@ -19,8 +19,6 @@
 
 - (void)registerListener:(id<LAListener>)listener forName:(NSString *)name ignoreHasSeen:(BOOL)ignoreHasSeen;
 
-- (id)_performRemoteMessage:(SEL)selector withObject:(id)withObject;
-
 - (NSDictionary *)_cachedAndSortedListeners;
 - (void)_cacheAllListenerMetadata;
 
@@ -28,7 +26,6 @@
 
 @property (nonatomic, readonly) NSURL *moreActionsURL;
 @property (nonatomic, readonly) NSURL *adPaneURL;
-@property (nonatomic, readonly) CPDistributedMessagingCenter *messagingCenter;
 @property (nonatomic, readonly) NSBundle *bundle;
 
 @end
@@ -38,7 +35,7 @@
 __attribute__((visibility("hidden")))
 extern BOOL shouldAddNowPlayingButton;
 __attribute__((visibility("hidden")))
-extern CPDistributedMessagingCenter *messagingCenter;
+extern CFMessagePortRef serverPort;
 
 @interface NSObject(LAListener)
 - (void)activator:(LAActivator *)activator didChangeToEventMode:(NSString *)eventMode;

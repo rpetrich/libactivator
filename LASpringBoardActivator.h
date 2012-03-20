@@ -11,9 +11,6 @@ __attribute__((visibility("hidden")))
 }
 
 - (void)_eventModeChanged;
-- (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
-- (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
-- (NSDictionary *)_handleRemoteBoolMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo;
 
 @end
 

@@ -2,6 +2,7 @@
 #import "LAApplicationListener.h"
 #import "libactivator-private.h"
 #import "SlideEvents.h"
+#import "LAMessaging.h"
 
 #import <SpringBoard/SpringBoard.h>
 #include <sys/stat.h>
@@ -24,11 +25,6 @@ static NSInteger CompareListenerNamesCallback(id a, id b, void *context)
 static void NewCydiaStatusChanged()
 {
 	[LASharedActivator _setObject:(id)kCFBooleanTrue forPreference:@"LAHasNewCydia"];
-}
-
-- (NSDictionary *)_handleRemoteIsAlive
-{
-	return [NSDictionary dictionaryWithObject:(id)kCFBooleanTrue forKey:@"result"];
 }
 
 - (BOOL)isAlive
@@ -79,93 +75,6 @@ static void NewCydiaStatusChanged()
 - (BOOL)isRunningInsideSpringBoard
 {
 	return YES;
-}
-
-// Remote Messaging
-
-- (NSDictionary *)_handleRemoteListenerEventMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
-	id<LAListener> listener = [self listenerForName:listenerName];
-	LAEvent *event = [NSKeyedUnarchiver unarchiveObjectWithData:[userInfo objectForKey:@"event"]];
-	objc_msgSend(listener, NSSelectorFromString(message), self, event, listenerName);
-	id result = [NSKeyedArchiver archivedDataWithRootObject:event];
-	return result ? [NSDictionary dictionaryWithObject:result forKey:@"result"] : [NSDictionary dictionary];
-}
-
-- (NSDictionary *)_handleRemoteListenerMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
-	id<LAListener> listener = [self listenerForName:listenerName];
-	id result = objc_msgSend(listener, NSSelectorFromString(message), self, [userInfo objectForKey:@"object"], [userInfo objectForKey:@"object2"]);
-	return result ? [NSDictionary dictionaryWithObject:result forKey:@"result"] : [NSDictionary dictionary];
-}
-
-- (NSDictionary *)_handleRemoteListenerScalePtrMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
-	CGFloat scale = [[userInfo objectForKey:@"scale"] floatValue];
-	id<LAListener> listener = [self listenerForName:listenerName];
-	id result = objc_msgSend(listener, NSSelectorFromString(message), self, [userInfo objectForKey:@"object"], &scale);
-	return [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithFloat:scale], @"scale", result, @"result", nil];
-}
-
-- (NSDictionary *)_handleRemoteListenerImageScaleMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	NSString *listenerName = [userInfo objectForKey:@"listenerName"];
-	CGFloat scale = [[userInfo objectForKey:@"scale"] floatValue];
-	id<LAListener> listener = [self listenerForName:listenerName];
-	UIImage *image = objc_msgSend(listener, NSSelectorFromString(message), self, [userInfo objectForKey:@"object"], scale);
-	if (image) {
-		CGImageRef cgImage = image.CGImage;
-		size_t width = CGImageGetWidth(cgImage);
-		size_t height = CGImageGetHeight(cgImage);
-		size_t bitsPerComponent = CGImageGetBitsPerComponent(cgImage);
-		size_t bitsPerPixel = CGImageGetBitsPerPixel(cgImage);
-		size_t bytesPerRow = CGImageGetBytesPerRow(cgImage);
-		CGBitmapInfo bitmapInfo = CGImageGetBitmapInfo(cgImage);
-		CFDataRef data = CGDataProviderCopyData(CGImageGetDataProvider(cgImage));
-		if ([image respondsToSelector:@selector(scale)])
-			scale = [image scale];
-		UIImageOrientation orientation = image.imageOrientation;
-		return [NSDictionary dictionaryWithObjectsAndKeys:
-			[NSNumber numberWithFloat:scale], @"scale",
-			[NSNumber numberWithLong:orientation], @"orientation",
-			[NSNumber numberWithLong:width], @"width",
-			[NSNumber numberWithLong:height], @"height",
-			[NSNumber numberWithLong:bitsPerComponent], @"bitsPerComponent",
-			[NSNumber numberWithLong:bitsPerPixel], @"bitsPerPixel",
-			[NSNumber numberWithLong:bytesPerRow], @"bytesPerRow",
-			[NSNumber numberWithLong:bitmapInfo], @"bitmapInfo",
-			[(NSData *)data autorelease], @"data",
-			nil];
-	} else {
-		return [NSDictionary dictionary];
-	}
-}
-
-- (NSDictionary *)_handleRemoteMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	id withObject = [userInfo objectForKey:@"withObject"];
-	id withObject2 = [userInfo objectForKey:@"withObject2"];
-	id result = objc_msgSend(self, NSSelectorFromString(message), withObject, withObject2);
-	return result ? [NSDictionary dictionaryWithObject:result forKey:@"result"] : [NSDictionary dictionary];
-}
-
-- (NSDictionary *)_handleRemoteBoolMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	id withObject = [userInfo objectForKey:@"withObject"];
-	id withObject2 = [userInfo objectForKey:@"withObject2"];
-	id result = objc_msgSend(self, NSSelectorFromString(message), withObject, withObject2);
-	return [NSDictionary dictionaryWithObject:result ? (id)kCFBooleanTrue : (id)kCFBooleanFalse forKey:@"result"];
-}
-
-- (NSDictionary *)_handleRemoteDeactivateMessage:(NSString *)message withUserInfo:(NSDictionary *)userInfo
-{
-	LAEvent *event = [LAEvent eventWithName:[userInfo objectForKey:@"name"] mode:[userInfo objectForKey:@"mode"]];
-	event.handled = [[userInfo objectForKey:@"handled"] boolValue];
-	[self sendDeactivateEventToListeners:event];
-	return [NSDictionary dictionaryWithObject:event.handled ? (id)kCFBooleanTrue : (id)kCFBooleanFalse forKey:@"result"];
 }
 
 // Preferences
@@ -453,49 +362,260 @@ static void WriteSettingsCallback(CFRunLoopObserverRef observer, CFRunLoopActivi
 	return [[_eventData objectForKey:eventName] localizedDescriptionForEventName:eventName];
 }
 
+static CFDataRef trueData;
+
+static CFDataRef messageServerCallback(CFMessagePortRef local, SInt32 messageId, CFDataRef data, void *info)
+{
+	switch (messageId) {
+		case LAMessageIdResetPreferences:
+			[LASharedActivator _resetPreferences];
+			break;
+		case LAMessageIdGetPreference:
+			return (CFDataRef)[LATransformPropertyListToData([LASharedActivator _getObjectForPreference:LATransformDataToString(data)]) retain];
+		case LAMessageIdSetPreference: {
+			NSArray *args = LATransformDataToPropertyList(data);
+			if ([args isKindOfClass:[NSArray class]]) {
+				NSString *preference = nil;
+				id value = nil;
+				switch ([args count]) {
+					case 2:
+						value = [args objectAtIndex:1];
+					case 1:
+						preference = [args objectAtIndex:0];
+						if (![preference isKindOfClass:[NSString class]])
+							preference = nil;
+				}
+				[LASharedActivator _setObject:value forPreference:preference];
+			}
+			break;
+		}
+		case LAMessageIdGetAvaliableEventNames:
+			return (CFDataRef)[LATransformPropertyListToData([LASharedActivator availableEventNames]) retain];
+		case LAMessageIdGetEventIsHidden:
+			if ([LASharedActivator eventWithNameIsHidden:LATransformDataToString(data)])
+				return (CFDataRef)CFRetain(trueData);
+			break;
+		case LAMessageIdGetCompatibleModesForEventName:
+			return (CFDataRef)[LATransformPropertyListToData([LASharedActivator compatibleModesForEventWithName:LATransformDataToString(data)]) retain];
+		case LAMessageIdGetEventWithNameIsCompatibleWithMode: {
+			NSArray *args = LATransformDataToPropertyList(data);
+			if ([args isKindOfClass:[NSArray class]]) {
+				NSString *eventMode = nil;
+				NSString *eventName = nil;
+				switch ([args count]) {
+					case 2:
+						eventName = [args objectAtIndex:1];
+						if (![eventName isKindOfClass:[NSString class]])
+							eventName = nil;
+					case 1:
+						eventMode = [args objectAtIndex:0];
+						if (![eventMode isKindOfClass:[NSString class]])
+							eventMode = nil;
+				}
+				if ([LASharedActivator eventWithName:eventName isCompatibleWithMode:eventMode])
+					return (CFDataRef)CFRetain(trueData);
+			}
+			break;
+		}	
+		case LAMessageIdGetListenerNames:
+			return (CFDataRef)[LATransformPropertyListToData([LASharedActivator availableListenerNames]) retain];
+		case LAMessageIdGetCachedAnsSortedListeners:
+			return (CFDataRef)[LATransformPropertyListToData([LASharedActivator _cachedAndSortedListeners]) retain];
+		case LAMessageIdGetCurrentEventMode:
+			return (CFDataRef)[LATransformStringToData([LASharedActivator currentEventMode]) retain];
+		case LAMessageIdGetDisplayIdentifierForCurrentApplication:
+			return (CFDataRef)[LATransformStringToData([LASharedActivator displayIdentifierForCurrentApplication]) retain];
+		case LAMessageIdGetLocalizedTitleForEventName:
+			return (CFDataRef)[LATransformStringToData([LASharedActivator localizedTitleForEventName:LATransformDataToString(data)]) retain];
+		case LAMessageIdGetLocalizedDescriptionForEventName:
+			return (CFDataRef)[LATransformStringToData([LASharedActivator localizedDescriptionForEventName:LATransformDataToString(data)]) retain];
+		case LAMessageIdGetLocalizedGroupForEventName:
+			return (CFDataRef)[LATransformStringToData([LASharedActivator localizedGroupForEventName:LATransformDataToString(data)]) retain];
+		case LAMessageIdSendDeactivateEventToListeners: {
+			LAEvent *event = [NSKeyedUnarchiver unarchiveObjectWithData:(NSData *)data];
+			if ([event isKindOfClass:[LAEvent class]]) {
+				[LASharedActivator sendDeactivateEventToListeners:event];
+				if (event.handled)
+					return (CFDataRef)CFRetain(trueData);
+			}
+			break;
+		}
+		case LAMessageIdReceiveEventForListenerName: {
+			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:(NSData *)data];
+			LAEvent *event = [unarchiver decodeObjectForKey:@"event"];
+			NSString *listenerName = [unarchiver decodeObjectForKey:@"listenerName"];
+			[unarchiver release];
+			if ([event isKindOfClass:[LAEvent class]] && [listenerName isKindOfClass:[NSString class]]) {
+				[[LASharedActivator listenerForName:listenerName] activator:LASharedActivator receiveEvent:event forListenerName:listenerName];
+				if (event.handled)
+					return (CFDataRef)CFRetain(trueData);
+			}
+		}
+		case LAMessageIdAbortEventForListenerName: {
+			NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:(NSData *)data];
+			LAEvent *event = [unarchiver decodeObjectForKey:@"event"];
+			NSString *listenerName = [unarchiver decodeObjectForKey:@"listenerName"];
+			[unarchiver release];
+			if ([event isKindOfClass:[LAEvent class]] && [listenerName isKindOfClass:[NSString class]]) {
+				[[LASharedActivator listenerForName:listenerName] activator:LASharedActivator abortEvent:event forListenerName:listenerName];
+				if (event.handled)
+					return (CFDataRef)CFRetain(trueData);
+			}
+		}
+		case LAMessageIdGetLocalizedTitleForListenerName: {
+			NSString *listenerName = LATransformDataToString(data);
+			NSString *result = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresLocalizedTitleForListenerName:listenerName];
+			return (CFDataRef)[LATransformStringToData(result) retain];
+		}
+		case LAMessageIdGetLocalizedDescriptionForListenerName: {
+			NSString *listenerName = LATransformDataToString(data);
+			NSString *result = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresLocalizedDescriptionForListenerName:listenerName];
+			return (CFDataRef)[LATransformStringToData(result) retain];
+		}
+		case LAMessageIdGetLocalizedGroupForListenerName: {
+			NSString *listenerName = LATransformDataToString(data);
+			NSString *result = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresLocalizedGroupForListenerName:listenerName];
+			return (CFDataRef)[LATransformStringToData(result) retain];
+		}
+		case LAMessageIdGetRequiresAssignmentForListenerName: {
+			NSString *listenerName = LATransformDataToString(data);
+			NSNumber *result = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresRequiresAssignmentForListenerName:listenerName];
+			return (CFDataRef)[LATransformPropertyListToData(result) retain];
+		}
+		case LAMessageIdGetCompatibleEventModesForListenerName: {
+			NSString *listenerName = LATransformDataToString(data);
+			NSArray *result = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresCompatibleEventModesForListenerWithName:listenerName];
+			return (CFDataRef)[LATransformPropertyListToData(result) retain];
+		}
+		case LAMessageIdGetIconDataForListenerName: {
+			NSString *listenerName = LATransformDataToString(data);
+			NSData *result = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresIconDataForListenerName:listenerName];
+			return (CFDataRef)[result retain];
+		}
+		case LAMessageIdGetIconDataForListenerNameWithScale: {
+			NSArray *args = LATransformDataToPropertyList(data);
+			if ([args isKindOfClass:[NSArray class]] && ([args count] == 2)) {
+				NSString *listenerName = [args objectAtIndex:0];
+				if (![listenerName isKindOfClass:[NSString class]])
+					return NULL;
+				NSNumber *scaleObject = [args objectAtIndex:1];
+				if (![scaleObject isKindOfClass:[NSNumber class]])
+					return NULL;
+				CGFloat scale = [scaleObject floatValue];
+				NSData *resultData = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresIconDataForListenerName:listenerName scale:&scale];
+				if (resultData) {
+					NSMutableData *result = [[NSMutableData alloc] initWithCapacity:sizeof(CGFloat) + [resultData length]];
+					[result appendBytes:&scale length:sizeof(CGFloat)];
+					[result appendData:resultData];
+					return (CFDataRef)result;
+				}
+			}
+			break;
+		}
+		case LAMessageIdGetIconWithScaleForListenerName: {
+			NSArray *args = LATransformDataToPropertyList(data);
+			if ([args isKindOfClass:[NSArray class]] && ([args count] == 2)) {
+				NSString *listenerName = [args objectAtIndex:0];
+				if (![listenerName isKindOfClass:[NSString class]])
+					return NULL;
+				NSNumber *scaleObject = [args objectAtIndex:1];
+				if (![scaleObject isKindOfClass:[NSNumber class]])
+					return NULL;
+				CGFloat scale = [scaleObject floatValue];
+				UIImage *result = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresIconForListenerName:listenerName scale:scale];
+				return (CFDataRef)[LATransformUIImageToData(result) retain];
+			}
+		}
+		case LAMessageIdGetSmallIconDataForListenerName: {
+			NSString *listenerName = LATransformDataToString(data);
+			NSData *result = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresSmallIconDataForListenerName:listenerName];
+			return (CFDataRef)[result retain];
+		}
+		case LAMessageIdGetSmallIconDataForListenerNameWithScale: {
+			NSArray *args = LATransformDataToPropertyList(data);
+			if ([args isKindOfClass:[NSArray class]] && ([args count] == 2)) {
+				NSString *listenerName = [args objectAtIndex:0];
+				if (![listenerName isKindOfClass:[NSString class]])
+					return NULL;
+				NSNumber *scaleObject = [args objectAtIndex:1];
+				if (![scaleObject isKindOfClass:[NSNumber class]])
+					return NULL;
+				CGFloat scale = [scaleObject floatValue];
+				NSData *resultData = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresSmallIconDataForListenerName:listenerName scale:&scale];
+				if (resultData) {
+					NSMutableData *result = [[NSMutableData alloc] initWithCapacity:sizeof(CGFloat) + [resultData length]];
+					[result appendBytes:&scale length:sizeof(CGFloat)];
+					[result appendData:resultData];
+					return (CFDataRef)result;
+				}
+			}
+			break;
+		}
+		case LAMessageIdGetSmallIconWithScaleForListenerName: {
+			NSArray *args = LATransformDataToPropertyList(data);
+			if ([args isKindOfClass:[NSArray class]] && ([args count] == 2)) {
+				NSString *listenerName = [args objectAtIndex:0];
+				if (![listenerName isKindOfClass:[NSString class]])
+					return NULL;
+				NSNumber *scaleObject = [args objectAtIndex:1];
+				if (![scaleObject isKindOfClass:[NSNumber class]])
+					return NULL;
+				CGFloat scale = [scaleObject floatValue];
+				UIImage *result = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresSmallIconForListenerName:listenerName scale:scale];
+				return (CFDataRef)[LATransformUIImageToData(result) retain];
+			}
+		}
+		case LAMessageIdGetListenerNameIsCompatibleWithEventName: {
+			NSArray *args = LATransformDataToPropertyList(data);
+			if ([args isKindOfClass:[NSArray class]]) {
+				NSString *listenerName = nil;
+				NSString *eventName = nil;
+				switch ([args count]) {
+					case 2:
+						eventName = [args objectAtIndex:1];
+						if (![eventName isKindOfClass:[NSString class]])
+							eventName = nil;
+					case 1:
+						listenerName = [args objectAtIndex:0];
+						if (![listenerName isKindOfClass:[NSString class]])
+							listenerName = nil;
+				}
+				NSNumber *result = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresIsCompatibleWithEventName:eventName listenerName:listenerName];
+				return (CFDataRef)[LATransformPropertyListToData(result) retain];
+			}
+			break;
+		}
+		case LAMessageIdGetValueOfInfoDictionaryKeyForListenerName: {
+			NSArray *args = LATransformDataToPropertyList(data);
+			if ([args isKindOfClass:[NSArray class]]) {
+				NSString *listenerName = nil;
+				NSString *key = nil;
+				switch ([args count]) {
+					case 2:
+						key = [args objectAtIndex:1];
+						if (![key isKindOfClass:[NSString class]])
+							key = nil;
+					case 1:
+						listenerName = [args objectAtIndex:0];
+						if (![listenerName isKindOfClass:[NSString class]])
+							listenerName = nil;
+				}
+				id result = [[LASharedActivator listenerForName:listenerName] activator:LASharedActivator requiresInfoDictionaryValueOfKey:key forListenerWithName:listenerName];
+				return (CFDataRef)[LATransformPropertyListToData(result) retain];
+			}
+			break;
+		}
+	}
+	return NULL;
+}
+
 - (id)init
 {
 	if ((self = [super init])) {
-		CPDistributedMessagingCenter *messagingCenter = self.messagingCenter;
-		[messagingCenter runServerOnCurrentThread];
-		// Remote messages to id<LAListener> (with event)
-		[messagingCenter registerForMessageName:@"activator:receiveEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:abortEvent:forListenerName:" target:self selector:@selector(_handleRemoteListenerEventMessage:withUserInfo:)];
-		// Remote messages to id<LAListener> (without event)
-		[messagingCenter registerForMessageName:@"activator:requiresLocalizedTitleForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresLocalizedDescriptionForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresLocalizedGroupForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresRequiresAssignmentForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresCompatibleEventModesForListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresIsCompatibleWithEventName:listenerName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresInfoDictionaryValueOfKey:forListenerWithName:" target:self selector:@selector(_handleRemoteListenerMessage:withUserInfo:)];
-		// Remote messages to id<LAListener> (without event, with scale pointer)
-		[messagingCenter registerForMessageName:@"activator:requiresIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresSmallIconDataForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerScalePtrMessage:withUserInfo:)];			
-		// Remote messages to id<LAListener> (without event, with scale pointer, with UIImage return type)
-		[messagingCenter registerForMessageName:@"activator:requiresIconForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerImageScaleMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"activator:requiresSmallIconForListenerName:scale:" target:self selector:@selector(_handleRemoteListenerImageScaleMessage:withUserInfo:)];			
-		// Remote messages to LAActivator
-		[messagingCenter registerForMessageName:@"isAlive" target:self selector:@selector(_handleRemoteIsAlive)];
-		[messagingCenter registerForMessageName:@"_cachedAndSortedListeners" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"currentEventMode" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"displayIdentifierForCurrentApplication" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"availableListenerNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"availableEventNames" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"eventWithNameIsHidden:" target:self selector:@selector(_handleRemoteBoolMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"compatibleModesForEventWithName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"eventWithName:isCompatibleWithMode:" target:self selector:@selector(_handleRemoteBoolMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"localizedTitleForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"localizedGroupForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		[messagingCenter registerForMessageName:@"localizedDescriptionForEventName:" target:self selector:@selector(_handleRemoteMessage:withUserInfo:)];
-		// Remote message to deactivate event
-		[messagingCenter registerForMessageName:@"sendDeactivateEventToListeners:" target:self selector:@selector(_handleRemoteDeactivateMessage:withUserInfo:)];
-		// Preferences
-		[messagingCenter registerForMessageName:@"setObjectForPreference" target:self selector:@selector(_setObjectForPreferenceFromMessageName:userInfo:)];
-		[messagingCenter registerForMessageName:@"getObjectForPreference" target:self selector:@selector(_getObjectForPreferenceFromMessageName:userInfo:)];
-		[messagingCenter registerForMessageName:@"resetPreferences" target:self selector:@selector(_resetPreferences)];
+		CFMessagePortRef localPort = CFMessagePortCreateLocal(kCFAllocatorDefault, kLAMessageServerName, messageServerCallback, NULL, NULL);
+		CFRunLoopSourceRef source = CFMessagePortCreateRunLoopSource(kCFAllocatorDefault, localPort, 0);
+		CFRunLoopAddSource(CFRunLoopGetCurrent(), source, kCFRunLoopDefaultMode);
+		trueData = CFDataCreateWithBytesNoCopy(kCFAllocatorDefault, (const UInt8 *)self /* can be anything, we only care about the length */, 1, kCFAllocatorNull);
 		// Does not retain values!
 		_listeners = (NSMutableDictionary *)CFDictionaryCreateMutable(kCFAllocatorDefault, 0, &kCFTypeDictionaryKeyCallBacks, NULL);
 		// Load preferences
