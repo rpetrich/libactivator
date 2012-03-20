@@ -35,7 +35,7 @@ static inline void LASendEventMessage(SInt32 messageId, LAEvent *event, NSString
 	NSMutableData *data = [[NSMutableData alloc] init];
 	NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:data];
 	[archiver encodeObject:event forKey:@"event"];
-	[archiver encodeObject:listenerName forKey:@"event"];
+	[archiver encodeObject:listenerName forKey:@"listenerName"];
 	[archiver finishEncoding];
 	event.handled = LAConsume(LATransformDataToBOOL, LASendTwoWayMessage(messageId, (CFDataRef)data), NO);
 	[archiver release];
