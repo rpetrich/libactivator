@@ -3,4 +3,5 @@
 	group = "Two Finger Slide In Gesture";
 	description = "Drag onto screen from left-bottom";
 	CoreFoundationVersion = (675.00);
+	hidden = 1;
 }

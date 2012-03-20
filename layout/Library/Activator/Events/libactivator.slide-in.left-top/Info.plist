@@ -3,4 +3,5 @@
 	group = "Slide In Gesture";
 	description = "Drag onto screen from left-top";
 	CoreFoundationVersion = (675.00);
+	hidden = 1;
 }

@@ -6,6 +6,16 @@
 
 // libactivator.m
 
+extern NSString * const LAEventNameSlideInFromLeftTop;
+extern NSString * const LAEventNameSlideInFromLeftBottom;
+extern NSString * const LAEventNameSlideInFromRightTop;
+extern NSString * const LAEventNameSlideInFromRightBottom;
+
+extern NSString * const LAEventNameTwoFingerSlideInFromLeftTop;
+extern NSString * const LAEventNameTwoFingerSlideInFromLeftBottom;
+extern NSString * const LAEventNameTwoFingerSlideInFromRightTop;
+extern NSString * const LAEventNameTwoFingerSlideInFromRightBottom;
+
 @interface LAActivator ()
 
 @property (nonatomic, readonly, getter=isAlive) BOOL alive;

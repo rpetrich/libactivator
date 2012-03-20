@@ -245,11 +245,7 @@ extern NSString * const LAEventNameSlideInFromBottom;
 extern NSString * const LAEventNameSlideInFromBottomLeft;
 extern NSString * const LAEventNameSlideInFromBottomRight;
 extern NSString * const LAEventNameSlideInFromLeft;
-extern NSString * const LAEventNameSlideInFromLeftTop;
-extern NSString * const LAEventNameSlideInFromLeftBottom;
 extern NSString * const LAEventNameSlideInFromRight;
-extern NSString * const LAEventNameSlideInFromRightTop;
-extern NSString * const LAEventNameSlideInFromRightBottom;
 extern NSString * const LAEventNameStatusBarSwipeDown; // Now a slide gesture in iOS5.0+; extern and name kept for backwards compatibility
 #define LAEventNameSlideInFromTop LAEventNameStatusBarSwipeDown
 extern NSString * const LAEventNameSlideInFromTopLeft;
@@ -259,11 +255,7 @@ extern NSString * const LAEventNameTwoFingerSlideInFromBottom;
 extern NSString * const LAEventNameTwoFingerSlideInFromBottomLeft;
 extern NSString * const LAEventNameTwoFingerSlideInFromBottomRight;
 extern NSString * const LAEventNameTwoFingerSlideInFromLeft;
-extern NSString * const LAEventNameTwoFingerSlideInFromLeftTop;
-extern NSString * const LAEventNameTwoFingerSlideInFromLeftBottom;
 extern NSString * const LAEventNameTwoFingerSlideInFromRight;
-extern NSString * const LAEventNameTwoFingerSlideInFromRightTop;
-extern NSString * const LAEventNameTwoFingerSlideInFromRightBottom;
 extern NSString * const LAEventNameTwoFingerSlideInFromTop;
 extern NSString * const LAEventNameTwoFingerSlideInFromTopLeft;
 extern NSString * const LAEventNameTwoFingerSlideInFromTopRight;
