@@ -406,10 +406,14 @@ __attribute__((visibility("hidden")))
 		static BOOL inside;
 		if (!inside) {
 			inside = YES;
-			[uic clickedMenuButton];
+			if ([uic respondsToSelector:@selector(_handleButtonEventToSuspendDisplays:displayWasSuspendedOut:)])
+				[uic _handleButtonEventToSuspendDisplays:YES displayWasSuspendedOut:NULL];
+			else {
+				[uic clickedMenuButton];
+				[ic scrollToIconListAtIndex:0 animate:NO];
+			}
 			inside = NO;
 		}
-		[ic scrollToIconListAtIndex:0 animate:NO];
 		return YES;
 	}
 	if ([ic isEditing]) {
