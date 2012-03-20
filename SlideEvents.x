@@ -306,6 +306,18 @@ static inline void SlideGestureClear(id self)
 }
 
 static int lastActiveTouchCount;
+static LAEvent *eventToResend;
+
+bool SlideGestureResendEventAfterTouches(LAEvent *event)
+{
+	if (lastActiveTouchCount) {
+		event.handled = YES;
+		[eventToResend autorelease];
+		eventToResend = [event retain];
+		return true;
+	}
+	return false;
+}
 
 %hook SBHandMotionExtractor
 
@@ -332,6 +344,12 @@ static int lastActiveTouchCount;
 		} else {
 			// Finishing gesture
 			SlideGestureClear(self);
+			// Resend events whose listeners don't work when touches are on the screen
+			if (eventToResend) {
+				[LASharedActivator performSelector:@selector(sendEventToListener:) withObject:eventToResend afterDelay:0.0];
+				[eventToResend release];
+				eventToResend = nil;
+			}
 		}
 		lastActiveTouchCount = count;
 	});

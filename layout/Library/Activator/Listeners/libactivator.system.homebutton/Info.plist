@@ -3,5 +3,6 @@
 	description = "Simulate a press of the home button";
 	group = "System Actions";
 	selector = "homeButton";
-	"incompatible-events" = ("libactivator.lock.hold.short", "libactivator.lock.press.double", "libactivator.menu.hold.short", "libactivator.menu.press.double", "libactivator.menu.press.single", "libactivator.statusbar.swipe.down", "libactivator.slide-in.top-left", "libactivator.slide-in.top-right", "libactivator.two-finger-slide-in.top", "libactivator.two-finger-slide-in.top-left", "libactivator.two-finger-slide-in.top-right");
+	"incompatible-events" = ("libactivator.lock.hold.short", "libactivator.lock.press.double", "libactivator.menu.hold.short", "libactivator.menu.press.double", "libactivator.menu.press.single");
+	"requires-no-touch-events" = 1;
 }

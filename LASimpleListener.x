@@ -3,6 +3,7 @@
 #import "LASimpleListener.h"
 #import "LAApplicationListener.h"
 #import "SpringBoard/AdditionalAPIs.h"
+#import "SlideEvents.h"
 
 #import <UIKit/UIKit2.h>
 #import <SpringBoard/SpringBoard.h>
@@ -509,6 +510,9 @@ static UIWindow *tweetFormerKeyWindow;
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
+	if ([[activator infoDictionaryValueOfKey:@"requires-no-touch-events" forListenerWithName:listenerName] boolValue])
+		if (SlideGestureResendEventAfterTouches(event))
+			return;
 	NSString *selector = [activator infoDictionaryValueOfKey:@"selector" forListenerWithName:listenerName];
 	if (objc_msgSend(self, NSSelectorFromString(selector), activator, event, listenerName))
 		[event setHandled:YES];
