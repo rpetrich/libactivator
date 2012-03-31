@@ -34,6 +34,9 @@ extern NSString * const LAEventNameTwoFingerSlideInFromRightBottom;
 
 - (UIImage *)cachedSmallIconForListenerName:(NSString *)listenerName;
 
+- (NSInteger)_activeTouchCount;
+- (void)_deferReceiveEventUntilTouchesComplete:(LAEvent *)event listenerName:(NSString *)listenerName;
+
 @property (nonatomic, readonly) NSURL *moreActionsURL;
 @property (nonatomic, readonly) NSURL *adPaneURL;
 @property (nonatomic, readonly) NSBundle *bundle;

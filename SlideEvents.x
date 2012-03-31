@@ -305,19 +305,37 @@ static inline void SlideGestureClear(id self)
 	}
 }
 
-static int lastActiveTouchCount;
-static LAEvent *eventToResend;
+static NSInteger lastActiveTouchCount;
+static LAEvent *deferredEvent;
+static NSString *deferredListenerName;
 
-bool SlideGestureResendEventAfterTouches(LAEvent *event)
+@implementation LASpringBoardActivator (DeferredEvents)
+
+- (NSInteger)_activeTouchCount
 {
-	if (lastActiveTouchCount) {
-		event.handled = YES;
-		[eventToResend autorelease];
-		eventToResend = [event retain];
-		return true;
-	}
-	return false;
+	return lastActiveTouchCount;
 }
+
+- (void)_deferReceiveEventUntilTouchesComplete:(LAEvent *)event listenerName:(NSString *)listenerName
+{
+	event.handled = YES;
+	[deferredEvent autorelease];
+	deferredEvent = [event retain];
+	[deferredListenerName autorelease];
+	deferredListenerName = [listenerName retain];
+}
+
+- (void)_sendDeferredEvent
+{
+	deferredEvent.handled = NO;
+	[[self listenerForName:deferredListenerName] activator:self receiveEvent:deferredEvent forListenerName:deferredListenerName];
+	[deferredEvent release];
+	deferredEvent = nil;
+	[deferredListenerName release];
+	deferredListenerName = nil;
+}
+
+@end
 
 %hook SBHandMotionExtractor
 
@@ -345,10 +363,8 @@ bool SlideGestureResendEventAfterTouches(LAEvent *event)
 			// Finishing gesture
 			SlideGestureClear(self);
 			// Resend events whose listeners don't work when touches are on the screen
-			if (eventToResend) {
-				[LASharedActivator performSelector:@selector(sendEventToListener:) withObject:eventToResend afterDelay:0.0];
-				[eventToResend release];
-				eventToResend = nil;
+			if (deferredListenerName && deferredEvent) {
+				[LASharedActivator performSelector:@selector(_sendDeferredEvent) withObject:nil afterDelay:0.0];
 			}
 		}
 		lastActiveTouchCount = count;

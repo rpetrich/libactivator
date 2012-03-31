@@ -302,7 +302,12 @@ static UIAlertView *inCydiaAlert;
 			return;
 		}
 		id<LAListener> listener = [self listenerForName:listenerName];
-		[listener activator:self receiveEvent:event forListenerName:listenerName];
+		if (self._activeTouchCount && [[listener activator:self requiresInfoDictionaryValueOfKey:@"requires-no-touch-events" forListenerWithName:listenerName] boolValue]) {
+			[self _deferReceiveEventUntilTouchesComplete:event listenerName:listenerName];
+			event.handled = YES;
+		} else {
+			[listener activator:self receiveEvent:event forListenerName:listenerName];
+		}
 		if ([event isHandled])
 			for (id<LAListener> otherListener in (NSSet *)_listenerInstances)
 				if (otherListener != listener)
@@ -461,6 +466,17 @@ static UIAlertView *inCydiaAlert;
 - (void)unregisterEventDataSourceWithEventName:(NSString *)eventName
 {
 	LAInvalidSpringBoardOperation();
+}
+
+// Deferred events
+
+- (NSInteger)_activeTouchCount
+{
+	return 0;
+}
+
+- (void)_deferReceiveEventUntilTouchesComplete:(LAEvent *)event listenerName:(NSString *)listenerName
+{
 }
 
 // Listeners

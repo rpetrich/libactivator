@@ -510,9 +510,6 @@ static UIWindow *tweetFormerKeyWindow;
 
 - (void)activator:(LAActivator *)activator receiveEvent:(LAEvent *)event forListenerName:(NSString *)listenerName
 {
-	if ([[activator infoDictionaryValueOfKey:@"requires-no-touch-events" forListenerWithName:listenerName] boolValue])
-		if (SlideGestureResendEventAfterTouches(event))
-			return;
 	NSString *selector = [activator infoDictionaryValueOfKey:@"selector" forListenerWithName:listenerName];
 	if (objc_msgSend(self, NSSelectorFromString(selector), activator, event, listenerName))
 		[event setHandled:YES];
