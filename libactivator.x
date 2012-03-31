@@ -530,7 +530,10 @@ static UIAlertView *inCydiaAlert;
 
 - (UIImage *)iconForListenerName:(NSString *)listenerName
 {
-	UIImage *result = [_cachedListenerIcons objectForKey:listenerName];
+	UIImage *result;
+	@synchronized (self) {
+		result = [_cachedListenerIcons objectForKey:listenerName];
+	}
 	if (!result) {
 		CGFloat scale = [UIScreen instancesRespondToSelector:@selector(scale)] ? [[UIScreen mainScreen] scale] : 1.0f;
 		id<LAListener> listener = [self listenerForName:listenerName];
@@ -541,8 +544,11 @@ static UIAlertView *inCydiaAlert;
 			if ([UIImage respondsToSelector:@selector(imageWithCGImage:scale:orientation:)])
 				result = [UIImage imageWithCGImage:result.CGImage scale:scale orientation:result.imageOrientation];
 		}
-		if (result)
-			[_cachedListenerIcons setObject:result forKey:listenerName];
+		if (result) {
+			@synchronized (self) {
+				[_cachedListenerIcons setObject:result forKey:listenerName];
+			}
+		}
 	}
 	return result;
 }
