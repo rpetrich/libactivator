@@ -342,7 +342,16 @@ static NSString *deferredListenerName;
 - (void)extractHandMotionForActiveTouches:(void *)activeTouches count:(NSUInteger)count centroid:(CGPoint)centroid
 {
 	dispatch_async(dispatch_get_main_queue(), ^{
-		if (count && !lastActiveTouchCount) {
+		NSUInteger newCount = count;
+		if (LASharedActivator.currentEventMode == LAEventModeLockScreen) {
+			// Abort. We use UIGestureRecognizer on the lock screen
+			newCount = 0;
+			SlideGestureClear(self);
+			// Resend events whose listeners don't work when touches are on the screen
+			if (deferredListenerName && deferredEvent) {
+				[LASharedActivator performSelector:@selector(_sendDeferredEvent) withObject:nil afterDelay:0.0];
+			}
+		} else if (count && !lastActiveTouchCount) {
 			// New gesture
 			if (![(SBBulletinListController *)[%c(SBBulletinListController) sharedInstance] listViewIsActive]) {
 				SlideGestureStartWithRotatedLocation(self, centroid);
@@ -367,7 +376,7 @@ static NSString *deferredListenerName;
 				[LASharedActivator performSelector:@selector(_sendDeferredEvent) withObject:nil afterDelay:0.0];
 			}
 		}
-		lastActiveTouchCount = count;
+		lastActiveTouchCount = newCount;
 	});
 	%orig;
 }
