@@ -1,7 +1,7 @@
 Package: libactivator
 Depends: mobilesubstrate (>= 0.9.3228), preferenceloader (>= 2.0.4), firmware (>= 3.0)
 Name: Activator
-Version: 1.6.2~rc1
+Version: 1.6.2
 Priority: optional
 Architecture: iphoneos-arm
 Description: Centralized gestures, button and shortcut management for iOS
