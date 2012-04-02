@@ -29,7 +29,7 @@ Settings_LDFLAGS = -L$(FW_OBJ_DIR) -lactivator
 ifeq ($(SINGLE),1)
 	SpringBoard_FILES = single_SpringBoard.xi
 else
-	SpringBoard_FILES = Events.x SlideEvents.x LASimpleListener.x LAApplicationListener.x LAToggleListener.m LASpringBoardActivator.x LAMenuListener.m LADefaultEventDataSource.m
+	SpringBoard_FILES = Events.x SlideEvents.x LASimpleListener.x LAApplicationListener.x LAToggleListener.m LASpringBoardActivator.x LAMenuListener.x LADefaultEventDataSource.m
 endif
 SpringBoard_INSTALL_PATH = /Library/Activator
 SpringBoard_FRAMEWORKS = UIKit CoreGraphics QuartzCore
