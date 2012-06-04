@@ -174,6 +174,7 @@ __attribute__((visibility("hidden")))
 	frame.size = size;
 	webView.frame = frame;
 	[toolbar addSubview:self];
+	self.alpha = 1.0f;
 }
 
 - (void)showAnimated:(BOOL)animated
@@ -204,6 +205,14 @@ __attribute__((visibility("hidden")))
 			if (CGRectEqualToRect(viewToFix.frame, bounds))
 				viewToFix.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
 		[navigationController setToolbarHidden:YES animated:animated];
+		if (animated) {
+			[UIView beginAnimations:nil context:NULL];
+			self.alpha = 0.0f;
+			[UIView setAnimationDuration:1.0];
+			[UIView commitAnimations];
+		} else {
+			self.alpha = 0.0f;
+		}
 		[NSObject cancelPreviousPerformRequestsWithTarget:self selector:@selector(reload) object:nil];
 	}
 }
