@@ -53,20 +53,26 @@ enum {
 
 static inline CFMessagePortRef LAGetServerPort()
 {
-	if (CFMessagePortIsValid(serverPort))
+	if (serverPort && CFMessagePortIsValid(serverPort))
 		return serverPort;
 	return (serverPort = CFMessagePortCreateRemote(kCFAllocatorDefault, kLAMessageServerName));
 }
 
 static inline void LASendOneWayMessage(SInt32 messageId, CFDataRef data)
 {
-	CFMessagePortSendRequest(LAGetServerPort(), messageId, data, 45.0, 45.0, NULL, NULL);
+	CFMessagePortRef messagePort = LAGetServerPort();
+	if (messagePort) {
+		CFMessagePortSendRequest(messagePort, messageId, data, 45.0, 45.0, NULL, NULL);
+	}
 }
 
 static inline CFDataRef LASendTwoWayMessage(SInt32 messageId, CFDataRef data)
 {
 	CFDataRef outData = NULL;
-	CFMessagePortSendRequest(LAGetServerPort(), messageId, data, 45.0, 45.0, kLAMessageWaitingRunLoopMode, &outData);
+	CFMessagePortRef messagePort = LAGetServerPort();
+	if (messagePort) {
+		CFMessagePortSendRequest(messagePort, messageId, data, 45.0, 45.0, kLAMessageWaitingRunLoopMode, &outData);
+	}
 	return outData;
 }
 
