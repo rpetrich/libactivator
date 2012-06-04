@@ -109,19 +109,22 @@ static NSNull *sharedNull;
 
 CFMessagePortRef serverPort;
 
+__attribute__((always_inline))
 static inline void LAInvalidSpringBoardOperation(SEL _cmd)
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
-	void *symbols[2];
-	size_t size = backtrace(symbols, 2);
-	NSString *culprit;
-	if (size == 2) {
+	void *symbols[20];
+	size_t size = backtrace(symbols, 20);
+	NSString *culprit = nil;
+	if (size) {
 		char **strings = backtrace_symbols(symbols, size);
-		NSString *description = [NSString stringWithUTF8String:strings[1]];
+		for (int i = 0; i < size; i++) {
+			NSString *description = [NSString stringWithUTF8String:strings[i]];
+			culprit = [[[description componentsSeparatedByString:@" "] objectAtIndex:3] stringByDeletingPathExtension];
+			if (![culprit isEqualToString:@"Activator"] && ![culprit isEqualToString:@"libactivator"])
+				break;
+		}
 		free(strings);
-		culprit = [[[description componentsSeparatedByString:@" "] objectAtIndex:3] stringByDeletingPathExtension];
-	} else {
-		culprit = nil;
 	}
 	NSDictionary *culpritDictionary = [NSDictionary dictionaryWithObjectsAndKeys:
 		[NSString stringWithUTF8String:(char *)_cmd], @"selector",
