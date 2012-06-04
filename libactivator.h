@@ -228,8 +228,14 @@ extern NSString * const LAEventNameSpringBoardSpread;
 extern NSString * const LAEventNameStatusBarSwipeRight;
 extern NSString * const LAEventNameStatusBarSwipeLeft;
 extern NSString * const LAEventNameStatusBarTapDouble;
+extern NSString * const LAEventNameStatusBarTapDoubleLeft;
+extern NSString * const LAEventNameStatusBarTapDoubleRight;
 extern NSString * const LAEventNameStatusBarTapSingle;
+extern NSString * const LAEventNameStatusBarTapSingleLeft;
+extern NSString * const LAEventNameStatusBarTapSingleRight;
 extern NSString * const LAEventNameStatusBarHold;
+extern NSString * const LAEventNameStatusBarHoldLeft;
+extern NSString * const LAEventNameStatusBarHoldRight;
 
 extern NSString * const LAEventNameVolumeDownUp;
 extern NSString * const LAEventNameVolumeUpDown;

@@ -12,6 +12,9 @@ static CGPoint statusBarTouchDown;
 static BOOL hasSentStatusBarEvent;
 static CFRunLoopTimerRef statusBarHoldTimer;
 static CFRunLoopTimerRef statusBarTapTimer;
+static NSString *statusBarHoldEventName;
+static NSString *statusBarTapEventName;
+static NSString *statusBarDoubleTapEventName;
 
 static void DestroyCurrentStatusBarHoldTimer()
 {
@@ -27,7 +30,7 @@ static void StatusBarHeldCallback(CFRunLoopTimerRef timer, void *info)
 	DestroyCurrentStatusBarHoldTimer();
 	if (!hasSentStatusBarEvent) {
 		hasSentStatusBarEvent = YES;
-		LASendEventWithName(LAEventNameStatusBarHold);
+		LASendEventWithName(statusBarHoldEventName);
 	}
 }
 
@@ -45,7 +48,7 @@ static void StatusBarTapCallback(CFRunLoopTimerRef timer, void *info)
 	DestroyCurrentStatusBarTapTimer();
 	if (!hasSentStatusBarEvent) {
 		hasSentStatusBarEvent = YES;
-		LASendEventWithName(LAEventNameStatusBarTapSingle);
+		LASendEventWithName(statusBarTapEventName);
 	}
 }
 
@@ -57,6 +60,21 @@ static void StatusBarTapCallback(CFRunLoopTimerRef timer, void *info)
 	} else {
 		DestroyCurrentStatusBarHoldTimer();
 		DestroyCurrentStatusBarTapTimer();
+		CGFloat width = self.bounds.size.width;
+		CGFloat position = [[touches anyObject] locationInView:self].x;
+		if (position < width * 0.25f) {
+			statusBarHoldEventName = LAEventNameStatusBarHoldLeft;
+			statusBarTapEventName = LAEventNameStatusBarTapSingleLeft;
+			statusBarDoubleTapEventName = LAEventNameStatusBarTapDoubleLeft;
+		} else if (position < width * 0.75f) {
+			statusBarHoldEventName = LAEventNameStatusBarHold;
+			statusBarTapEventName = LAEventNameStatusBarTapSingle;
+			statusBarDoubleTapEventName = LAEventNameStatusBarTapDouble;
+		} else {
+			statusBarHoldEventName = LAEventNameStatusBarHoldRight;
+			statusBarTapEventName = LAEventNameStatusBarTapSingleRight;
+			statusBarDoubleTapEventName = LAEventNameStatusBarTapDoubleRight;
+		}
 		statusBarHoldTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarHoldDelay, 0.0, 0, 0, StatusBarHeldCallback, NULL);
 		CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarHoldTimer, kCFRunLoopCommonModes);
 		statusBarTouchDown = [[touches anyObject] locationInView:self];
@@ -95,7 +113,7 @@ static void StatusBarTapCallback(CFRunLoopTimerRef timer, void *info)
 	DestroyCurrentStatusBarTapTimer();
 	if (!hasSentStatusBarEvent) {
 		if ([[touches anyObject] tapCount] == 2)
-			LASendEventWithName(LAEventNameStatusBarTapDouble);
+			LASendEventWithName(statusBarDoubleTapEventName);
 		else {
 			statusBarTapTimer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + kStatusBarTapDelay, 0.0, 0, 0, StatusBarTapCallback, NULL);
 			CFRunLoopAddTimer(CFRunLoopGetCurrent(), statusBarTapTimer, kCFRunLoopCommonModes);

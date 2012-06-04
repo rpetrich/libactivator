@@ -1,0 +1,5 @@
+{
+	title = "Double Tap Right";
+	group = "Status Bar";
+	description = "Double-tap on the right part of the statusbar";
+}

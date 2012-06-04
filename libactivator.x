@@ -28,8 +28,14 @@ NSString * const LAEventNameSpringBoardSpread      = @"libactivator.springboard.
 NSString * const LAEventNameStatusBarSwipeRight    = @"libactivator.statusbar.swipe.right";
 NSString * const LAEventNameStatusBarSwipeLeft     = @"libactivator.statusbar.swipe.left";
 NSString * const LAEventNameStatusBarTapDouble     = @"libactivator.statusbar.tap.double";
+NSString * const LAEventNameStatusBarTapDoubleLeft = @"libactivator.statusbar.tap.double.left";
+NSString * const LAEventNameStatusBarTapDoubleRight = @"libactivator.statusbar.tap.double.right";
 NSString * const LAEventNameStatusBarTapSingle     = @"libactivator.statusbar.tap.single";
+NSString * const LAEventNameStatusBarTapSingleLeft = @"libactivator.statusbar.tap.single.left";
+NSString * const LAEventNameStatusBarTapSingleRight = @"libactivator.statusbar.tap.single.right";
 NSString * const LAEventNameStatusBarHold          = @"libactivator.statusbar.hold";
+NSString * const LAEventNameStatusBarHoldLeft      = @"libactivator.statusbar.hold.left";
+NSString * const LAEventNameStatusBarHoldRight     = @"libactivator.statusbar.hold.right";
 
 NSString * const LAEventNameVolumeDownUp           = @"libactivator.volume.down-up";
 NSString * const LAEventNameVolumeUpDown           = @"libactivator.volume.up-down";
