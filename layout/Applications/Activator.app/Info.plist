@@ -4,6 +4,7 @@
 	CFBundleIconFiles = (
 		"icon.png",
 		"icon-72.png",
+		"icon-72@2x.png",
 		"icon@2x.png",
 		"Icon-Small.png",
 		"Icon-Small@2x.png",
