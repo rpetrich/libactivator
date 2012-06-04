@@ -128,7 +128,9 @@ static void NewCydiaStatusChanged()
 			[av release];
 		}
 	}
-	CFRelease(stream);
+	if (stream) {
+		CFRelease(stream);
+	}
 	chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
 }
 
