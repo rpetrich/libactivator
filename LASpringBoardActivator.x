@@ -104,15 +104,29 @@ static void NewCydiaStatusChanged()
 	CFURLRef url = CFURLCreateWithFileSystemPath(kCFAllocatorDefault, (CFStringRef)[self settingsFilePath], kCFURLPOSIXPathStyle, NO);
 	CFWriteStreamRef stream = CFWriteStreamCreateWithFile(kCFAllocatorDefault, url);
 	CFRelease(url);
-	if (CFWriteStreamOpen(stream)) {
+	if (stream && CFWriteStreamOpen(stream)) {
 		CFStringRef errorString = NULL;
 		if (CFPropertyListWriteToStream((CFPropertyListRef)_preferences, stream, kCFPropertyListBinaryFormat_v1_0, &errorString) == 0) {
 			NSLog(@"Activator Failed to write to settings file: %@", errorString);
+			if (UIApp) {
+				UIAlertView *av = [[UIAlertView alloc] init];
+				av.title = Localize(self.bundle, @"ACTIVATOR", @"Activator");
+				av.message = [Localize(self.bundle, @"FAILED_TO_WRITE_SETTINGS_FILE", @"Failed to write to settings file: ") stringByAppendingString:(NSString *)errorString ?: @""];
+				[av addButtonWithTitle:Localize(self.bundle, @"OK", @"OK")];
+				[av release];
+			}
 			CFRelease(errorString);
 		}
 		CFWriteStreamClose(stream);
 	} else {
-		NSLog(@"Activator: Failed ot open settings file for writing");
+		NSLog(@"Activator: Failed to open settings file for writing");
+		if (UIApp) {
+			UIAlertView *av = [[UIAlertView alloc] init];
+			av.title = Localize(self.bundle, @"ACTIVATOR", @"Activator");
+			av.message = Localize(self.bundle, @"FAILED_TO_OPEN_SETTINGS_FILE", @"Failed to open settings file for writing");
+			[av addButtonWithTitle:Localize(self.bundle, @"OK", @"OK")];
+			[av release];
+		}
 	}
 	CFRelease(stream);
 	chmod([[self settingsFilePath] UTF8String], S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
