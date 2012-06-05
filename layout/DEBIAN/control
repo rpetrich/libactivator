@@ -10,7 +10,7 @@ Depiction: http://rpetri.ch/cydia/activator/
 Maintainer: Ryan Petrich <rpetrich+activator@gmail.com>
 Author: Ryan Petrich <rpetrich+activator@gmail.com>
 Sponsor: thebigboss.org <http://thebigboss.org>
-Conflicts: com.booleanmagic.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6), sbsettings (<= 3.0.6)
-Replaces: com.booleanmagic.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6)
+Conflicts: com.booleanmagic.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6), sbsettings (<= 3.0.6), com.clezz.quickdo
+Replaces: com.booleanmagic.overboard (<= 1.1), com.ashman.lockinfo (<= 2.0.0-6), com.clezz.quickdo
 Section: System
 dev: rpetrich
