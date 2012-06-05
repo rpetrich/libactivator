@@ -28,6 +28,17 @@
 
 static CFMutableDictionaryRef toggles;
 
+@interface BBBulletinRequest : NSObject
+@property (nonatomic, copy) NSString *title;
+@property (nonatomic, copy) NSString *message;
+@property (nonatomic, copy) NSString *sectionID;
+@end
+
+@interface SBBulletinBannerController : NSObject
++ (SBBulletinBannerController *)sharedInstance;
+- (void)observer:(id)observer addBulletin:(BBBulletinRequest *)bulletin forFeed:(int)feed;
+@end
+
 @implementation LAToggleListener
 
 static LAToggleListener *sharedToggleListener;
@@ -149,6 +160,18 @@ static UIAlertView *alertView;
 		BOOL newState = !isEnabled(toggle);
 		setState(toggle, newState);
 		notify_post("com.sbsettings.refreshalltoggles");
+		[event setHandled:YES];
+		Class bulletinBannerController = objc_getClass("SBBulletinBannerController");
+		Class bulletinRequest = objc_getClass("BBBulletinRequest");
+		if (bulletinBannerController && bulletinRequest) {
+			BBBulletinRequest *request = [[bulletinRequest alloc] init];
+			request.title = [LASharedActivator localizedStringForKey:[@"LISTENER_TITLE_toggle_" stringByAppendingString:toggleName] value:toggleName];
+			request.message = newState ? [LASharedActivator localizedStringForKey:@"ENABLED" value:@"Enabled"] : [LASharedActivator localizedStringForKey:@"DISABLED" value:@"Disabled"];
+			request.sectionID = @"libactivator";
+			[(SBBulletinBannerController *)[bulletinBannerController sharedInstance] observer:nil addBulletin:request forFeed:2];
+			[request release];
+			return;
+		}
 		alertView = [[UIAlertView alloc] init];
 	    alertView.title = [LASharedActivator localizedStringForKey:[@"LISTENER_TITLE_toggle_" stringByAppendingString:toggleName] value:toggleName];
 		CGRect frame = alertView.bounds;
@@ -166,7 +189,6 @@ static UIAlertView *alertView;
 		[alertView addSubview:label];
 		[label release];
 		[alertView show];
-		[event setHandled:YES];
 		[self performSelector:@selector(dismiss) withObject:nil afterDelay:1.5];
 	}
 }
