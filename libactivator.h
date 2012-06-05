@@ -218,6 +218,7 @@ extern NSString * const LAEventNameMenuPressSingle;
 extern NSString * const LAEventNameMenuPressDouble;
 extern NSString * const LAEventNameMenuPressTriple;
 extern NSString * const LAEventNameMenuHoldShort;
+extern NSString * const LAEventNameMenuHoldLong;
 
 extern NSString * const LAEventNameLockHoldShort;
 extern NSString * const LAEventNameLockPressDouble;

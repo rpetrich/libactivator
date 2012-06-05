@@ -18,6 +18,7 @@ NSString * const LAEventNameMenuPressSingle        = @"libactivator.menu.press.s
 NSString * const LAEventNameMenuPressDouble        = @"libactivator.menu.press.double";
 NSString * const LAEventNameMenuPressTriple        = @"libactivator.menu.press.triple";
 NSString * const LAEventNameMenuHoldShort          = @"libactivator.menu.hold.short";
+NSString * const LAEventNameMenuHoldLong           = @"libactivator.menu.hold.long";
 
 NSString * const LAEventNameLockHoldShort          = @"libactivator.lock.hold.short";
 NSString * const LAEventNameLockPressDouble        = @"libactivator.lock.press.double";

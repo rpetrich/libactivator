@@ -580,7 +580,12 @@ static BOOL justTookScreenshot;
 		[menuEventToAbort release];
 		menuEventToAbort = nil;
 	}
-	%orig;
+	if (LASendEventWithName(LAEventNameMenuHoldLong).handled) {
+		if ([self respondsToSelector:@selector(clearMenuButtonTimer)])
+			[self clearMenuButtonTimer];
+	} else {
+		%orig;
+	}
 }
 
 - (void)_menuButtonWasHeld
@@ -590,7 +595,12 @@ static BOOL justTookScreenshot;
 		[menuEventToAbort release];
 		menuEventToAbort = nil;
 	}
-	%orig;
+	if (LASendEventWithName(LAEventNameMenuHoldLong).handled) {
+		if ([self respondsToSelector:@selector(clearMenuButtonTimer)])
+			[self clearMenuButtonTimer];
+	} else {
+		%orig;
+	}
 }
 
 %new
