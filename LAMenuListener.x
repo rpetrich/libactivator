@@ -187,6 +187,10 @@ static void NotificationCallback(CFNotificationCenterRef center, void *observer,
 			[actionSheet showInView:view];
 			[UIApp setStatusBarOrientation:currentOrientation animated:NO];
 		}
+		if ([[%c(SBAwayController) sharedAwayController] isDimmed]) {
+			[UIApp undim];
+			[[%c(SBAwayController) sharedAwayController] undimScreen];
+		}
 		[currentActionSheet release];
 		currentActionSheet = actionSheet;
 		[currentEvent release];
