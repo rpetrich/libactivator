@@ -45,4 +45,12 @@
 - (UIImage *)activator:(LAActivator *)activator requiresIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale;
 - (UIImage *)activator:(LAActivator *)activator requiresSmallIconForListenerName:(NSString *)listenerName scale:(CGFloat)scale;
 
+- (id)activator:(LAActivator *)activator requiresGlyphImageDescriptorForListenerName:(NSString *)listenerName;
+
+- (BOOL)activator:(LAActivator *)activator requiresSupportsRemovalForListenerWithName:(NSString *)listenerName;
+- (void)activator:(LAActivator *)activator requestsRemovalForListenerWithName:(NSString *)listenerName;
+- (NSString *)activator:(LAActivator *)activator requiresConfigurationViewControllerClassNameForListenerWithName:(NSString *)listenerName bundle:(NSBundle **)outBundle; // LAListenerConfigurationViewController
+- (id)activator:(LAActivator *)activator requestsConfigurationForListenerWithName:(NSString *)listenerName;
+- (void)activator:(LAActivator *)activator didSaveNewConfiguration:(id)configuration forListenerWithName:(NSString *)listenerName;
+
 @end

@@ -94,6 +94,7 @@ extern NSString * const LAEventNameLockScreenClockDoubleTap;
 extern NSString * const LAEventNameLockScreenClockTapHold;
 extern NSString * const LAEventNameLockScreenClockSwipeLeft;
 extern NSString * const LAEventNameLockScreenClockSwipeRight;
+extern NSString * const LAEventNameLockScreenClockSwipeDown;
 
 extern NSString * const LAEventNamePowerConnected;
 extern NSString * const LAEventNamePowerDisconnected;

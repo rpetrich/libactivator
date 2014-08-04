@@ -32,3 +32,10 @@
 @property (nonatomic, assign) BOOL showsSaveButton;
 - (BOOL)performSave;
 @end
+
+@interface LAListenerConfigurationViewController LA_SETTINGS_CONTROLLER(LASettingsViewController)
+- (id)initWithListenerName:(NSString *)listenerName;
+@property (nonatomic, readonly, copy) NSString *listenerName;
+@property (nonatomic, assign) BOOL showsSaveButton;
+- (BOOL)performSave;
+@end

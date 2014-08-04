@@ -5,7 +5,7 @@
 
 // Main event dispatcher that is responsible for sending events, maintaining the list of actions/events, and querying information about them
 
-@class LAEvent;
+@class LAEvent, LAListenerConfigurationViewController, LAEventConfigurationViewController;
 @protocol LAListener, LAEventDataSource;
 
 @interface LAActivator : NSObject LA_PRIVATE_IVARS(LAActivator)
@@ -49,20 +49,21 @@
 // Events
 
 @property (nonatomic, readonly) NSArray *availableEventNames;
+- (BOOL)hasEventWithName:(NSString *)name;
 - (BOOL)eventWithNameIsHidden:(NSString *)name;
 - (BOOL)eventWithNameRequiresAssignment:(NSString *)name;
 - (NSArray *)compatibleModesForEventWithName:(NSString *)name;
 - (BOOL)eventWithName:(NSString *)eventName isCompatibleWithMode:(NSString *)eventMode;
 - (BOOL)eventWithNameSupportsUnlockingDeviceToSend:(NSString *)eventName;
 
-- (BOOL)eventWithNameSupportsConfiguration:(NSString *)eventName;
-- (NSString *)configurationViewControllerClassNameForEventWithName:(NSString *)eventName bundle:(NSBundle **)bundle;
-- (Class)configurationViewControllerClassForEventWithName:(NSString *)eventName;
 - (BOOL)eventWithNameSupportsRemoval:(NSString *)eventName;
 - (void)removeEventWithName:(NSString *)eventName;
 
 - (void)registerEventDataSource:(id<LAEventDataSource>)dataSource forEventName:(NSString *)eventName;
 - (void)unregisterEventDataSourceWithEventName:(NSString *)eventName;
+
+- (BOOL)eventWithNameSupportsConfiguration:(NSString *)eventName;
+- (LAEventConfigurationViewController *)configurationViewControllerForEventWithName:(NSString *)eventName;
 
 // Listener Metadata
 
@@ -77,6 +78,12 @@
 - (BOOL)listenerNamesAreMutuallyCompatible:(NSArray *)listenerNames;
 - (UIImage *)iconForListenerName:(NSString *)listenerName;
 - (UIImage *)smallIconForListenerName:(NSString *)listenerName;
+- (UIImage *)imageForListenerName:(NSString *)listenerName usingTemplate:(NSBundle *)templateBundle;
+- (BOOL)listenerWithNameSupportsRemoval:(NSString *)listenerName;
+- (void)requestRemovalForListenerWithName:(NSString *)listenerName;
+
+- (BOOL)listenerWithNameSupportsConfiguration:(NSString *)listenerName;
+- (LAListenerConfigurationViewController *)configurationViewControllerForListenerWithName:(NSString *)listenerName;
 
 // Event Modes
 
@@ -90,6 +97,11 @@
 @property (nonatomic, readonly) NSString *displayIdentifierForCurrentApplication;
 - (BOOL)applicationWithDisplayIdentifierIsBlacklisted:(NSString *)displayIdentifier;
 - (void)setApplicationWithDisplayIdentifier:(NSString *)displayIdentifier isBlacklisted:(BOOL)blacklisted;
+
+// Profiles
+
+@property (nonatomic, readonly) NSArray *availableProfileNames;
+@property (nonatomic, copy) NSString *currentProfileName;
 
 @end
 
@@ -117,3 +129,4 @@ extern NSString * const LAEventModeLockScreen;
 
 extern NSString * const LAActivatorAvailableListenersChangedNotification;
 extern NSString * const LAActivatorAvailableEventsChangedNotification;
+extern NSString * const LAActivatorAssignmentsChangedNotification;

@@ -19,5 +19,8 @@
 - (BOOL)eventWithNameSupportsRemoval:(NSString *)eventName;
 - (void)removeEventWithName:(NSString *)eventName;
 - (NSString *)configurationViewControllerClassNameForEventWithName:(NSString *)eventName bundle:(NSBundle **)bundle; // LAEventConfigurationViewController
+- (id)configurationForEventWithName:(NSString *)eventName;
+- (void)eventWithName:(NSString *)eventName didSaveNewConfiguration:(id)configuration;
+
 @end
 
